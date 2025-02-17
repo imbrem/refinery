@@ -141,6 +141,7 @@ instance Var?.Wk.den_central {v w : Var? α ε} (h : v ≤ w)
   : Central (C := C) (Var?.Wk.den h)
   := (den_pure h).pure_central
 
+@[simp]
 theorem Var?.Wk.den_comp {u v w : Var? α ε} (h : u ≤ v) (h' : v ≤ w)
   : den h ≫ den h' = den (C := C) (le_trans h h')
   := by cases u with | mk _ qu _ => cases v with | mk _ qv _ => cases w with | mk _ qw _ =>
@@ -152,6 +153,11 @@ theorem Var?.Wk.den_comp {u v w : Var? α ε} (h : u ≤ v) (h' : v ≤ w)
     | zero => cases h'.q using EQuant.le.casesLE
     | rest qv => simp
 
+@[simp]
+theorem Var?.Wk.den_comp_drop {v w : Var? α ε} (h : v ≤ w) [hw : w.del]
+  : Var?.Wk.den h ≫ !_ w.ety = (hw.anti h).den (C := C)
+  := by rw [M.drop_aff ⊥ _ (hA := (hw.anti h).ety_aff)]
+
 variable [IsPremonoidal C]
 
 instance Ctx?.Wk.den_pure {Γ Δ : Ctx? α ε} (h : Γ.Wk Δ) : E.HasEff e h.den := by induction h with
@@ -162,6 +168,18 @@ instance Ctx?.Wk.den_pure {Γ Δ : Ctx? α ε} (h : Γ.Wk Δ) : E.HasEff e h.den
 
 instance Ctx?.Wk.den_central {Γ Δ : Ctx? α ε} (h : Γ.Wk Δ) : Central (C := C) h.den
   := (den_pure h).pure_central
+
+theorem Ctx?.Wk.den_comp {Γ Δ Ξ : Ctx? α ε} (h : Γ.Wk Δ) (h' : Δ.Wk Ξ)
+  : h.den ≫ h'.den = (h.comp h').den (C := C)
+  := by induction h generalizing Ξ with
+  -- TODO: why is this not simping?
+  | nil => cases h'; simp [den, Wk.comp]; apply Category.id_comp
+  | skip _ _ I => simp [
+      den, Wk.comp, <-Monoidal.rightUnitor_naturality, <-Monoidal.whiskerRight_comp_assoc, I,
+      Monoidal.tensor_eq_rtimes_left, rtimes]
+  | cons _ hv I => cases h' with
+  | skip _ hw => simp [den, Wk.comp, <-Monoidal.tensor_comp_left_assoc, I]
+  | cons => simp [den, Wk.comp, <-Monoidal.tensor_comp_left, I]
 
 instance Ctx?.At.den_pure {v : Var? α ε} {Γ : Ctx? α ε} {n} (h : Γ.At v n)
   : E.HasEff e h.den

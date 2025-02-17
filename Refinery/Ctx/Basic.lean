@@ -186,7 +186,7 @@ instance Var?.ety_rel_of_copy (v : Var? α ε) [h : v.copy] : IsRel v.ety := by
   | zero => simp only [ety]; infer_instance
   | rest => simp [quant, IsRel.is_rel_iff] at h; exact ⟨h.2⟩
 
-instance Var?.ety_aff_of_del (v : Var? α ε) [h : v.del] : IsAff v.ety := by
+instance Var?.del.ety_aff (v : Var? α ε) [h : v.del] : IsAff v.ety := by
   cases v with | mk A q e => cases q using EQuant.casesZero with
   | zero => simp only [ety]; infer_instance
   | rest => simp [quant, IsAff.is_aff_iff] at h; exact ⟨h.2⟩
@@ -288,7 +288,7 @@ instance Var?.instPartialOrder : PartialOrder (Var? α ε) where
   le_antisymm _ _ h h' := ext h.ty (le_antisymm h'.q h.q) (le_antisymm h.eff h'.eff)
 
 theorem Var?.Wk.ety_aff_zero {B : Ty α} {e : ε} (h : v ≤ Var?.mk B 0 e)
-  : IsAff v.ety := ety_aff_of_del _ (h := del.anti h)
+  : IsAff v.ety := del.ety_aff _ (h := del.anti h)
 
 theorem Var?.Wk.ety_eq_quant {B : Ty α} {q : Quant} {e : ε} (h : v ≤ Var?.mk B q e)
   : v.ety = B := by
