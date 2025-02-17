@@ -255,6 +255,9 @@ structure Var?.Wk (v w : Var? α ε) : Prop where
   eff : v.eff ≤ w.eff
   unused_del : w.unused → v.del
 
+theorem Var?.wk_eff (A : Ty α) (q : EQuant) {e e' : ε} (h : e ≤ e') : Var?.Wk ⟨A, q, e⟩ ⟨A, q, e'⟩
+  := ⟨rfl, le_refl _, h, λh => by convert h.del using 0; simp [del_iff]⟩
+
 instance Var?.instLE : LE (Var? α ε) := ⟨Wk⟩
 
 theorem Var?.used.anti {v w : Var? α ε} (h : v ≤ w) (hw : w.used) : v.used := hw.trans h.q
@@ -286,6 +289,12 @@ instance Var?.instPartialOrder : PartialOrder (Var? α ε) where
 
 theorem Var?.Wk.ety_aff_zero {B : Ty α} {e : ε} (h : v ≤ Var?.mk B 0 e)
   : IsAff v.ety := ety_aff_of_del _ (h := del.anti h)
+
+theorem Var?.Wk.ety_eq_quant {B : Ty α} {q : Quant} {e : ε} (h : v ≤ Var?.mk B q e)
+  : v.ety = B := by
+  cases v with | mk A q' e' => cases q' using EQuant.casesZero with
+  | zero => cases h.q using EQuant.le.casesLE
+  | rest => cases h.ty; rfl
 
 inductive Ctx?.PWk : Ctx? α ε → Ctx? α ε → Prop where
   | nil : Ctx?.PWk .nil .nil
@@ -515,13 +524,13 @@ theorem Ctx?.At.zero_cons_head {Γ : Ctx? α ε} {v} (h : (Γ.cons w).At v 0) : 
 def Ctx?.At.zero_cons_tail {Γ : Ctx? α ε} {v} (h : (Γ.cons w).At v 0) : Γ.Wk .nil
   := Γ.choose_drop (by cases h; constructor; assumption)
 
-theorem Ctx?.At.succ_cons_head {Γ : Ctx? α ε} {v w} (h : (Γ.cons w).At v (n + 1)) : IsAff w
+theorem Ctx?.At.succ_cons_head {Γ : Ctx? α ε} {v w} (h : (Γ.cons w).At v (n + 1)) : w.del
   := by cases h; assumption
 
 theorem Ctx?.At.succ_cons_tail {Γ : Ctx? α ε} {v w} (h : (Γ.cons w).At v (n + 1)) : Γ.At v n
   := by cases h; assumption
 
-theorem Ctx?.At.succ_cons_iff (Γ : Ctx? α ε) (v w) : (Γ.cons w).At v (n + 1) ↔ IsAff w ∧ Γ.At v n
+theorem Ctx?.At.succ_cons_iff (Γ : Ctx? α ε) (v w) : (Γ.cons w).At v (n + 1) ↔ w.del ∧ Γ.At v n
   := ⟨λh => ⟨h.succ_cons_head, h.succ_cons_tail⟩, λ⟨h, h'⟩ => At.there h' h⟩
 
 @[elab_as_elim, induction_eliminator]
@@ -534,6 +543,9 @@ def Ctx?.At.inductionOn {v : Var? α ε} {motive : ∀ (Γ n), Ctx?.At v Γ n �
   | .cons Γ w, 0, h => here Γ h.zero_cons_tail w h.zero_cons_head
   | .cons Γ w, n + 1, h
     => there Γ w n h.succ_cons_tail h.succ_cons_head (h.succ_cons_tail.inductionOn here there)
+
+def Ctx?.At.wkOut {v : Var? α ε} {Γ : Ctx? α ε} {n} (h : Γ.At v n) (h' : v ≤ w)
+  : Γ.At w n := by induction h <;> constructor <;> (try apply le_trans) <;> assumption
 
 def Ctx?.At.ix {Γ : Ctx? α ε} {v n} (h : Γ.At v n) : v.Ix Γ
   := h.inductionOn (λ_ d _ h => Var?.zero_le d h) (λ_ _ _ _ _ I => I.succ _)

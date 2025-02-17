@@ -16,3 +16,11 @@ structure Signature.IsFn (f : φ) (e : ε) (A B : Ty α) where
   src : A = src f
   trg : B = trg f
   eff : eff f ≤ e
+
+theorem Signature.IsFn.mono {f : φ} {e e' : ε} {A B : Ty α} (h : IsFn f e A B) (h' : e ≤ e')
+  : IsFn f e' A B := ⟨h.src, h.trg, le_trans h.eff h'⟩
+
+theorem Signature.IsFn.top {f : φ} {e : ε} {A B : Ty α} (h : IsFn f e A B) : IsFn f ⊤ A B
+  := h.mono le_top
+
+end Refinery

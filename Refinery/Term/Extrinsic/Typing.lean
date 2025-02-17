@@ -10,33 +10,6 @@ namespace Term
 
 variable {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε]
 
-inductive Wf : Ctx? α ε → Ty α → Term φ → Type _
-  | bv {Γ} : Γ.At ⟨A, 1, e⟩ n → Wf Γ A (.bv n)
-  | op {Γ e A B f a} : S.IsFn f e A B → Wf Γ A a → Wf Γ B (.op f a)
-  | let₁ {Γ Γl Γr A B a b} :
-    Γ.PSSplit Γr Γl →
-    Wf Γl A a → Wf (Γr.cons ⟨A, ⊤, ⊥⟩) B b → Wf Γ B (.let₁ a b)
-  | unit {Γ} : Γ.Wk .nil → Wf Γ .unit .unit
-  | pair {Γ Γl Γr A B a b} :
-    Γ.PSSplit Γl Γr →
-    Wf Γl A a → Wf Γr B b → Wf Γ (.tensor A B) (.pair a b)
-  | let₂ {Γ Γl Γr A B C a b} :
-    Γ.PSSplit Γr Γl →
-    Wf Γl (.tensor A B) a → Wf ((Γr.cons ⟨A, ⊤, ⊥⟩).cons ⟨B, ⊤, ⊥⟩) C b → Wf Γ C (.let₂ a b)
-  | inl {Γ A B a} : Wf Γ A a → Wf Γ (.coprod A B) (.inl a)
-  | inr {Γ A B b} : Wf Γ B b → Wf Γ (.coprod A B) (.inr b)
-  | case {Γ Γl Γr A B C a b c} :
-    Γ.PSSplit Γl Γr →
-    Wf Γr (.coprod A B) a → Wf (Γl.cons ⟨A, ⊤, ⊥⟩) C b → Wf (Γl.cons ⟨B, ⊤, ⊥⟩) C c
-      → Wf Γ C (.case a b c)
-  | abort {Γ A a} : Wf Γ .empty a → Wf Γ A (.abort a)
-  | iter {Γ Γl Γr A B a b} :
-    Γ.PSSplit Γr Γl →
-    Γr.copy → Γr.del →
-    Wf Γl A a → Wf (Γr.cons ⟨A, ⊤, ⊥⟩) (.coprod B A) b → Wf Γ B (.iter a b)
-
-notation Γ "⊢" a ":" A => Wf Γ A a
-
 inductive Deriv : ε → Ctx? α ε → Ty α → Term φ → Type _
   | bv {Γ} : Γ.At ⟨A, 1, e⟩ n → Deriv e Γ A (.bv n)
   | op {Γ e A B f a} : S.IsFn f e A B → Deriv e Γ A a → Deriv e Γ B (.op f a)
@@ -66,15 +39,20 @@ inductive Deriv : ε → Ctx? α ε → Ty α → Term φ → Type _
 
 notation Γ "⊢[" e "]" a ":" A => Deriv e Γ A a
 
-def Deriv.toWf {e : ε} {Γ : Ctx? α ε} {A : Ty α} {a : Term φ} : (Γ ⊢[e] a : A) → (Γ ⊢ a : A)
-  | .bv hv => Wf.bv hv
-  | .op hf da => Wf.op hf (Deriv.toWf da)
-  | .let₁ dΓ da db => Wf.let₁ dΓ (Deriv.toWf da) (Deriv.toWf db)
-  | .unit dΓ => Wf.unit dΓ
-  | .pair dΓ da db => Wf.pair dΓ (Deriv.toWf da) (Deriv.toWf db)
-  | .let₂ dΓ da db => Wf.let₂ dΓ (Deriv.toWf da) (Deriv.toWf db)
-  | .inl da => Wf.inl (Deriv.toWf da)
-  | .inr db => Wf.inr (Deriv.toWf db)
-  | .case dΓ da db dc => Wf.case dΓ (Deriv.toWf da) (Deriv.toWf db) (Deriv.toWf dc)
-  | .abort da => Wf.abort (Deriv.toWf da)
-  | .iter dΓ _ dΓrc dΓrd da db => Wf.iter dΓ dΓrc dΓrd (Deriv.toWf da) (Deriv.toWf db)
+def Deriv.mono {e e' : ε} {Γ : Ctx? α ε} {A : Ty α} {a : Term φ} (he : e ≤ e')
+  : (Γ ⊢[e] a : A) → (Γ ⊢[e'] a : A)
+  | .bv hv => .bv (hv.wkOut (Var?.wk_eff _ _ he))
+  | .op hf da => .op (hf.mono he) (da.mono he)
+  | .let₁ dΓ da db => .let₁ dΓ (da.mono he) (db.mono he)
+  | .unit dΓ => .unit dΓ
+  | .pair dΓ da db => .pair dΓ (da.mono he) (db.mono he)
+  | .let₂ dΓ da db => .let₂ dΓ (da.mono he) (db.mono he)
+  | .inl da => .inl (da.mono he)
+  | .inr db => .inr (db.mono he)
+  | .case dΓ da db dc => .case dΓ (da.mono he) (db.mono he) (dc.mono he)
+  | .abort da => .abort (da.mono he)
+  | .iter dΓ hei hc hd da db =>
+    .iter dΓ (S.iterative_is_upper he hei) hc hd (da.mono he) (db.mono he)
+
+abbrev Deriv.top {e : ε} {Γ : Ctx? α ε} {A : Ty α} {a : Term φ} (D : Γ ⊢[e] a : A) : (Γ ⊢[⊤] a : A)
+  := D.mono le_top
