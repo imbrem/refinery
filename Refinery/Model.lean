@@ -27,6 +27,7 @@ variable {α : Type _} [HasQuant α]
          {C : Type _} [Category C] [MonoidalCategoryStruct C] [ChosenFiniteCoproducts C]
         [TyModel α C]
 
+@[simp]
 def Ty.den : Ty α → C
   | .of A => TyModel.den_base A
   | .unit => 𝟙_ C
@@ -82,7 +83,7 @@ class Model
   drop_tensor {A B} [IsAff A] [IsAff B] : drop (.tensor A B) = (drop A ⊗ drop B) ≫ (λ_ _).hom
   copy_unit : copy .unit = (λ_ _).inv
   copy_tensor {A B} [IsRel A] [IsRel B]
-    : copy (.tensor A B) = (copy A ⊗ copy B) ≫ swap_inner _ _ _ _
+    : copy (.tensor A B) = (copy A ⊗ copy B) ≫ swap_inner ..
   drop_rem {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
     [IsAff A] [IsAff B] [hf : IsRem e] : f ≫ drop _ ↠ drop _
   copy_drop_left_rem {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]

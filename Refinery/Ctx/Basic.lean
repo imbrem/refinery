@@ -10,6 +10,7 @@ structure Var? (α : Type u) (ε : Type v) where
   q : EQuant
   eff : ε
 
+@[simp]
 abbrev Var?.ety {α ε} (v : Var? α ε) : Ty α := match v.q with
   | 0 => .unit
   | (_ : Quant) => v.ty
@@ -52,6 +53,7 @@ theorem Ctx?.length_cons (Γ : Ctx? α ε) (v : Var? α ε)
 theorem Ctx?.length_cons' (Γ : Ctx? α ε) (A : Ty α) (q : EQuant) (e : ε)
   : Ctx?.length (Ctx?.cons' Γ A q e) = Ctx?.length Γ + 1 := rfl
 
+@[simp]
 def Ctx?.ety : Ctx? α ε → Ty α
   | .nil => Ty.unit
   | .cons Γ v => .tensor (Ctx?.ety Γ) v.ety

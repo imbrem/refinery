@@ -121,7 +121,7 @@ variable {φ : Type _} {α : Type _} {ε : Type _} [Signature φ α ε]
 theorem Var?.Wk.den_eff {A : Ty α} {q : EQuant} {e e' : ε} (h : ⟨A, q, e⟩ ≤ ⟨A, q, e'⟩)
   : Var?.Wk.den (C := C) h = 𝟙 _
   := by cases q using EQuant.casesZero with
-    | zero => simp [Var?.del.den, ety]; rfl
+    | zero => simp [Var?.del.den, ety]
     | rest q => rfl
 
 @[simp]
