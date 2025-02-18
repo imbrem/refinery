@@ -61,6 +61,7 @@ def Ctx?.PWk.den {Γ Δ : Ctx? α ε} (h : Γ.PWk Δ) : (g⟦ Γ ⟧ : C) ⟶ g�
   | .nil, .nil, _ => 𝟙 (𝟙_ C)
   | .cons _ _, .cons _ _, h => h.tail.den ⊗ (Var?.Wk.den h.head)
 
+@[simp]
 def Ctx?.Wk.den {Γ Δ : Ctx? α ε} : Γ.Wk Δ → ((g⟦ Γ ⟧ : C) ⟶ g⟦ Δ ⟧)
   | .nil => 𝟙 (𝟙_ C)
   | .cons hΓ hv => hΓ.den ⊗ (Var?.Wk.den hv)
@@ -101,7 +102,8 @@ theorem Ctx?.At.den_eff {A : Ty α} {q} {e e' : ε} {Γ : Ctx? α ε} {n}
   : hΓe.den (C := C) = hΓe'.den
   := by induction hΓe with
   | here =>
-    cases hΓe'; simp only [den_zero, Iso.cancel_iso_hom_right]; congr 1; apply Var?.Wk.den_eff_in
+    cases hΓe'; simp only [den_zero, Iso.cancel_iso_hom_right]
+    congr 1; apply Var?.Wk.den_eff_in
   | there _ _ _ _ _ I => cases hΓe'; simp [*]
 
 variable [BraidedCategoryStruct C]
@@ -169,6 +171,7 @@ instance Ctx?.Wk.den_pure {Γ Δ : Ctx? α ε} (h : Γ.Wk Δ) : E.HasEff e h.den
 instance Ctx?.Wk.den_central {Γ Δ : Ctx? α ε} (h : Γ.Wk Δ) : Central (C := C) h.den
   := (den_pure h).pure_central
 
+@[reassoc]
 theorem Ctx?.Wk.den_comp {Γ Δ Ξ : Ctx? α ε} (h : Γ.Wk Δ) (h' : Δ.Wk Ξ)
   : h.den ≫ h'.den = (h.comp h').den (C := C)
   := by induction h generalizing Ξ with
@@ -203,6 +206,20 @@ theorem Ctx?.At.den_wkOut {v w : Var? α ε} {Γ : Ctx? α ε} {n} (hΓv : Γ.At
     rw [Monoidal.tensor_eq_rtimes_left, Monoidal.tensor_eq_rtimes_left]
     simp only [rtimes, Category.assoc]
     rw [<-Monoidal.whiskerRight_comp_assoc, I]
+
+@[simp]
+theorem Ctx?.At.den_wkIn {Γ Δ : Ctx? α ε} (w : Γ.Wk Δ) {v n} (hΔv : Δ.At v n)
+  : w.den (C := C) ≫ hΔv.den = (hΔv.wkIn w).den := by induction w generalizing n with
+  | nil => cases hΔv
+  | skip => simp [
+    <-Monoidal.rightUnitor_naturality, <-Monoidal.tensorHom_id,
+    <-Monoidal.tensor_comp_left_assoc, *]
+  | cons => cases hΔv with
+  | here =>
+    simp [<-Monoidal.tensor_comp_left_assoc, Wk.den_comp]
+    congr
+    apply wk_nil_unique
+  | there => simp [<-Monoidal.tensor_comp_left_assoc, Wk.den_comp, *]
 
 -- TODO: Ctx?.At.ix.den = Ctx?.At.den
 

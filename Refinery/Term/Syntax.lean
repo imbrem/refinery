@@ -88,10 +88,15 @@ def subst (σ : Subst φ) : Term φ → Term φ
   | .iter a b => .iter (subst σ a) (subst (↑ˢ σ) b)
   | .invalid => .invalid
 
-@[simp] theorem subst_id (t : Term φ) : t.subst 1 = t := by induction t <;> simp [subst, *]
+instance instSMul : SMul (Subst φ) (Term φ) where
+  smul := subst
 
 instance Subst.instMul : Mul (Subst φ) where
   mul σ τ i := (τ.get i).subst σ
+
+@[simp] theorem subst_id (t : Term φ) : t.subst 1 = t := by induction t <;> simp [subst, *]
+
+@[simp] theorem smul_id (t : Term φ) : (1 : Subst φ) • t = t := subst_id t
 
 def Subst.comp (σ τ : Subst φ) : Subst φ := λ ix => (τ.get ix).subst σ
 
@@ -162,5 +167,9 @@ instance Subst.instMonoid : Monoid (Subst φ) where
   one_mul := Subst.id_comp
   mul_one := Subst.comp_id
   mul_assoc := Subst.comp_assoc
+
+instance instMulAction : MulAction (Subst φ) (Term φ) where
+  one_smul := smul_id
+  mul_smul _ _ _ := subst_comp
 
 end Term

@@ -11,9 +11,15 @@ structure Var? (α : Type u) (ε : Type v) where
   eff : ε
 
 @[simp]
-abbrev Var?.ety {α ε} (v : Var? α ε) : Ty α := match v.q with
+abbrev ety_var {α : Type u} (a : Ty α) : EQuant → Ty α
   | 0 => .unit
-  | (_ : Quant) => v.ty
+  | (q : Quant) => a
+
+abbrev Var?.ety {α ε} (v : Var? α ε) : Ty α := ety_var v.ty v.q
+
+theorem Var?.ety_quant_zero {A : Ty α} {e : ε} : Var?.ety ⟨A, 0, e⟩ = Ty.unit := rfl
+
+theorem Var?.ety_quant_ty {A : Ty α} {q : Quant} {e : ε} : Var?.ety ⟨A, q, e⟩ = A := rfl
 
 def Ctx? (α : Type u) (ε : Type v) := List (Var? α ε)
 
@@ -197,10 +203,13 @@ abbrev Ctx?.copy (Γ : Ctx? α ε) : Prop := IsRel Γ
 
 abbrev Ctx?.del (Γ : Ctx? α ε) : Prop := IsAff Γ
 
+@[simp]
 instance Ctx?.nil_copy : (.nil : Ctx? α ε).copy := ⟨by simp⟩
 
+@[simp]
 instance Ctx?.nil_del : (.nil : Ctx? α ε).del := ⟨by simp⟩
 
+@[simp]
 theorem Ctx?.cons_copy_iff (Γ : Ctx? α ε) (v : Var? α ε) : (Γ.cons v).copy ↔ Γ.copy ∧ v.copy
   := ⟨λ⟨h⟩ => by simp at h; exact ⟨⟨h.1⟩, ⟨h.2⟩⟩, λ⟨⟨hΓ⟩, ⟨hv⟩⟩ => ⟨by simp [*]⟩⟩
 
@@ -213,6 +222,7 @@ theorem Ctx?.copy.head (Γ : Ctx? α ε) (v : Var? α ε) [h : (Γ.cons v).copy]
 instance Ctx?.copy.cons (Γ : Ctx? α ε) (v : Var? α ε) [Γ.copy] [v.copy] : (Γ.cons v).copy
   := ⟨by simp [cons_copy_iff, *]⟩
 
+@[simp]
 theorem Ctx?.cons_del_iff (Γ : Ctx? α ε) (v : Var? α ε) : (Γ.cons v).del ↔ Γ.del ∧ v.del
   := ⟨λ⟨h⟩ => by simp at h; exact ⟨⟨h.1⟩, ⟨h.2⟩⟩, λ⟨⟨hΓ⟩, ⟨hv⟩⟩ => ⟨by simp [*]⟩⟩
 
@@ -222,7 +232,7 @@ theorem Ctx?.del.tail (Γ : Ctx? α ε) (v : Var? α ε) [h : (Γ.cons v).del] :
 theorem Ctx?.del.head (Γ : Ctx? α ε) (v : Var? α ε) [h : (Γ.cons v).del] : v.del
   := by rw [cons_del_iff] at h; exact h.2
 
-theorem Ctx?.del.cons (Γ : Ctx? α ε) (v : Var? α ε) [Γ.del] [v.del] : (Γ.cons v).del
+instance Ctx?.del.cons (Γ : Ctx? α ε) (v : Var? α ε) [Γ.del] [v.del] : (Γ.cons v).del
   := ⟨by simp [cons_del_iff, *]⟩
 
 instance Ctx?.ety_rel_of_copy {Γ : Ctx? α ε} [h : Γ.copy] : IsRel (Ctx?.ety Γ) := by
@@ -393,20 +403,24 @@ theorem Ctx?.Wk.comp_assoc {Γ Δ Ξ Θ : Ctx? α ε} (h : Wk Γ Δ) (h' : Wk Δ
   | cons _ _ I => cases h' <;> cases h'' <;> simp [comp, I]
   | skip _ _ I => simp [comp, I]
 
+@[simp]
 def Ctx?.Wk.ix {Γ Δ : Ctx? α ε} : Wk Γ Δ → ℕ → ℕ
   | .nil => id
   | .cons h _ => Nat.liftWk h.ix
   | .skip h _ => Nat.stepWk h.ix
 
+instance Ctx?.Wk.coeFunRen {Γ Δ : Ctx? α ε} : CoeFun (Wk Γ Δ) (λ_ => ℕ → ℕ) := ⟨ix⟩
+
 @[simp]
-theorem Ctx?.Wk.ix_increasing {Γ Δ : Ctx? α ε} (h : Wk Γ Δ) (i : ℕ) : i ≤ h.ix i := by
+theorem Ctx?.Wk.ix_increasing {Γ Δ : Ctx? α ε} (h : Wk Γ Δ) (i : ℕ) : i ≤ h i := by
   induction h generalizing i with
   | nil => simp [ix]
   | cons _ _ I => cases i <;> simp [ix, *]
   | skip _ _ I => simp [ix]; have I := I i; omega
 
+@[simp]
 theorem Ctx?.Wk.ix_comp_applied {Γ Δ Ξ : Ctx? α ε} (h : Wk Γ Δ) (h' : Wk Δ Ξ) (i : ℕ)
-  : (h.comp h').ix i = h.ix (h'.ix i) := by induction h generalizing Ξ i with
+  : (h.comp h') i = h (h' i) := by induction h generalizing Ξ i with
   | nil => cases h'; rfl
   | cons _ _ I => cases h' <;> cases i <;> simp [comp, ix, I]
   | skip _ _ I => simp [comp, ix, I]
@@ -415,7 +429,7 @@ theorem Ctx?.Wk.ix_comp {Γ Δ Ξ : Ctx? α ε} (h : Wk Γ Δ) (h' : Wk Δ Ξ)
   : (h.comp h').ix = h.ix ∘ h'.ix := funext (λi => Wk.ix_comp_applied h h' i)
 
 theorem Ctx?.Wk.ix_length_eq_applied {Γ Δ : Ctx? α ε}
-  (h : Γ.Wk Δ) (hl : Γ.length = Δ.length) (i : ℕ) : h.ix i = i := by induction h generalizing i with
+  (h : Γ.Wk Δ) (hl : Γ.length = Δ.length) (i : ℕ) : h i = i := by induction h generalizing i with
   | nil => rfl
   | cons _ _ I =>
     cases i; rfl; simp only [ix, Nat.liftWk_succ, add_left_inj]; apply I; convert hl using 0; simp
@@ -439,13 +453,31 @@ theorem Ctx?.Wk.ix_bounded {Γ Δ : Ctx? α ε} (h : Γ.Wk Δ) (i : ℕ)
       apply I; convert hi using 0; simp
   | skip _ _ I => simp [ix, *]
 
-def Ctx?.Wk.skips {Γ Δ : Ctx? α ε} (h : Wk Γ Δ) : ℕ := h.ix 0
+def Ctx?.Wk.skips {Γ Δ : Ctx? α ε} (h : Wk Γ Δ) : ℕ := h 0
 
-def Ctx?.choose_drop (Γ : Ctx? α ε) (h : Nonempty (Γ.Wk .nil)) : Γ.Wk .nil := match Γ with
+--TODO: minimize and report because this is a _sin_
+def Ctx?.drop (Γ : Ctx? α ε) [h : Γ.del] : Wk Γ .nil := (λh => match Γ with
   | .nil => .nil
-  | .cons Γ v => .skip
-    (Γ.choose_drop (have ⟨h⟩ := h; by cases h; constructor; assumption))
-    (have ⟨h⟩ := h; by cases h; assumption)
+  | .cons Γ _ => have _ := h.tail; .skip Γ.drop h.head) h
+
+@[simp]
+theorem Ctx?.Wk.drop_nil : (.nil : Ctx? α ε).drop = .nil := rfl
+
+@[simp]
+theorem Ctx?.Wk.drop_cons (Γ : Ctx? α ε) [hΓ : Γ.del] (v : Var? α ε) [hv : v.del]
+  : (Ctx?.cons Γ v).drop = Γ.drop.skip inferInstance := rfl
+
+theorem Ctx?.Wk.drop_del {Γ : Ctx? α ε} (w : Γ.Wk .nil) : Γ.del := by
+  induction Γ <;> cases w <;> simp; constructor <;> apply_assumption; assumption
+
+theorem Ctx?.wk_nil_eq_drop {Γ : Ctx? α ε} (w : Γ.Wk .nil) : w = Γ.drop (h := w.drop_del) := by
+  induction Γ <;> cases w <;> rw [drop]; simp; apply_assumption
+
+theorem Ctx?.wk_nil_unique {Γ : Ctx? α ε} (w w' : Γ.Wk .nil) : w = w' := by
+  rw [wk_nil_eq_drop w, wk_nil_eq_drop w']
+
+def Ctx?.choose_drop (Γ : Ctx? α ε) (h : Nonempty (Γ.Wk .nil)) : Γ.Wk .nil :=
+  have _ : Γ.del := let ⟨h⟩ := h; h.drop_del; Γ.drop
 
 def Var?.Ix (Γ : Ctx? α ε) (v : Var? α ε) : Type _ := Γ.Wk [v]
 
@@ -546,8 +578,16 @@ def Ctx?.At.inductionOn {v : Var? α ε} {motive : ∀ (Γ n), Ctx?.At v Γ n �
   | .cons Γ w, n + 1, h
     => there Γ w n h.succ_cons_tail h.succ_cons_head (h.succ_cons_tail.inductionOn here there)
 
-def Ctx?.At.wkOut {v : Var? α ε} {Γ : Ctx? α ε} {n} (h : Γ.At v n) (h' : v ≤ w)
+theorem Ctx?.At.wkOut {v : Var? α ε} {Γ : Ctx? α ε} {n} (h : Γ.At v n) (h' : v ≤ w)
   : Γ.At w n := by induction h <;> constructor <;> (try apply le_trans) <;> assumption
+
+theorem Ctx?.At.wkIn {Γ Δ : Ctx? α ε} (w : Γ.Wk Δ) {v : Var? α ε} {n} (h : Δ.At v n)
+  : Γ.At v (w n) := by induction w generalizing n with
+  | nil => cases h
+  | skip w hv I => constructor <;> apply_assumption; assumption
+  | cons w hv I => cases h with
+  | here => constructor; (apply Wk.comp <;> assumption); (apply le_trans <;> assumption)
+  | there => constructor; (apply I; assumption); (exact Var?.del.anti hv)
 
 def Ctx?.At.ix {Γ : Ctx? α ε} {v n} (h : Γ.At v n) : v.Ix Γ
   := h.inductionOn (λ_ d _ h => Var?.zero_le d h) (λ_ _ _ _ _ I => I.succ _)
