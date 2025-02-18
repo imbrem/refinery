@@ -10,6 +10,8 @@ structure Var? (α : Type u) (ε : Type v) where
   q : EQuant
   eff : ε
 
+abbrev Var?.erase (v : Var? α ε) : Var? α ε := ⟨v.ty, 0, v.eff⟩
+
 @[simp]
 abbrev ety_var {α : Type u} (a : Ty α) : EQuant → Ty α
   | 0 => .unit
@@ -20,6 +22,8 @@ abbrev Var?.ety {α ε} (v : Var? α ε) : Ty α := ety_var v.ty v.q
 theorem Var?.ety_quant_zero {A : Ty α} {e : ε} : Var?.ety ⟨A, 0, e⟩ = Ty.unit := rfl
 
 theorem Var?.ety_quant_ty {A : Ty α} {q : Quant} {e : ε} : Var?.ety ⟨A, q, e⟩ = A := rfl
+
+theorem Var?.ety_erase {v : Var? α ε} : v.erase.ety = Ty.unit := rfl
 
 def Ctx? (α : Type u) (ε : Type v) := List (Var? α ε)
 
@@ -71,6 +75,10 @@ theorem Var?.ext {v w : Var? α ε}
 
 abbrev Var?.unused (v : Var? α ε) : Prop := v.q = 0
 
+@[simp]
+theorem Var?.unused.eq_erase {v : Var? α ε} (h : v.unused) : v.erase = v
+  := by cases v; cases h; rfl
+
 abbrev Var?.used (v : Var? α ε) : Prop := 1 ≤ v.q
 
 theorem Var?.used_iff (v : Var? α ε) : v.used ↔ ¬v.unused := EQuant.one_le_iff_ne_zero _
@@ -102,6 +110,10 @@ instance Var?.del.instZeroQuant (A : Ty α) (e : ε) : (⟨A, 0, e⟩ : Var? α 
 
 instance Var?.copy.instZeroQuant (A : Ty α) (e : ε) : (⟨A, 0, e⟩ : Var? α ε).copy
   := ⟨by simp [quant]⟩
+
+instance Var?.del.instErase (v : Var? α ε) : v.erase.del := ⟨by simp⟩
+
+instance Var?.copy.instErase (v : Var? α ε) : v.erase.copy := ⟨by simp⟩
 
 theorem Var?.del.q (v : Var? α ε) [hv : v.del] : 0 ≤ v.q := by
   cases v with | mk A q e => cases q using EQuant.casesZero with
@@ -157,15 +169,64 @@ instance Var?.copy.instCopyQuant (A : Ty α) [IsRel A] (e : ε) : (⟨A, .copy, 
   := by simp [copy_iff, scopy_iff, *]
 
 inductive Var?.PSSplit : Var? α ε → Var? α ε → Var? α ε → Type _
-  | left (A q e) : PSSplit ⟨A, q, e⟩ ⟨A, q, e⟩ ⟨A, 0, e⟩
-  | right (A q e) : PSSplit ⟨A, q, e⟩ ⟨A, 0, e⟩ ⟨A, q, e⟩
+  | left (v) : PSSplit v v v.erase
+  | right (v) : PSSplit v v.erase v
   | sboth {v} : v.scopy → PSSplit v v v
+
+theorem Var?.PSSplit.left_unused {u v w : Var? α ε} (σ : u.PSSplit v w) (h : u.unused) : v.unused
+  := by cases σ <;> first | assumption | rfl
+
+theorem Var?.PSSplit.right_unused {u v w : Var? α ε} (σ : u.PSSplit v w) (h : u.unused) : w.unused
+  := by cases σ <;> first | rfl | assumption
+
+theorem Var?.PSSplit.used_of_left {u v w : Var? α ε} (σ : u.PSSplit v w) (h : v.used) : u.used
+  := by cases σ <;> first | assumption | cases h
+
+theorem Var?.PSSplit.used_of_right {u v w : Var? α ε} (σ : u.PSSplit v w) (h : w.used) : u.used
+  := by cases σ <;> first | cases h | assumption
 
 def Var?.PSSplit.both (v : Var? α ε) [h : IsRel v] : PSSplit v v v := if hv : v.used then
     PSSplit.sboth hv.scopy
   else by
     rw [<-Var?.unused_iff] at hv
-    convert PSSplit.left v.ty v.q v.eff
+    convert PSSplit.left v
+    rw [hv.eq_erase]
+
+def Var?.PSSplit.wkLeft {u v w : Var? α ε} (u' : Var? α ε)
+  : u.PSSplit v w → Var? α ε
+  | .left _ => u'
+  | .right _ => u'.erase
+  | .sboth _ => u'
+
+@[simp]
+theorem Var?.PSSplit.wkLeft_left {u' u : Var? α ε}
+  : (PSSplit.left u).wkLeft u' = u' := rfl
+
+@[simp]
+theorem Var?.PSSplit.wkLeft_right {u' u : Var? α ε}
+  : (PSSplit.right u).wkLeft u' = u'.erase := rfl
+
+@[simp]
+theorem Var?.PSSplit.wkLeft_sboth {u' u : Var? α ε} (h : u.scopy)
+  : (PSSplit.sboth h).wkLeft u' = u' := rfl
+
+def Var?.PSSplit.wkRight {u v w : Var? α ε} (u' : Var? α ε)
+  : u.PSSplit v w → Var? α ε
+  | .left _ => u'.erase
+  | .right _ => u'
+  | .sboth _ => u'
+
+@[simp]
+theorem Var?.PSSplit.wkRight_left {u' u : Var? α ε}
+  : (PSSplit.left u).wkRight u' = u'.erase := rfl
+
+@[simp]
+theorem Var?.PSSplit.wkRight_right {u' u : Var? α ε}
+  : (PSSplit.right u).wkRight u' = u' := rfl
+
+@[simp]
+theorem Var?.PSSplit.wkRight_sboth {u' u : Var? α ε} (h : u.scopy)
+  : (PSSplit.sboth h).wkRight u' = u' := rfl
 
 inductive Ctx?.PSSplit : Ctx? α ε → Ctx? α ε → Ctx? α ε → Type _ where
   | nil : Ctx?.PSSplit [] [] []
@@ -189,7 +250,7 @@ theorem Ctx?.quant_le_of_quant_le_cons (Γ : Ctx? α ε) (h : q ≤ quant (Γ.co
 theorem Ctx?.quant_le_var_of_quant_le_cons (Γ : Ctx? α ε) (h : q ≤ quant (Γ.cons v)) : q ≤ quant v
   := by simp at h; exact h.2
 
-instance Var?.ety_rel_of_copy (v : Var? α ε) [h : v.copy] : IsRel v.ety := by
+instance Var?.copy.ety_rel (v : Var? α ε) [h : v.copy] : IsRel v.ety := by
   cases v with | mk A q e => cases q using EQuant.casesZero with
   | zero => simp only [ety]; infer_instance
   | rest => simp [quant, IsRel.is_rel_iff] at h; exact ⟨h.2⟩
@@ -272,6 +333,10 @@ theorem Var?.wk_eff (A : Ty α) (q : EQuant) {e e' : ε} (h : e ≤ e') : Var?.W
 
 instance Var?.instLE : LE (Var? α ε) := ⟨Wk⟩
 
+theorem Var?.erase_mono {v w : Var? α ε} (h : v ≤ w) : v.erase ≤ w.erase := by
+  cases v with | mk A q e => cases w with | mk A' q' e' =>
+    exact ⟨h.ty, le_refl _, h.eff, λ_ => inferInstance⟩
+
 theorem Var?.used.anti {v w : Var? α ε} (h : v ≤ w) (hw : w.used) : v.used := hw.trans h.q
 
 theorem Var?.unused.mono {v w : Var? α ε} (h : v ≤ w) : (hv : v.unused) → w.unused
@@ -307,6 +372,12 @@ theorem Var?.Wk.ety_eq_quant {B : Ty α} {q : Quant} {e : ε} (h : v ≤ Var?.mk
   cases v with | mk A q' e' => cases q' using EQuant.casesZero with
   | zero => cases h.q using EQuant.le.casesLE
   | rest => cases h.ty; rfl
+
+theorem Var?.Wk.ety_eq_used {v w : Var? α ε} (h : v ≤ w) (hw : w.used) : v.ety = w.ety := by
+  cases w with | mk A q e =>
+    cases q using EQuant.casesZero with
+    | zero => cases hw
+    | rest => rw [ety_eq_quant h]
 
 inductive Ctx?.PWk : Ctx? α ε → Ctx? α ε → Prop where
   | nil : Ctx?.PWk .nil .nil
@@ -612,10 +683,75 @@ inductive Ctx?.PSplit : Ctx? α ε → Ctx? α ε → Ctx? α ε → Type _ wher
     : PSplit (Ctx?.cons Γ v) (Ctx?.cons Δ l) (Ctx?.cons Ξ r)
 
 def Var?.PSSplit.toPSplit {u v w : Var? α ε} (h : u.PSSplit v w) : u.PSplit v w := match h with
-  | Var?.PSSplit.left A q e => Var?.PSplit.left (le_refl _) e
-  | Var?.PSSplit.right A q e => Var?.PSplit.right (le_refl _) e
+  | Var?.PSSplit.left _ => Var?.PSplit.left (le_refl _) _
+  | Var?.PSSplit.right _ => Var?.PSplit.right (le_refl _) _
   | Var?.PSSplit.sboth hu => Var?.PSplit.sboth hu (le_refl _) (le_refl _)
 
 def Ctx?.PSSplit.toPSplit {Γ Δ Ξ : Ctx? α ε} : Ctx?.PSSplit Γ Δ Ξ → Ctx?.PSplit Γ Δ Ξ
   | .nil => .nil
   | .cons h hvw => .cons h.toPSplit hvw.toPSplit
+
+def Var?.PSSplit.wk {u' u v w : Var? α ε} (ρ : u' ≤ u)
+  : (σ : u.PSSplit v w) → u'.PSSplit (σ.wkLeft u') (σ.wkRight u')
+  | .left _ => .left _
+  | .right _ => .right _
+  | .sboth h => .sboth (h.anti ρ)
+
+@[simp]
+theorem Var?.PSSplit.wk_left {u' u : Var? α ε} (ρ : u' ≤ u)
+  : (PSSplit.left u).wk ρ = PSSplit.left u' := rfl
+
+@[simp]
+theorem Var?.PSSplit.wk_right {u' u : Var? α ε} (ρ : u' ≤ u)
+  : (PSSplit.right u).wk ρ = PSSplit.right u' := rfl
+
+@[simp]
+theorem Var?.PSSplit.wk_sboth {u' u : Var? α ε} (ρ : u' ≤ u) (h : u.scopy)
+  : (PSSplit.sboth h).wk ρ = PSSplit.sboth (h.anti ρ) := rfl
+
+theorem Var?.PSSplit.leftWk {u' u v w : Var? α ε} (ρ : u' ≤ u)
+  : (σ : u.PSSplit v w) → (σ.wkLeft u') ≤ v
+  | .left _ => ρ
+  | .right _ => erase_mono ρ
+  | .sboth h => ρ
+
+theorem Var?.PSSplit.rightWk {u' u v w : Var? α ε} (ρ : u' ≤ u)
+  : (σ : u.PSSplit v w) → (σ.wkRight u') ≤ w
+  | .left _ => erase_mono ρ
+  | .right _ => ρ
+  | .sboth h => ρ
+
+@[simp]
+def Ctx?.PSSplit.wkLeft {Γ' Γ Δ Ξ : Ctx? α ε}
+  : Γ'.Wk Γ → Γ.PSSplit Δ Ξ → Ctx? α ε
+  | .nil, _ => .nil
+  | .skip (v := v) ρ _, σ => (wkLeft ρ σ).cons v
+  | .cons (v := v) ρ _, .cons σ hlr => (wkLeft ρ σ).cons (hlr.wkLeft v)
+
+@[simp]
+def Ctx?.PSSplit.wkRight {Γ' Γ Δ Ξ : Ctx? α ε}
+  : Γ'.Wk Γ → Γ.PSSplit Δ Ξ → Ctx? α ε
+  | .nil, _ => .nil
+  | .skip (v := v) ρ _, σ => (wkRight ρ σ).cons v.erase
+  | .cons (v := v) ρ _, .cons σ hlr => (wkRight ρ σ).cons (hlr.wkRight v)
+
+@[simp]
+def Ctx?.PSSplit.leftWk {Γ' Γ Δ Ξ : Ctx? α ε}
+  : (ρ : Γ'.Wk Γ) → (σ : Γ.PSSplit Δ Ξ) → (σ.wkLeft ρ).Wk Δ
+  | .nil, .nil => .nil
+  | .skip ρ hv, σ => .skip (σ.leftWk ρ) hv
+  | .cons ρ hvw, .cons σ hlr => .cons (σ.leftWk ρ) (hlr.leftWk hvw)
+
+@[simp]
+def Ctx?.PSSplit.rightWk {Γ' Γ Δ Ξ : Ctx? α ε}
+  : (ρ : Γ'.Wk Γ) → (σ : Γ.PSSplit Δ Ξ) → (σ.wkRight ρ).Wk Ξ
+  | .nil, .nil => .nil
+  | .skip ρ _, σ => .skip (σ.rightWk ρ) inferInstance
+  | .cons ρ hvw, .cons σ hlr => .cons (σ.rightWk ρ) (hlr.rightWk hvw)
+
+@[simp]
+def Ctx?.PSSplit.wk {Γ' Γ Δ Ξ : Ctx? α ε}
+  : (ρ : Γ'.Wk Γ) → (σ : Γ.PSSplit Δ Ξ) → Γ'.PSSplit (σ.wkLeft ρ) (σ.wkRight ρ)
+  | .nil, .nil => .nil
+  | .skip (v := ⟨A, q, e⟩) ρ _, σ => .cons (σ.wk ρ) (.left ..)
+  | .cons ρ hvw, .cons σ hlr => .cons (σ.wk ρ) (hlr.wk hvw)

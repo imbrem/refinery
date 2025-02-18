@@ -45,16 +45,30 @@ def Var?.Wk.den {v w : Var? α ε} (h : v ≤ w) : (v⟦ v ⟧ : C) ⟶ v⟦ w �
   | v, ⟨B, 0, _⟩, h => (h.unused_del rfl).den
   | ⟨A, (_ : Quant), _⟩, ⟨B, (_ : Quant), _⟩, h => eq_hom (by cases h.ty; rfl)
 
-@[simp]
 theorem Var?.Wk.den_zero {v : Var? α ε} {A : Ty α} {e : ε} (h : v ≤ ⟨A, 0, e⟩)
   : Var?.Wk.den (C := C) h = (h.unused_del rfl).den
   := by cases v with | mk _ q _ => cases q <;> rfl
 
 @[simp]
+theorem Var?.Wk.den_unused {v w : Var? α ε} (h : v ≤ w) (hw : w.unused)
+  : Var?.Wk.den (C := C) h = ((Var?.unused.del hw).anti h).den ≫ eq_hom (by simp [ety, hw])
+  := by cases w; cases hw; rw [den_zero]; simp
+
+theorem Var?.Wk.den_erase {v  w: Var? α ε} (h : v ≤ w.erase)
+  : Var?.Wk.den (C := C) h = (h.unused_del rfl).den
+  := by simp
+
 theorem Var?.Wk.den_quant {v : Var? α ε} {A : Ty α} {q : Quant} {e : ε} (h : v ≤ ⟨A, q, e⟩)
   : Var?.Wk.den (C := C) h = eq_hom (by rw [ety_eq_quant h])
   := by cases v with | mk _ q' _ =>
         cases q' with | zero => have h := h.q; cases h using EQuant.le.casesLE | _ => rfl
+
+@[simp]
+theorem Var?.Wk.den_used {v w : Var? α ε} (h : v ≤ w) (hw : w.used)
+  : Var?.Wk.den (C := C) h = eq_hom (by rw [ety_eq_used h hw])
+  := by cases w with | mk A q e => cases q using EQuant.casesZero with
+    | zero => cases hw
+    | rest q => rw [den_quant]
 
 def Ctx?.PWk.den {Γ Δ : Ctx? α ε} (h : Γ.PWk Δ) : (g⟦ Γ ⟧ : C) ⟶ g⟦ Δ ⟧
   := match Γ, Δ, h with
@@ -87,9 +101,10 @@ theorem Ctx?.At.den_succ {v w : Var? α ε} {Γ : Ctx? α ε} (h : (Γ.cons w).A
   = (h.succ_cons_tail.den (C := C) ⊗ h.succ_cons_head.den) ≫ (ρ_ _).hom
   := rfl
 
+@[simp]
 def Var?.PSSplit.den {u v w : Var? α ε} : u.PSSplit v w → ((v⟦ u ⟧ : C) ⟶ v⟦ v ⟧ ⊗ v⟦ w ⟧)
-  | .left _ _ _ => (ρ_ _).inv
-  | .right _ _ _ => (λ_ _).inv
+  | .left _ => (ρ_ _).inv
+  | .right _ => (λ_ _).inv
   | .sboth h => have _ := h.copy; Δ_ _
 
 theorem Var?.Wk.den_eff_in {v : Var? α ε} {A : Ty α} {q} {e e' : ε}
@@ -160,6 +175,21 @@ theorem Var?.Wk.den_comp_drop {v w : Var? α ε} (h : v ≤ w) [hw : w.del]
   : Var?.Wk.den h ≫ !_ w.ety = (hw.anti h).den (C := C)
   := by rw [M.drop_aff ⊥ _ (hA := (hw.anti h).ety_aff)]
 
+@[simp]
+theorem Var?.Wk.den_from_unused {v w : Var? α ε} (h : v ≤ w) (h' : v.unused)
+  : Var?.Wk.den (C := C) h
+  = eq_hom (by cases v; cases w; cases h'; cases h.q using EQuant.le.casesLE; rfl)
+  := by cases v; cases w; cases h'; cases h.q using EQuant.le.casesLE;
+        simp [den_zero (C := C) h, M.drop_unit]
+
+theorem Var?.Wk.den_from_zero {v : Var? α ε} {A : Ty α} {e : ε} (h : ⟨A, 0, e⟩ ≤ v)
+  : Var?.Wk.den (C := C) h = eq_hom (by cases v; cases h.q using EQuant.le.casesLE; rfl)
+  := by simp
+
+theorem Var?.Wk.den_from_erase {v w : Var? α ε} (h : v.erase ≤ w)
+  : Var?.Wk.den (C := C) h = eq_hom (by cases v; cases w; cases h.q using EQuant.le.casesLE; rfl)
+  := by simp
+
 variable [IsPremonoidal C]
 
 instance Ctx?.Wk.den_pure {Γ Δ : Ctx? α ε} (h : Γ.Wk Δ) : E.HasEff e h.den := by induction h with
@@ -220,6 +250,25 @@ theorem Ctx?.At.den_wkIn {Γ Δ : Ctx? α ε} (w : Γ.Wk Δ) {v n} (hΔv : Δ.At
     congr
     apply wk_nil_unique
   | there => simp [<-Monoidal.tensor_comp_left_assoc, Wk.den_comp, *]
+
+theorem Var?.PSSplit.wk_den {u' u v w : Var? α ε} (ρ : u' ≤ u) (σ : u.PSSplit v w)
+  : Var?.Wk.den ρ ≫ σ.den (C := C)
+  = (σ.wk ρ).den ≫ (Var?.Wk.den (C := C) (σ.leftWk ρ) ⊗ Var?.Wk.den (σ.rightWk ρ))
+  := by cases σ with
+  | left =>
+    simp only [Ty.den, den, wkLeft_left, wkRight_left, wk_left, Wk.den_unused, eq_hom_refl,
+    Category.comp_id, Monoidal.rightUnitor_inv_naturality, <-Monoidal.tensorHom_id, del.den]
+    rw [M.drop_unit]
+  | right =>
+    simp only [Ty.den, den, wkLeft_right, wkRight_right, wk_right, Wk.den_unused, eq_hom_refl,
+      Category.comp_id, Monoidal.leftUnitor_inv_naturality, <-Monoidal.id_tensorHom, del.den]
+    rw [M.drop_unit]
+  | sboth h =>
+    simp only [den, wkLeft_sboth, wkRight_sboth, wk_sboth]
+    rw [
+      Model.copy_rel_ltimes ⊥ _ (hA := (h.anti ρ).copy.ety_rel) (hB := h.copy.ety_rel),
+      Monoidal.tensorHom_def
+    ]
 
 -- TODO: Ctx?.At.ix.den = Ctx?.At.den
 
