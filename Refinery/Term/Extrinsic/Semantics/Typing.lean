@@ -5,19 +5,19 @@ namespace Refinery
 
 open CategoryTheory
 
-open Monoidal
+open MonoidalCategory' PremonoidalCategory DistributiveCategory
 
-open MonoidalCategory
+open scoped MonoidalCategory
 
 open ChosenFiniteCoproducts
 
 variable {φ : Type _} {α : outParam (Type _)} {ε : outParam (Type _)} [S : Signature φ α ε]
-         {C : Type _} [Category C] [MonoidalCategoryStruct C] [CC : ChosenFiniteCoproducts C]
-        [BraidedCategoryStruct C] [Iterate C] [E : Elgot2 C ε] [Model φ α ε C]
+         {C : Type _} [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
+        [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε] [Model φ α ε C]
 
 namespace Term
 
-def Deriv.den {e : ε} {Γ : Ctx? α ε} {A : Ty α} {a : Term φ}
+def Deriv.den {e : ε} {Γ : Ctx? α ε} {A : Ty α} {a : Term φ (Ty α)}
   : (Γ ⊢[e] a : A) → ((g⟦ Γ ⟧ : C) ⟶ t⟦ A ⟧)
   | .bv hv => hv.den
   | .op hf da => da.den ≫ hf.den
@@ -38,7 +38,7 @@ def Deriv.den {e : ε} {Γ : Ctx? α ε} {A : Ty α} {a : Term φ}
         ≫ ((!_ Γr.ety ▷ _ ≫ (λ_ _).hom) ⊕ₕ 𝟙 _))
 
 @[simp]
-theorem Deriv.den_mono {e e' : ε} {Γ : Ctx? α ε} {A : Ty α} {a : Term φ}
+theorem Deriv.den_mono {e e' : ε} {Γ : Ctx? α ε} {A : Ty α} {a : Term φ (Ty α)}
   (he : e ≤ e') (D : Γ ⊢[e] a : A) : (D.mono he).den = D.den (C := C)
   := by induction D with
   | bv => simp only [den, mono]; rw [Ctx?.At.den_eff]

@@ -1,15 +1,17 @@
 import Refinery.Model
 import Refinery.Ctx.Basic
 
-import Discretion.Utils.Category
+import Discretion.Premonoidal.BraidedHelpers
+import Discretion.Premonoidal.Category
+import Discretion.Monoidal.CoherenceLemmas
 
 namespace Refinery
 
 open CategoryTheory
 
-open MonoidalCategory
+open PremonoidalCategory MonoidalCategory'
 
-open Monoidal
+open scoped MonoidalCategory
 
 open EffectfulCategory
 
@@ -29,10 +31,13 @@ end TyModel
 
 section VarModel
 
-variable {φ : Type _} {α : Type _} {ε : Type _} [Signature φ α ε]
-         {C : Type _} [Category C] [MonoidalCategoryStruct C] [ChosenFiniteCoproducts C]
-         [VarModel α C]
 
+variable {φ : Type _} {α : Type _} {ε : Type _} [Signature φ α ε]
+         {C : Type _} [Category C] [ChosenFiniteCoproducts C]
+
+section MonoidalCategoryStruct
+
+variable [MonoidalCategoryStruct C] [VarModel α C]
 
 abbrev Var?.del.den {v : Var? α ε} (h : v.del) : (v⟦ v ⟧ : C) ⟶ 𝟙_ C
   := !_ v.ety
@@ -43,7 +48,7 @@ abbrev Var?.copy.den {v : Var? α ε} (h : v.copy) : (v⟦ v ⟧ : C) ⟶ v⟦ v
 def Var?.Wk.den {v w : Var? α ε} (h : v ≤ w) : (v⟦ v ⟧ : C) ⟶ v⟦ w ⟧
   := match v, w, h with
   | v, ⟨B, 0, _⟩, h => (h.unused_del rfl).den
-  | ⟨A, (_ : Quant), _⟩, ⟨B, (_ : Quant), _⟩, h => eq_hom (by cases h.ty; rfl)
+  | ⟨A, (_ : Quant), _⟩, ⟨B, (_ : Quant), _⟩, h => eqToHom (by cases h.ty; rfl)
 
 theorem Var?.Wk.den_zero {v : Var? α ε} {A : Ty α} {e : ε} (h : v ≤ ⟨A, 0, e⟩)
   : Var?.Wk.den (C := C) h = (h.unused_del rfl).den
@@ -51,7 +56,7 @@ theorem Var?.Wk.den_zero {v : Var? α ε} {A : Ty α} {e : ε} (h : v ≤ ⟨A, 
 
 @[simp]
 theorem Var?.Wk.den_unused {v w : Var? α ε} (h : v ≤ w) (hw : w.unused)
-  : Var?.Wk.den (C := C) h = ((Var?.unused.del hw).anti h).den ≫ eq_hom (by simp [ety, hw])
+  : Var?.Wk.den (C := C) h = ((Var?.unused.del hw).anti h).den ≫ eqToHom (by simp [ety, hw])
   := by cases w; cases hw; rw [den_zero]; simp
 
 theorem Var?.Wk.den_erase {v  w: Var? α ε} (h : v ≤ w.erase)
@@ -59,13 +64,13 @@ theorem Var?.Wk.den_erase {v  w: Var? α ε} (h : v ≤ w.erase)
   := by simp
 
 theorem Var?.Wk.den_quant {v : Var? α ε} {A : Ty α} {q : Quant} {e : ε} (h : v ≤ ⟨A, q, e⟩)
-  : Var?.Wk.den (C := C) h = eq_hom (by rw [ety_eq_quant h])
+  : Var?.Wk.den (C := C) h = eqToHom (by rw [ety_eq_quant h])
   := by cases v with | mk _ q' _ =>
         cases q' with | zero => have h := h.q; cases h using EQuant.le.casesLE | _ => rfl
 
 @[simp]
 theorem Var?.Wk.den_used {v w : Var? α ε} (h : v ≤ w) (hw : w.used)
-  : Var?.Wk.den (C := C) h = eq_hom (by rw [ety_eq_used h hw])
+  : Var?.Wk.den (C := C) h = eqToHom (by rw [ety_eq_used h hw])
   := by cases w with | mk A q e => cases q using EQuant.casesZero with
     | zero => cases hw
     | rest q => rw [den_quant]
@@ -80,6 +85,8 @@ def Ctx?.Wk.den {Γ Δ : Ctx? α ε} : Γ.Wk Δ → ((g⟦ Γ ⟧ : C) ⟶ g⟦ 
   | .nil => 𝟙 (𝟙_ C)
   | .cons hΓ hv => hΓ.den ⊗ (Var?.Wk.den hv)
   | .skip hΓ hv => (hΓ.den ⊗ hv.den) ≫ (ρ_ _).hom
+
+notation "w⟦" ρ "⟧" => Ctx?.Wk.den ρ
 
 def Var.Ix.den {Γ : Ctx? α ε} {v : Var? α ε} (h : v.Ix Γ) : (g⟦ Γ ⟧ : C) ⟶ v⟦ v ⟧
   := Ctx?.Wk.den h ≫ (λ_ _).hom
@@ -101,11 +108,20 @@ theorem Ctx?.At.den_succ {v w : Var? α ε} {Γ : Ctx? α ε} (h : (Γ.cons w).A
   = (h.succ_cons_tail.den (C := C) ⊗ h.succ_cons_head.den) ≫ (ρ_ _).hom
   := rfl
 
-@[simp]
 def Var?.PSSplit.den {u v w : Var? α ε} : u.PSSplit v w → ((v⟦ u ⟧ : C) ⟶ v⟦ v ⟧ ⊗ v⟦ w ⟧)
   | .left _ => (ρ_ _).inv
   | .right _ => (λ_ _).inv
   | .sboth h => have _ := h.copy; Δ_ _
+
+@[simp]
+theorem Var?.PSSplit.den_left (v : Var? α ε) : (PSSplit.left v).den (C := C) = (ρ_ _).inv := rfl
+
+@[simp]
+theorem Var?.PSSplit.den_right (v : Var? α ε) : (PSSplit.right v).den (C := C) = (λ_ _).inv := rfl
+
+@[simp]
+theorem Var?.PSSplit.den_sboth {v : Var? α ε} (h : v.scopy)
+  : (PSSplit.sboth h).den (C := C) = have _ := h.copy; Δ_ _ := rfl
 
 theorem Var?.Wk.den_eff_in {v : Var? α ε} {A : Ty α} {q} {e e' : ε}
   (h : v ≤ ⟨A, q, e⟩) (h' : v ≤ ⟨A, q, e'⟩)
@@ -121,17 +137,26 @@ theorem Ctx?.At.den_eff {A : Ty α} {q} {e e' : ε} {Γ : Ctx? α ε} {n}
     congr 1; apply Var?.Wk.den_eff_in
   | there _ _ _ _ _ I => cases hΓe'; simp [*]
 
-variable [BraidedCategoryStruct C]
+end MonoidalCategoryStruct
 
+section BraidedCategory
+
+variable [PremonoidalCategory C] [BraidedCategory' C] [VarModel α C]
+
+@[simp]
 def Ctx?.PSSplit.den {Γ Δ Ξ : Ctx? α ε} : Γ.PSSplit Δ Ξ → ((g⟦ Γ ⟧ : C) ⟶ g⟦ Δ ⟧ ⊗ g⟦ Ξ ⟧)
   | .nil => (λ_ _).inv
-  | .cons hΓ hv => (hΓ.den ⊗ hv.den) ≫ swap_inner _ _ _ _
+  | .cons hΓ hv => (hΓ.den ⊗ hv.den) ≫ (βi_ _ _ _ _).hom
+
+notation "ps⟦" ρ "⟧" => Ctx?.Wk.den ρ
+
+end BraidedCategory
 
 end VarModel
 
 variable {φ : Type _} {α : Type _} {ε : Type _} [Signature φ α ε]
-         {C : Type _} [Category C] [MonoidalCategoryStruct C] [ChosenFiniteCoproducts C]
-         [BraidedCategoryStruct C] [Iterate C] [E : Elgot2 C ε]
+         {C : Type _} [Category C] [PremonoidalCategory C] [ChosenFiniteCoproducts C]
+         [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε]
          [M : Model φ α ε C]
 
 @[simp]
@@ -176,21 +201,32 @@ theorem Var?.Wk.den_comp_drop {v w : Var? α ε} (h : v ≤ w) [hw : w.del]
   := by rw [M.drop_aff ⊥ _ (hA := (hw.anti h).ety_aff)]
 
 @[simp]
+theorem Var?.del.den_unused {v : Var? α ε} (hv : v.unused)
+  : hv.del.den (C := C) = eqToHom (by simp [ety, hv])
+  := by cases v; cases hv; simp [den, M.drop_unit]
+
+@[simp]
 theorem Var?.Wk.den_from_unused {v w : Var? α ε} (h : v ≤ w) (h' : v.unused)
   : Var?.Wk.den (C := C) h
-  = eq_hom (by cases v; cases w; cases h'; cases h.q using EQuant.le.casesLE; rfl)
+  = eqToHom (by cases v; cases w; cases h'; cases h.q using EQuant.le.casesLE; rfl)
   := by cases v; cases w; cases h'; cases h.q using EQuant.le.casesLE;
         simp [den_zero (C := C) h, M.drop_unit]
 
 theorem Var?.Wk.den_from_zero {v : Var? α ε} {A : Ty α} {e : ε} (h : ⟨A, 0, e⟩ ≤ v)
-  : Var?.Wk.den (C := C) h = eq_hom (by cases v; cases h.q using EQuant.le.casesLE; rfl)
+  : Var?.Wk.den (C := C) h = eqToHom (by cases v; cases h.q using EQuant.le.casesLE; rfl)
   := by simp
 
 theorem Var?.Wk.den_from_erase {v w : Var? α ε} (h : v.erase ≤ w)
-  : Var?.Wk.den (C := C) h = eq_hom (by cases v; cases w; cases h.q using EQuant.le.casesLE; rfl)
+  : Var?.Wk.den (C := C) h = eqToHom (by cases v; cases w; cases h.q using EQuant.le.casesLE; rfl)
   := by simp
 
-variable [IsPremonoidal C]
+@[simp]
+instance Var?.PSSplit.den_pure {u v w : Var? α ε} (h : u.PSSplit v w) : E.HasEff e h.den
+  := by cases h <;> simp; infer_instance
+
+@[simp]
+instance Var?.PSSplit.den_central {u v w : Var? α ε} (h : u.PSSplit v w) : Central (C := C) h.den
+  := (den_pure h).pure_central
 
 instance Ctx?.Wk.den_pure {Γ Δ : Ctx? α ε} (h : Γ.Wk Δ) : E.HasEff e h.den := by induction h with
   | nil => simp only [den]; exact HasEff.id
@@ -207,12 +243,12 @@ theorem Ctx?.Wk.den_comp {Γ Δ Ξ : Ctx? α ε} (h : Γ.Wk Δ) (h' : Δ.Wk Ξ)
   := by induction h generalizing Ξ with
   -- TODO: why is this not simping?
   | nil => cases h'; simp [den, Wk.comp]; apply Category.id_comp
-  | skip _ _ I => simp [
-      den, Wk.comp, <-Monoidal.rightUnitor_naturality, <-Monoidal.whiskerRight_comp_assoc, I,
-      Monoidal.tensor_eq_rtimes_left, rtimes]
+  | skip _ _ I => simp only [
+      den, Wk.comp, <-rightUnitor_naturality, <-comp_whiskerRight_assoc, I,
+      tensorHom_def, Central.left_exchange, Category.assoc]
   | cons _ hv I => cases h' with
-  | skip _ hw => simp [den, Wk.comp, <-Monoidal.tensor_comp_left_assoc, I]
-  | cons => simp [den, Wk.comp, <-Monoidal.tensor_comp_left, I]
+  | skip _ hw => simp [den, Wk.comp, <-tensor_comp_of_left_assoc, I]
+  | cons => simp [den, Wk.comp, <-tensor_comp_of_left, I]
 
 instance Ctx?.At.den_pure {v : Var? α ε} {Γ : Ctx? α ε} {n} (h : Γ.At v n)
   : E.HasEff e h.den
@@ -223,52 +259,105 @@ instance Ctx?.At.den_central {v : Var? α ε} {Γ : Ctx? α ε} {n} (h : Γ.At v
   := (den_pure h).pure_central
 
 @[simp]
+instance Ctx?.PSSplit.den_pure {Γ Δ Ξ : Ctx? α ε} (h : Γ.PSSplit Δ Ξ) : E.HasEff e h.den
+  := by induction h <;> simp; infer_instance
+
+@[simp]
+instance Ctx?.PSSplit.den_central {Γ Δ Ξ : Ctx? α ε} (h : Γ.PSSplit Δ Ξ) : Central (C := C) h.den
+  := (den_pure h).pure_central
+
+@[simp]
 theorem Ctx?.At.den_wkOut {v w : Var? α ε} {Γ : Ctx? α ε} {n} (hΓv : Γ.At v n) (hvw : v ≤ w)
   : hΓv.den (C := C) ≫ Var?.Wk.den hvw = (hΓv.wkOut hvw).den
   := by induction hΓv with
   | here =>
-    simp only [Ctx?.den, ety, Ty.den, den_zero, Monoidal.tensorHom_def, Category.assoc, ←
-      Monoidal.leftUnitor_naturality]
-    rw [<-Monoidal.whiskerLeft_comp_assoc, Var?.Wk.den_comp]
+    simp only [Ctx?.den, ety, Ty.den, den_zero, tensorHom_def, Category.assoc, ←
+      leftUnitor_naturality]
+    rw [<-PremonoidalCategory.whiskerLeft_comp_assoc, Var?.Wk.den_comp]
     rfl
   | there _ _ _ _ _ I =>
-    simp only [den_succ, Category.assoc, ← Monoidal.rightUnitor_naturality]
-    rw [Monoidal.tensor_eq_rtimes_left, Monoidal.tensor_eq_rtimes_left]
-    simp only [rtimes, Category.assoc]
-    rw [<-Monoidal.whiskerRight_comp_assoc, I]
+    simp only [den_succ, Category.assoc, ← rightUnitor_naturality]
+    rw [tensorHom_def_of_left, tensorHom_def_of_left]
+    simp only [Category.assoc]
+    rw [<-comp_whiskerRight_assoc, I]
 
 @[simp]
 theorem Ctx?.At.den_wkIn {Γ Δ : Ctx? α ε} (w : Γ.Wk Δ) {v n} (hΔv : Δ.At v n)
   : w.den (C := C) ≫ hΔv.den = (hΔv.wkIn w).den := by induction w generalizing n with
   | nil => cases hΔv
   | skip => simp [
-    <-Monoidal.rightUnitor_naturality, <-Monoidal.tensorHom_id,
-    <-Monoidal.tensor_comp_left_assoc, *]
+    <-PremonoidalCategory.rightUnitor_naturality, <-tensorHom_id,
+    <-tensor_comp_of_left_assoc, *]
   | cons => cases hΔv with
   | here =>
-    simp [<-Monoidal.tensor_comp_left_assoc, Wk.den_comp]
+    simp [<-tensor_comp_of_left_assoc, Wk.den_comp]
     congr
     apply wk_nil_unique
-  | there => simp [<-Monoidal.tensor_comp_left_assoc, Wk.den_comp, *]
+  | there => simp [<-tensor_comp_of_left_assoc, Wk.den_comp, *]
 
 theorem Var?.PSSplit.wk_den {u' u v w : Var? α ε} (ρ : u' ≤ u) (σ : u.PSSplit v w)
   : Var?.Wk.den ρ ≫ σ.den (C := C)
   = (σ.wk ρ).den ≫ (Var?.Wk.den (C := C) (σ.leftWk ρ) ⊗ Var?.Wk.den (σ.rightWk ρ))
-  := by cases σ with
-  | left =>
-    simp only [Ty.den, den, wkLeft_left, wkRight_left, wk_left, Wk.den_unused, eq_hom_refl,
-    Category.comp_id, Monoidal.rightUnitor_inv_naturality, <-Monoidal.tensorHom_id, del.den]
-    rw [M.drop_unit]
-  | right =>
-    simp only [Ty.den, den, wkLeft_right, wkRight_right, wk_right, Wk.den_unused, eq_hom_refl,
-      Category.comp_id, Monoidal.leftUnitor_inv_naturality, <-Monoidal.id_tensorHom, del.den]
-    rw [M.drop_unit]
-  | sboth h =>
-    simp only [den, wkLeft_sboth, wkRight_sboth, wk_sboth]
-    rw [
-      Model.copy_rel_ltimes ⊥ _ (hA := (h.anti ρ).copy.ety_rel) (hB := h.copy.ety_rel),
-      Monoidal.tensorHom_def
-    ]
+  := by cases u with | mk A q e => cases q using EQuant.casesZero with
+  | zero => cases σ with
+    | sboth h => cases h.q using EQuant.le.casesLE
+    | right =>
+      simp only [
+        ety_quant_zero, leftUnitor_inv_naturality, rightUnitor_inv_naturality,
+        id_tensorHom, wk, Wk.den_zero, den_right
+      ]
+      simp
+    | left =>
+      apply (cancel_mono (f := (ρ_ (𝟙_ C)).hom)).mp
+      simp [ety_quant_zero, id_tensorHom, unitors_inv_equal]
+  | rest => cases σ with
+    | sboth h =>
+      simp [den, wkLeft_sboth, wkRight_sboth]
+      rw [
+        Model.copy_rel_ltimes ⊥ _ (hA := (h.anti ρ).copy.ety_rel) (hB := h.copy.ety_rel),
+        tensorHom_def
+      ]
+    | _ =>
+      simp only [
+        leftUnitor_inv_naturality, rightUnitor_inv_naturality,
+        tensorHom_id, id_tensorHom, Wk.den_quant, den_left, den_right
+      ]
+      simp
+
+local notation "PW" => Ctx?.PSSplit.wk
+
+local notation "LW" => Ctx?.PSSplit.leftWk
+
+local notation "RW" => Ctx?.PSSplit.rightWk
+
+local notation "WR" => Ctx?.PSSplit.wkRight
+
+local notation "WL" => Ctx?.PSSplit.wkLeft
+
+-- theorem Ctx.PSSplit.wk_den {Γ' Γ Δ Ξ : Ctx? α ε} (ρ : Γ'.Wk Γ) (σ : Γ.PSSplit Δ Ξ)
+--   : ρ.den ≫ σ.den (C := C) = (σ.wk ρ).den ≫ ((σ.leftWk ρ).den (C := C) ⊗ (σ.rightWk ρ).den)
+--   := by induction ρ generalizing Δ Ξ with
+--   | nil =>
+--     cases σ
+--     calc
+--     _ = 𝟙 (𝟙_ C) ≫ (λ_ (𝟙_ C)).inv := rfl
+--     _ = (λ_ (𝟙_ C)).inv ≫ (𝟙 (𝟙_ C) ⊗ 𝟙 (𝟙_ C)) := by simp
+--     _ = _ := rfl
+--   | skip ρ hv I =>
+--     calc
+--     _ = (ρ.den (C := C) ⊗ hv.den) ≫ (ρ_ _).hom ≫ σ.den := by simp
+--     _ = _ ◁ hv.den ≫ (ρ_ _).hom ≫ ρ.den (C := C) ≫ σ.den
+--       := by simp only [tensor_eq_rtimes_left, Category.assoc, Monoidal.rightUnitor_naturality_assoc]
+--     _ = _ ◁ hv.den ≫ (ρ_ _).hom ≫ (σ.wk ρ).den ≫ ((σ.leftWk ρ).den (C := C) ⊗ (σ.rightWk ρ).den)
+--       := by simp [I]
+--     _ = ((σ.wk ρ).den (C := C) ⊗ hv.den) ≫ (ρ_ _).hom
+--           ≫ ((σ.leftWk ρ).den (C := C) ⊗ (σ.rightWk ρ).den)
+--       := by simp only [tensor_eq_rtimes_left, Category.assoc, Monoidal.rightUnitor_naturality_assoc]
+--     _ = _ := by sorry
+--     -- simp [
+--     --   Monoidal.tensor_eq_rtimes_left, Category.assoc, Monoidal.rightUnitor_naturality_assoc,
+--     --   Monoidal.rightUnitor_naturality, I]
+--   | cons => sorry
 
 -- TODO: Ctx?.At.ix.den = Ctx?.At.den
 

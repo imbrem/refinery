@@ -9,7 +9,8 @@ open CategoryTheory
 
 open Monoidal
 
-open MonoidalCategory
+open PremonoidalCategory MonoidalCategory'
+open scoped MonoidalCategory
 
 open ChosenFiniteCoproducts
 
@@ -52,8 +53,8 @@ notation "Δ_" => VarModel.copy
 
 class SigModel
   (φ : Type _) (α : Type _) (ε : Type _) [S : Signature φ α ε]
-  (C : Type _) [Category C] [Category C] [MonoidalCategoryStruct C] [ChosenFiniteCoproducts C]
-               [BraidedCategoryStruct C] [E : Effectful2 C ε]
+  (C : Type _) [Category C] [Category C] [PremonoidalCategory C] [ChosenFiniteCoproducts C]
+               [BraidedCategory' C] [E : Effectful2 C ε]
   extends VarModel α C
   where
   den_inst (f : φ) : (t⟦S.src f⟧ : C) ⟶ t⟦S.trg f⟧
@@ -62,19 +63,19 @@ class SigModel
 notation "i⟦" f "⟧" => SigModel.den_inst f
 
 variable {φ : Type _} {α : Type _} {ε : Type _} [S : Signature φ α ε]
-         {C : Type _} [Category C] [MonoidalCategoryStruct C] [ChosenFiniteCoproducts C]
-        [BraidedCategoryStruct C]
+         {C : Type _} [Category C] [PremonoidalCategory C] [ChosenFiniteCoproducts C]
+        [BraidedCategory' C]
 
 def Signature.IsFn.den [Effectful2 C ε] [SigModel φ α ε C]
   {f : φ} {e : ε} {A B : Ty α} (h : IsFn f e A B)
-  : (t⟦ A ⟧ : C) ⟶ t⟦ B ⟧ := eq_hom (by rw [h.src]) ≫ i⟦ f ⟧ ≫ eq_hom (by rw [h.trg])
+  : (t⟦ A ⟧ : C) ⟶ t⟦ B ⟧ := eqToHom (by rw [h.src]) ≫ i⟦ f ⟧ ≫ eqToHom (by rw [h.trg])
 
 class Model
   (φ : Type _) (α : outParam (Type _)) (ε : outParam (Type _)) [S : Signature φ α ε]
-  (C : Type _) [Category C] [MonoidalCategoryStruct C] [ChosenFiniteCoproducts C]
-               [BraidedCategoryStruct C] [Iterate C] [E : Elgot2 C ε]
+  (C : Type _) [Category C] [PremonoidalCategory C] [ChosenFiniteCoproducts C]
+               [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε]
   extends SigModel φ α ε C where
-  copy_swap {A : Ty α} [IsRel A] : Δ_ A ≫ σ_ _ _ = copy A
+  copy_swap {A : Ty α} [IsRel A] : Δ_ A ≫ (β'_ _ _).hom = copy A
   copy_assoc {A : Ty α} [IsRel A] :
     Δ_ A ≫ Δ_ A ▷ (t⟦ A ⟧ : C) ≫ (α_ _ _ _).hom = Δ_ A ≫ t⟦ A ⟧ ◁ Δ_ A
   drop_pure {A} [IsAff A] : E.eff ⊥ (drop A)
@@ -83,7 +84,7 @@ class Model
   drop_tensor {A B} [IsAff A] [IsAff B] : drop (.tensor A B) = (drop A ⊗ drop B) ≫ (λ_ _).hom
   copy_unit : copy .unit = (λ_ _).inv
   copy_tensor {A B} [IsRel A] [IsRel B]
-    : copy (.tensor A B) = (copy A ⊗ copy B) ≫ swap_inner ..
+    : copy (.tensor A B) = (copy A ⊗ copy B) ≫ (βi_ _ _ _ _).hom
   drop_rem {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
     [IsAff A] [IsAff B] [hf : IsRem e] : f ≫ drop _ ↠ drop _
   copy_drop_left_rem {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
