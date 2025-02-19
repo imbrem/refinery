@@ -344,16 +344,57 @@ local notation "WL" => Ctx?.PSSplit.wkLeft
 --     _ = (λ_ (𝟙_ C)).inv ≫ (𝟙 (𝟙_ C) ⊗ 𝟙 (𝟙_ C)) := by simp
 --     _ = _ := rfl
 --   | skip ρ hv I =>
+--     rename_i v
 --     calc
 --     _ = (ρ.den (C := C) ⊗ hv.den) ≫ (ρ_ _).hom ≫ σ.den := by simp
 --     _ = _ ◁ hv.den ≫ (ρ_ _).hom ≫ ρ.den (C := C) ≫ σ.den
---       := by simp only [tensor_eq_rtimes_left, Category.assoc, Monoidal.rightUnitor_naturality_assoc]
---     _ = _ ◁ hv.den ≫ (ρ_ _).hom ≫ (σ.wk ρ).den ≫ ((σ.leftWk ρ).den (C := C) ⊗ (σ.rightWk ρ).den)
+--       := by simp only [tensorHom_def_of_left, Category.assoc, rightUnitor_naturality_assoc]
+--     _ = _ ◁ hv.den ≫ (ρ_ _).hom ≫ (σ.wk ρ).den ≫ ((LW ρ σ).den (C := C) ⊗ (RW ρ σ).den)
 --       := by simp [I]
---     _ = ((σ.wk ρ).den (C := C) ⊗ hv.den) ≫ (ρ_ _).hom
---           ≫ ((σ.leftWk ρ).den (C := C) ⊗ (σ.rightWk ρ).den)
---       := by simp only [tensor_eq_rtimes_left, Category.assoc, Monoidal.rightUnitor_naturality_assoc]
---     _ = _ := by sorry
+--     _ = ((σ.wk ρ).den (C := C) ⊗ hv.den) ≫ (ρ_ _).hom ≫ ((LW ρ σ).den (C := C) ⊗ (RW ρ σ).den)
+--       := by simp only [tensorHom_def_of_left, Category.assoc, rightUnitor_naturality_assoc]
+--     _ = ((σ.wk ρ).den (C := C) ⊗ hv.den)
+--       ≫ (((LW ρ σ).den (C := C) ⊗ (RW ρ σ).den) ▷ _)
+--       ≫ (ρ_ _).hom
+--       := by simp only [rightUnitor_naturality]
+--     _ = _
+--       := by
+--       simp only [<-tensorHom_def_assoc]
+--       simp only [<-tensorHom_id, <-tensor_comp_of_left_assoc, Category.comp_id]
+--     ((PW ρ σ).den (C := C) ≫ ((LW ρ σ).den (C := C) ⊗ ps⟦RW ρ σ⟧)) ▷ _
+--       ≫ (_ ◁ hv.den)
+--       ≫ (ρ_ _).hom
+--       = _ := by simp only [
+--         tensorHom_def, Category.assoc, comp_whiskerRight, comp_whiskerRight_assoc]
+--     (PW ρ σ).den (C := C) ▷ _
+--       ≫ (((LW ρ σ).den (C := C) ⊗ ps⟦RW ρ σ⟧) ⊗ hv.den)
+--       ≫ (ρ_ _).hom
+--       = _ := by simp only [<-associator_naturality_assoc]; congr; premonoidal_coherence
+--     (PW ρ σ).den (C := C) ▷ _ ≫ (α_ _ _ _).hom
+--       ≫ (ps⟦LW ρ σ⟧ ⊗ (ps⟦RW ρ σ⟧ ⊗ hv.den))
+--       ≫ (_ ◁ (ρ_ g⟦Ξ⟧).hom)
+--       = _ := by simp only [
+--         tensorHom_def, PremonoidalCategory.whiskerLeft_comp,
+--         PremonoidalCategory.whiskerLeft_comp_assoc, Category.assoc]
+--     (PW ρ σ).den (C := C) ▷ _ ≫ (α_ _ _ _).hom
+--       ≫ (ps⟦LW ρ σ⟧ ⊗ ((ps⟦RW ρ σ⟧ ⊗ hv.den)
+--       ≫ (ρ_ g⟦Ξ⟧).hom))
+--       = _ := by simp only [
+--         <-comp_whiskerRight_assoc, Category.assoc, Iso.inv_hom_id_assoc, tensorHom_def]
+--     (PW ρ σ).den (C := C) ▷ _ ≫ (α_ _ _ _).hom ≫ (ρ_ _).inv ▷ _
+--       ≫ (((ρ_ _).hom ≫ ps⟦LW ρ σ⟧) ▷ _)
+--       ≫ (_ ◁ ((ps⟦RW ρ σ⟧ ⊗ hv.den) ≫ (ρ_ g⟦Ξ⟧).hom))
+--       = _
+--       := by simp only [tensorHom_def]
+--     (PW ρ σ).den (C := C) ▷ _ ≫ (α_ _ _ _).hom ≫ (ρ_ _).inv ▷ _
+--       ≫ ((ρ_ _).hom ≫ ps⟦LW ρ σ⟧ ⊗ (ps⟦RW ρ σ⟧ ⊗ hv.den)
+--       ≫ (ρ_ g⟦Ξ⟧).hom)
+--       = _ := by rw [swap_inner_tensor_leftUnitor_assoc]
+--     ((PW ρ σ).den (C := C) ⊗ (λ_ _).inv)
+--       ≫ (βi_ g⟦WL ρ σ⟧ g⟦WR ρ σ⟧ (𝟙_ C) _).hom
+--       ≫ ((ρ_ _).hom ≫ ps⟦LW ρ σ⟧ ⊗ (ps⟦RW ρ σ⟧ ⊗ hv.den)
+--       ≫ (ρ_ g⟦Ξ⟧).hom)
+--       = _ := by simp
 --     -- simp [
 --     --   Monoidal.tensor_eq_rtimes_left, Category.assoc, Monoidal.rightUnitor_naturality_assoc,
 --     --   Monoidal.rightUnitor_naturality, I]
