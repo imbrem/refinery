@@ -29,13 +29,13 @@ def Deriv.den {e : ε} {Γ : Ctx? α ε} {A : Ty α} {a : Term φ (Ty α)}
   | .inr db => db.den ≫ CC.inr _ _
   | .case dΓ da db dc => dΓ.den ≫ (_ ◁ da.den) ≫ (∂L _ _ _).inv ≫ desc db.den dc.den
   | .abort da => da.den ≫ CC.fromZero _
-  | .iter (A := A) (B := B) (Γr := Γr) dΓ _ _ _ da db =>
+  | .iter (A := A) (B := B) (Γl := Γl) dΓ _ _ _ da db =>
     dΓ.den ≫ (_ ◁ da.den) ≫ iterate (
-      Δ_ Γr.ety ▷ _
+      Δ_ Γl.ety ▷ _
         ≫ (α_ _ _ _).hom
         ≫ _ ◁ db.den
-        ≫ (∂L g⟦Γr⟧ t⟦B⟧ t⟦A⟧).inv
-        ≫ ((!_ Γr.ety ▷ _ ≫ (λ_ _).hom) ⊕ₕ 𝟙 _))
+        ≫ (∂L g⟦Γl⟧ t⟦B⟧ t⟦A⟧).inv
+        ≫ ((!_ Γl.ety ▷ _ ≫ (λ_ _).hom) ⊕ₕ 𝟙 _))
 
 @[simp]
 theorem Deriv.den_mono {e e' : ε} {Γ : Ctx? α ε} {A : Ty α} {a : Term φ (Ty α)}

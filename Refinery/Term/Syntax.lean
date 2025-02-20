@@ -49,6 +49,8 @@ theorem ren_ren (ρ ρ' : ℕ → ℕ) (t : Term φ α) : (t.ren ρ').ren ρ = t
 
 scoped notation "↑⁰" => ren Nat.succ
 
+scoped notation "↑¹" => ren (Nat.liftWk Nat.succ)
+
 def Subst (φ : Type u) (α : Type v) : Type _ := ℕ → Term φ α
 
 def Subst.get (σ : Subst φ α) (ix : ℕ) : Term φ α := σ ix

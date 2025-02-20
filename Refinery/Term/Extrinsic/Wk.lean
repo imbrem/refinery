@@ -50,8 +50,9 @@ def Deriv.wk {e : ε} {Γ Δ : Ctx? α ε} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term
     .case (hΓ.wk ρ) (da.wk (hΓ.rightWk ρ)) (db.wk ((hΓ.leftWk ρ).scons _))
           (dc.wk ((hΓ.leftWk ρ).scons _))
   | .abort (A := A) da => .abort (da.wk ρ)
-  | .iter (A := A) (B := B) hΓ hei hc hd da db =>
-    .iter (hΓ.wk ρ) hei sorry sorry (da.wk (hΓ.rightWk ρ)) (db.wk ((hΓ.leftWk ρ).scons _))
+  | .iter (A := A) (B := B) hΓ hei _ _ da db =>
+    .iter (hΓ.wk ρ) hei (hΓ.wkLeft_copy ρ) (hΓ.wkLeft_del ρ)
+                        (da.wk (hΓ.rightWk ρ)) (db.wk ((hΓ.leftWk ρ).scons _))
 
 end Term
 
