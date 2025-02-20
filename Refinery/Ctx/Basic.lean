@@ -395,10 +395,10 @@ instance Ctx?.nil_copy : (.nil : Ctx? α ε).copy := ⟨by simp⟩
 instance Ctx?.nil_del : (.nil : Ctx? α ε).del := ⟨by simp⟩
 
 @[simp]
-instance Ctx?.erase_copy (Γ : Ctx? α ε) [Γ.copy] : Γ.erase.copy := ⟨by induction Γ <;> simp [*]⟩
+instance Ctx?.erase_copy (Γ : Ctx? α ε) : Γ.erase.copy := ⟨by induction Γ <;> simp [*]⟩
 
 @[simp]
-instance Ctx?.erase_del (Γ : Ctx? α ε) [Γ.del] : Γ.erase.del := ⟨by induction Γ <;> simp [*]⟩
+instance Ctx?.erase_del (Γ : Ctx? α ε) : Γ.erase.del := ⟨by induction Γ <;> simp [*]⟩
 
 @[simp]
 theorem Ctx?.cons_copy_iff (Γ : Ctx? α ε) (v : Var? α ε) : (Γ.cons v).copy ↔ Γ.copy ∧ v.copy
@@ -454,9 +454,9 @@ instance Ctx?.ety_aff_of_del {Γ : Ctx? α ε} [h : Γ.del] : IsAff (Ctx?.ety Γ
     simp only [ety]
     apply IsAff.tensor
 
-def Ctx?.both (Γ : Ctx? α ε) : [Γ.copy] → Γ.PSSplit Γ Γ := λ{_} => match Γ with
+def Ctx?.both (Γ : Ctx? α ε) [hΓ : Γ.copy] : Γ.PSSplit Γ Γ := (λ_ => match Γ with
   | .nil => .nil
-  | .cons Γ v => .cons (have _ := copy.tail Γ v; Γ.both) (have _ := copy.head Γ v; .both v)
+  | .cons Γ v => .cons (have _ := copy.tail Γ v; Γ.both) (have _ := copy.head Γ v; .both v)) hΓ
 
 variable [PartialOrder ε]
 
@@ -1147,3 +1147,19 @@ theorem Ctx?.PSSplit.wkRight_quant'
     apply Var?.PSSplit.wkRight_quant'
     assumption
   | _ => simp [*]
+
+@[simp]
+def Var?.PSSplit.leftCtx {u v w : Var? α ε} : u.PSSplit v w → Ctx? α ε → Ctx? α ε
+  | .left _, Γ | .sboth _, Γ => Γ
+  | .right _, Γ => Γ.erase
+
+@[simp]
+def Var?.PSSplit.rightCtx {u v w : Var? α ε} : u.PSSplit v w → Ctx? α ε → Ctx? α ε
+  | .left _, Γ => Γ.erase
+  | .right _, Γ | .sboth _, Γ => Γ
+
+def Var?.PSSplit.lift {u v w : Var? α ε} (Γ : Ctx? α ε) (hΓ : quant u ≤ quant Γ)
+  : (h : u.PSSplit v w) → Γ.PSSplit (h.leftCtx Γ) (h.rightCtx Γ)
+  | .left _ => Γ.erase_right
+  | .right _ => Γ.erase_left
+  | .sboth h => Γ.both (hΓ := ⟨le_trans h.copy.copy_le_quant hΓ⟩)

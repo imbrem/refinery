@@ -15,6 +15,16 @@ inductive Deriv? : Ctx? α ε → Var? α ε → Term φ (Ty α) → Type _
 
 notation Γ "⊢?" a ":" v => Deriv? Γ v a
 
+-- def Deriv?.erase {Γ : Ctx? α ε} {v : Var? α ε} {a : Term φ (Ty α)}
+--   : (Γ ⊢? a : v) → (Γ.erase ⊢? a : v.erase)
+--   | .valid D q hΓ => .zero inferInstance _ _ _
+--   | .zero hΓ a A e => .zero inferInstance _ _ _
+
+-- def Deriv?.splitLeft {Γ : Ctx? α ε} {u v w : Var? α ε} {a : Term φ (Ty α)}
+--   : (h : u.PSSplit v w) → (Γ ⊢? a : u) → (h.leftCtx Γ ⊢? a : v)
+--   | .left _, D => D | .sboth _, D => D
+--   | .right _, _ => sorry
+
 inductive SubstDS (φ) {α ε} [S : Signature φ α ε] : Ctx? α ε → Ctx? α ε → Type _
   | nil {Γ} (hΓ : Γ.del) : SubstDS φ Γ nil
   | cons {Γ Γl Γr Δ} {v} {a : Term φ _} (hΓ : Γ.PSSplit Γl Γr)
