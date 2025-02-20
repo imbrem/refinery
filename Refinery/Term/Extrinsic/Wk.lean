@@ -38,7 +38,7 @@ def Deriv.wk {e : ε} {Γ Δ : Ctx? α ε} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term
   | .op hf da => .op hf (da.wk ρ)
   | .let₁ (A := A) (B := B) hΓ da db =>
     .let₁ (A := A) (B := B) (hΓ.wk ρ) (da.wk (hΓ.rightWk ρ)) (db.wk ((hΓ.leftWk ρ).scons _))
-  | .unit hv => .unit (ρ.comp hv)
+  | .unit hv => .unit (hv.wk ρ)
   | .pair hΓ da db =>
     .pair (hΓ.wk ρ) (da.wk (hΓ.leftWk ρ)) (db.wk (hΓ.rightWk ρ))
   | .let₂ (A := A) (B := B) hΓ da db =>

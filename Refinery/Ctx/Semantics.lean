@@ -42,8 +42,14 @@ variable [MonoidalCategoryStruct C] [VarModel α C]
 abbrev Var?.del.den {v : Var? α ε} (h : v.del) : (v⟦ v ⟧ : C) ⟶ 𝟙_ C
   := !_ v.ety
 
+abbrev Ctx?.del.den {Γ : Ctx? α ε} (h : Γ.del) : (g⟦ Γ ⟧ : C) ⟶ 𝟙_ C
+  := !_ Γ.ety
+
 abbrev Var?.copy.den {v : Var? α ε} (h : v.copy) : (v⟦ v ⟧ : C) ⟶ v⟦ v ⟧ ⊗ v⟦ v ⟧
   := Δ_ v.ety
+
+abbrev Ctx?.copy.den {Γ : Ctx? α ε} (h : Γ.copy) : (g⟦ Γ ⟧ : C) ⟶ g⟦ Γ ⟧ ⊗ g⟦ Γ ⟧
+  := Δ_ Γ.ety
 
 def Var?.Wk.den {v w : Var? α ε} (h : v ≤ w) : (v⟦ v ⟧ : C) ⟶ v⟦ w ⟧
   := match v, w, h with

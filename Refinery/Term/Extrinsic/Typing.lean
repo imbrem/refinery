@@ -16,7 +16,7 @@ inductive Deriv : ε → Ctx? α ε → Ty α → Term φ (Ty α) → Type _
   | let₁ {Γ Γl Γr e A B a b} :
     Γ.PSSplit Γl Γr →
     Deriv e Γr A a → Deriv e (Γl.cons ⟨A, ⊤, ⊥⟩) B b → Deriv e Γ B (.let₁ a A b)
-  | unit {Γ} : Γ.Wk .nil → Deriv e Γ .unit .unit
+  | unit {Γ} : Γ.del → Deriv e Γ .unit .unit
   | pair {Γ Γl Γr e A B a b} :
     Γ.PSSplit Γl Γr →
     Deriv e Γl A a → Deriv e Γr B b → Deriv e Γ (.tensor A B) (.pair a b)
@@ -131,8 +131,11 @@ def Deriv.let₁_expr {e : ε} {Γ : Ctx? α ε} {A B : Ty α} {a b : Term φ (T
   (D : Γ ⊢[e] (.let₁ a A b) : B) : (D.let₁_splitLeft.cons ⟨A, ⊤, ⊥⟩) ⊢[e] b : B
   := match D with | .let₁ _ _ db => db
 
-def Deriv.unit_wk {e : ε} {Γ : Ctx? α ε} (D : Γ ⊢[e] .unit (φ := φ) : .unit) : Γ.Wk .nil
+theorem Deriv.unit_wk {e : ε} {Γ : Ctx? α ε} {A : Ty α} (D : Γ ⊢[e] .unit (φ := φ) : A) : Γ.del
   := match D with | .unit dΓ => dΓ
+
+theorem IsWt.unit_wk {e : ε} {Γ : Ctx? α ε} (D : IsWt (φ := φ) e Γ A .unit) : Γ.del
+  := D.elim Deriv.unit_wk
 
 def Deriv.pair_splitLeft {e : ε} {Γ : Ctx? α ε} {A B : Ty α} {a b : Term φ (Ty α)}
   (D : Γ ⊢[e] (.pair a b) : .tensor A B) : Ctx? α ε
