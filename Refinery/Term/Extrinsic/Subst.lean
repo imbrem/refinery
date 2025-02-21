@@ -1,4 +1,5 @@
 import Refinery.Term.Extrinsic.Typing
+import Refinery.Ctx.Add
 
 namespace Refinery
 
@@ -15,15 +16,18 @@ inductive Deriv? : Ctx? α ε → Var? α ε → Term φ (Ty α) → Type _
 
 notation Γ "⊢?" a ":" v => Deriv? Γ v a
 
--- def Deriv?.erase {Γ : Ctx? α ε} {v : Var? α ε} {a : Term φ (Ty α)}
---   : (Γ ⊢? a : v) → (Γ.erase ⊢? a : v.erase)
---   | .valid D q hΓ => .zero inferInstance _ _ _
---   | .zero hΓ a A e => .zero inferInstance _ _ _
+abbrev Deriv?.erase {Γ : Ctx? α ε} {v : Var? α ε} {a : Term φ (Ty α)} (_D : Γ ⊢? a : v)
+  : (Γ.erase ⊢? a : v.erase) := .zero inferInstance _ _ _
 
--- def Deriv?.splitLeft {Γ : Ctx? α ε} {u v w : Var? α ε} {a : Term φ (Ty α)}
---   : (h : u.PSSplit v w) → (Γ ⊢? a : u) → (h.leftCtx Γ ⊢? a : v)
---   | .left _, D => D | .sboth _, D => D
---   | .right _, _ => sorry
+def Deriv?.splitLeft {Γ : Ctx? α ε} {u v w : Var? α ε} {a : Term φ (Ty α)}
+  : (h : u.PSSplit v w) → (Γ ⊢? a : u) → (h.leftCtx Γ ⊢? a : v)
+  | .left _, D => D | .sboth _, D => D
+  | .right _, D => D.erase
+
+def Deriv?.splitRight {Γ : Ctx? α ε} {u v w : Var? α ε} {a : Term φ (Ty α)}
+  : (h : u.PSSplit v w) → (Γ ⊢? a : u) → (h.rightCtx Γ ⊢? a : w)
+  | .left _, D => D.erase | .sboth _, D => D
+  | .right _, D => D
 
 inductive SubstDS (φ) {α ε} [S : Signature φ α ε] : Ctx? α ε → Ctx? α ε → Type _
   | nil {Γ} (hΓ : Γ.del) : SubstDS φ Γ nil
@@ -38,15 +42,15 @@ def SubstDS.toSubst {Γ Δ} : SubstDS φ Γ Δ → Subst φ (Ty α)
 instance SubstDS.coeSubst : CoeOut (SubstDS φ Γ Δ) (Subst φ (Ty α)) where
   coe := SubstDS.toSubst
 
-def SubstDS.leftCtx {Γ Δ} : SubstDS φ Γ Δ → Ctx? α ε
+def SubstDS.tailCtx {Γ Δ} : SubstDS φ Γ Δ → Ctx? α ε
   | .nil _ => Γ
   | .cons (Γl := Γl) .. => Γl
 
-def SubstDS.rightCtx {Γ Δ} : SubstDS φ Γ Δ → Ctx? α ε
+def SubstDS.headCtx {Γ Δ} : SubstDS φ Γ Δ → Ctx? α ε
   | .nil _ => Γ.erase
   | .cons (Γr := Γr) .. => Γr
 
-def SubstDS.splitCtx {Γ Δ} : (σ : SubstDS φ Γ Δ) → Γ.PSSplit (σ.leftCtx) (σ.rightCtx)
+def SubstDS.headSplit {Γ Δ} : (σ : SubstDS φ Γ Δ) → Γ.PSSplit (σ.tailCtx) (σ.headCtx)
   | .nil _ => Γ.erase_right
   | .cons hΓ .. => hΓ
 
@@ -54,13 +58,16 @@ def SubstDS.head {Γ Δ} : SubstDS φ Γ Δ → Var? α ε
   | .nil _ => ⟨.unit, 0, ⊥⟩
   | .cons (v := v) .. => v
 
-def SubstDS.headD {Γ Δ} : (σ : SubstDS φ Γ Δ) → σ.rightCtx ⊢? (σ.toSubst 0) : σ.head
-  | .nil hΓ => .zero (by simp [rightCtx]) _ _ _
+def SubstDS.headD {Γ Δ} : (σ : SubstDS φ Γ Δ) → σ.headCtx ⊢? (σ.toSubst 0) : σ.head
+  | .nil hΓ => .zero (by simp [headCtx]) _ _ _
   | .cons _ _ da => da
 
-def SubstDS.tail {Γ Δ} : (σ : SubstDS φ Γ Δ) → SubstDS φ σ.leftCtx Δ.tail
+def SubstDS.tail {Γ Δ} : (σ : SubstDS φ Γ Δ) → SubstDS φ σ.tailCtx Δ.tail
   | .nil hΓ => .nil hΓ
   | .cons _ σ _ => σ
+
+-- def SubstDS.splitLeft {Γ Δ Δl Δr} : SubstDS φ Γ Δ → Δ.PSSplit Δl Δr → Ctx? α ε
+--   | _ => sorry
 
 -- def SubstDS.wkIn {Γ' Γ Δ} (ρ : Γ'.Wk Γ) : SubstDS φ Γ Δ → SubstDS φ Γ' Δ
 --   | .nil hΓ => .nil (hΓ.wk ρ)

@@ -342,7 +342,7 @@ def Var?.PSSplit.choose {u v w : Var? α ε} (h : Nonempty (u.PSSplit v w)) : u.
       (Var?.PSSplit.right u).cast rfl ev ew
 
 inductive Ctx?.PSSplit : Ctx? α ε → Ctx? α ε → Ctx? α ε → Type _ where
-  | nil : Ctx?.PSSplit [] [] []
+  | nil : Ctx?.PSSplit .nil .nil .nil
   | cons {Γ Δ Ξ v l r} (h : PSSplit Γ Δ Ξ) (hvw : v.PSSplit l r)
     : PSSplit (Ctx?.cons Γ v) (Ctx?.cons Δ l) (Ctx?.cons Ξ r)
 
@@ -833,7 +833,7 @@ inductive Var?.PSplit : Var? α ε → Var? α ε → Var? α ε → Type _
   | sboth {u v w} : u.scopy → u ≤ v → u ≤ w → PSplit u v w
 
 inductive Ctx?.PSplit : Ctx? α ε → Ctx? α ε → Ctx? α ε → Type _ where
-  | nil : Ctx?.PSplit [] [] []
+  | nil : Ctx?.PSplit .nil .nil .nil
   | cons {Γ Δ Ξ v l r} (h : PSplit Γ Δ Ξ) (hvw : v.PSplit l r)
     : PSplit (Ctx?.cons Γ v) (Ctx?.cons Δ l) (Ctx?.cons Ξ r)
 

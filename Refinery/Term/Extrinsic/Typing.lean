@@ -10,6 +10,8 @@ namespace Term
 
 variable {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε]
 
+--TODO: port to PSplit for hax?
+
 inductive Deriv : ε → Ctx? α ε → Ty α → Term φ (Ty α) → Type _
   | bv {Γ} : Γ.At ⟨A, 1, e⟩ n → Deriv e Γ A (.bv n)
   | op {Γ e A B f a} : S.IsFn f e A B → Deriv e Γ A a → Deriv e Γ B (.op f a)

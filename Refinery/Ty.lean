@@ -14,6 +14,7 @@ inductive Ty (α : Type u) : Type u where
   | empty : Ty α
   | tensor : Ty α → Ty α → Ty α
   | coprod : Ty α → Ty α → Ty α
+  deriving DecidableEq
 
 def Ty.map {α β : Type u} (f : α → β) : Ty α → Ty β
   | Ty.of a => Ty.of (f a)
@@ -133,5 +134,3 @@ theorem IsRel.tensor_iff {A B : Ty α} : IsRel (Ty.tensor A B) ↔ IsRel A ∧ I
 theorem IsRel.coprod_iff {A B : Ty α} : IsRel (Ty.coprod A B) ↔ IsRel A ∧ IsRel B :=
   ⟨λ h => ⟨IsRel.coprod_left A B, IsRel.coprod_right A B⟩,
    λ ⟨hA, hB⟩ => ⟨by simp [hA, hB]⟩⟩
-
-
