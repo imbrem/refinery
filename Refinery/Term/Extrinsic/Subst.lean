@@ -95,6 +95,7 @@ def SubstSplit.erase_right (Γ : Ctx? α ε) [hΓ : Γ.del] : SubstSplit φ Γ .
 def SubstSplit.erase_left (Γ : Ctx? α ε) [hΓ : Γ.del] : SubstSplit φ Γ .nil .nil .nil
   := ⟨Γ.erase, Γ, Γ.erase_left, .nil inferInstance, .nil hΓ⟩
 
+--TODO: make sure copyability is left-biased here...
 def SubstDS.split {Γ Δl Δr : Ctx? α ε}
   : SubstDS φ Γ Δ → Δ.PSSplit Δl Δr → SubstSplit φ Γ Δ Δl Δr
   | .nil hΓ, .nil => SubstSplit.erase_right _
@@ -134,9 +135,64 @@ def SubstDS.split {Γ Δl Δr : Ctx? α ε}
           s.substLeft.cons s.inLeft.erase_right (.unused inferInstance a hv),
           s.substRight.cons s23 da⟩
 
--- def SubstDS.splitLeft {Γ Δ Δl Δr} : SubstDS φ Γ Δ → Δ.PSSplit Δl Δr → Ctx? α ε
---   | _ => sorry
+-- instance SubstDS.split_copy_left {Γ Δl Δr : Ctx? α ε} (σ : SubstDS φ Γ Δ) (hΔ : Δ.PSSplit Δl Δr)
+--   [hl : Δl.copy] : (σ.split hΔ).inLeft.copy
+--   := sorry
 
--- def SubstDS.wkIn {Γ' Γ Δ} (ρ : Γ'.Wk Γ) : SubstDS φ Γ Δ → SubstDS φ Γ' Δ
---   | .nil hΓ => .nil (hΓ.wk ρ)
---   | .cons (a := a) hΓ σ da => .cons (a := a) (hΓ.wk' ρ) (σ.wkIn (hΓ.leftWk' ρ)) sorry
+-- instance SubstDS.split_del_left {Γ Δl Δr : Ctx? α ε} (σ : SubstDS φ Γ Δ) (hΔ : Δ.PSSplit Δl Δr)
+--   [hl : Δl.del] : (σ.split hΔ).inLeft.del
+--   := sorry
+
+-- def SubstDS.lift {Γ Δ : Ctx? α ε} (σ : SubstDS φ Γ Δ) (v : Var? α ε)
+--   : SubstDS φ (Γ.cons v) (Δ.cons v) := sorry
+
+-- def Deriv.substTerm {e : ε} {Γ Δ : Ctx? α ε} (σ : SubstDS φ Γ Δ) {A : Ty α} {a : Term φ (Ty α)}
+--   : (Δ ⊢[e] a : A) → Term φ (Ty α)
+--   | .bv (n := n) hv => σ.toSubst n
+--   | .op (f := f) hf da => .op f (da.substTerm σ)
+--   | .let₁ (A := A) (B := B) hΔ da db =>
+--     let s := σ.split hΔ;
+--     .let₁ (da.substTerm s.substRight) A (db.substTerm (s.substLeft.lift _))
+--   | .unit hv => .unit
+--   | .pair hΔ da db =>
+--     let s := σ.split hΔ;
+--     .pair (da.substTerm s.substLeft) (db.substTerm s.substRight)
+--   | .let₂ (A := A) (B := B) hΔ da db =>
+--     let s := σ.split hΔ;
+--     .let₂ (da.substTerm s.substRight) A B (db.substTerm ((s.substLeft.lift _).lift _))
+--   | .inl (A := A) (B := B) da => .inl A B (da.substTerm σ)
+--   | .inr (A := A) (B := B) db => .inr A B (db.substTerm σ)
+--   | .case (A := A) (B := B) hΔ da db dc =>
+--     let s := σ.split hΔ;
+--     .case (da.substTerm s.substRight) A B (db.substTerm (s.substLeft.lift _))
+--           (dc.substTerm (s.substLeft.lift _))
+--   | .abort (A := A) da => .abort A (da.substTerm σ)
+--   | .iter (A := A) (B := B) hΔ _ _ _ da db =>
+--     let s := σ.split hΔ;
+--     .iter (da.substTerm s.substRight) A B (db.substTerm (s.substLeft.lift _))
+
+-- def Deriv.subst  {e : ε} {Γ Δ : Ctx? α ε} (σ : SubstDS φ Γ Δ) {A : Ty α} {a : Term φ (Ty α)}
+--   : (D : Δ ⊢[e] a : A) → (Γ ⊢[e] D.substTerm σ : A)
+--   | .bv hv => sorry
+--   | .op hf da => .op hf (da.subst σ)
+--   | .let₁ hΔ da db =>
+--     let s := σ.split hΔ;
+--     .let₁ s.splitIn (da.subst s.substRight) (db.subst (s.substLeft.lift _))
+--   | .unit hv => sorry
+--   | .pair hΔ da db =>
+--     let s := σ.split hΔ;
+--     .pair s.splitIn (da.subst s.substLeft) (db.subst s.substRight)
+--   | .let₂ hΔ da db =>
+--     let s := σ.split hΔ;
+--     .let₂ s.splitIn (da.subst s.substRight) (db.subst ((s.substLeft.lift _).lift _))
+--   | .inl da => .inl (da.subst σ)
+--   | .inr db => .inr (db.subst σ)
+--   | .case hΔ da db dc =>
+--     let s := σ.split hΔ;
+--     .case s.splitIn (da.subst s.substRight) (db.subst (s.substLeft.lift _))
+--           (dc.subst (s.substLeft.lift _))
+--   | .abort da => .abort (da.subst σ)
+--   | .iter hΔ hei hc hd da db =>
+--     let s := σ.split hΔ;
+--     .iter s.splitIn hei (σ.split_copy_left hΔ) (σ.split_del_left hΔ)
+--                         (da.subst s.substRight) (db.subst (s.substLeft.lift _))
