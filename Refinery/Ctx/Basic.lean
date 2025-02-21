@@ -212,6 +212,15 @@ theorem Var?.PSSplit.used_of_left {u v w : Var? α ε} (σ : u.PSSplit v w) (h :
 theorem Var?.PSSplit.used_of_right {u v w : Var? α ε} (σ : u.PSSplit v w) (h : w.used) : u.used
   := by cases σ <;> first | cases h | assumption
 
+theorem Var?.PSSplit.erase_eq_left {u v w : Var? α ε} (h : u.PSSplit v w)
+  : u.erase = v.erase := by cases h <;> simp [*]
+
+theorem Var?.PSSplit.erase_eq_right {u v w : Var? α ε} (h : u.PSSplit v w)
+  : u.erase = w.erase := by cases h <;> simp [*]
+
+theorem Var?.PSSplit.erase_eq_both {u v w : Var? α ε} (h : u.PSSplit v w)
+  : v.erase = w.erase := by cases h <;> simp [*]
+
 def Var?.PSSplit.both (v : Var? α ε) [h : IsRel v] : PSSplit v v v := if hv : v.used then
     PSSplit.sboth hv.scopy
   else by
@@ -457,6 +466,191 @@ instance Ctx?.ety_aff_of_del {Γ : Ctx? α ε} [h : Γ.del] : IsAff (Ctx?.ety Γ
 def Ctx?.both (Γ : Ctx? α ε) [hΓ : Γ.copy] : Γ.PSSplit Γ Γ := (λ_ => match Γ with
   | .nil => .nil
   | .cons Γ v => .cons (have _ := copy.tail Γ v; Γ.both) (have _ := copy.head Γ v; .both v)) hΓ
+
+def Var?.PSSplit.comm {u v w : Var? α ε} : u.PSSplit v w → u.PSSplit w v
+  | .left _ => .right _
+  | .right _ => .left _
+  | .sboth h => .sboth h
+
+def Var?.PSSplit.v12_3_23 {u₁₂₃ u₁₂ u₁ u₂ u₃ : Var? α ε}
+  : u₁₂₃.PSSplit u₁₂ u₃ → u₁₂.PSSplit u₁ u₂ → Var? α ε
+  | .left _, .left _ => u₁₂₃.erase
+  | _, _ => u₁₂₃
+
+def Var?.PSSplit.s12_3_1_23 {u₁₂₃ u₁₂ u₁ u₂ u₃ : Var? α ε}
+  : (h12_3 : u₁₂₃.PSSplit u₁₂ u₃) → (h12 : u₁₂.PSSplit u₁ u₂) → u₁₂₃.PSSplit u₁ (h12_3.v12_3_23 h12)
+  | .left _, .left _ => .left _
+  | .left _, .right _ => .right _
+  | .left _, .sboth h => .sboth h
+  | .right _, .left _ => .right _
+  | .right _, .right _ => .right _
+  | .right _, .sboth _ => .right _
+  | .sboth h, .left _ => .sboth h
+  | .sboth _, .right _ => .right _
+  | .sboth h, .sboth _ => .sboth h
+
+def Var?.PSSplit.s12_3_23 {u₁₂₃ u₁₂ u₁ u₂ u₃ : Var? α ε}
+  : (h12_3 : u₁₂₃.PSSplit u₁₂ u₃) → (h12 : u₁₂.PSSplit u₁ u₂) → (h12_3.v12_3_23 h12).PSSplit u₂ u₃
+  | .left _, .left _ => .left _
+  | .left _, .right _ => .left _
+  | .left _, .sboth _ => .left _
+  | .right _, .left _ => .right _
+  | .right _, .right _ => .right _
+  | .right _, .sboth _ => .right _
+  | .sboth _, .left _ => .right _
+  | .sboth h, .right _ => .sboth h
+  | .sboth h, .sboth _ => .sboth h
+
+def Var?.PSSplit.v1_23_12 {u₁₂₃ u₂₃ u₁ u₂ u₃ : Var? α ε}
+  : u₁₂₃.PSSplit u₁ u₂₃ → u₂₃.PSSplit u₂ u₃ → Var? α ε
+  | .right _, .right _ => u₁₂₃.erase
+  | _, _ => u₁₂₃
+
+def Var?.PSSplit.s1_23_12_3 {u₁₂₃ u₂₃ u₁ u₂ u₃ : Var? α ε}
+  : (h12_3 : u₁₂₃.PSSplit u₁ u₂₃) → (h23 : u₂₃.PSSplit u₂ u₃) → u₁₂₃.PSSplit (h12_3.v1_23_12 h23) u₃
+  | .left _, .left _ => .left _
+  | .left _, .right _ => .left _
+  | .left _, .sboth _ => .left _
+  | .right _, .left _ => .left _
+  | .right _, .right _ => .right _
+  | .right _, .sboth h => .sboth h
+  | .sboth _, .left _ => .left _
+  | .sboth h, .right _ => .sboth h
+  | .sboth h, .sboth _ => .sboth h
+
+def Var?.PSSplit.s1_23_12 {u₁₂₃ u₂₃ u₁ u₂ u₃ : Var? α ε}
+  : (h12_3 : u₁₂₃.PSSplit u₁ u₂₃) → (h23 : u₂₃.PSSplit u₂ u₃) → (h12_3.v1_23_12 h23).PSSplit u₁ u₂
+  | .left _, .left _ => .left _
+  | .left _, .right _ => .left _
+  | .left _, .sboth h => .left _
+  | .right _, .left _ => .right _
+  | .right _, .right _ => .right _
+  | .right _, .sboth _ => .right _
+  | .sboth h, .left _ => .sboth h
+  | .sboth h, .right _ => .left _
+  | .sboth h, .sboth _ => .sboth h
+
+def Ctx?.PSSplit.comm {Γ Δ Ξ : Ctx? α ε} : Γ.PSSplit Δ Ξ → Γ.PSSplit Ξ Δ
+  | .nil => .nil
+  | .cons h hvw => .cons (PSSplit.comm h) hvw.comm
+
+def Ctx?.PSSplit.c1_23_12 {Γ₁₂₃ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α ε}
+  : Γ₁₂₃.PSSplit Γ₁ Γ₂₃ → Γ₂₃.PSSplit Γ₂ Γ₃ → Ctx? α ε
+  | .nil, .nil => .nil
+  | .cons h hvw, .cons h' hvw' => .cons (c1_23_12 h h') (Var?.PSSplit.v1_23_12 hvw hvw')
+
+def Ctx?.PSSplit.s1_23_12_3 {Γ₁₂₃ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α ε}
+  : (h12_3 : Γ₁₂₃.PSSplit Γ₁ Γ₂₃) → (h23 : Γ₂₃.PSSplit Γ₂ Γ₃)
+    → Γ₁₂₃.PSSplit (h12_3.c1_23_12 h23) Γ₃
+  | .nil, .nil => .nil
+  | .cons h hvw, .cons h' hvw' => .cons (s1_23_12_3 h h') (Var?.PSSplit.s1_23_12_3 hvw hvw')
+
+def Ctx?.PSSplit.s1_23_12 {Γ₁₂₃ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α ε}
+  : (h12_3 : Γ₁₂₃.PSSplit Γ₁ Γ₂₃) → (h23 : Γ₂₃.PSSplit Γ₂ Γ₃) → (h12_3.c1_23_12 h23).PSSplit Γ₁ Γ₂
+  | .nil, .nil => .nil
+  | .cons h hvw, .cons h' hvw' => .cons (s1_23_12 h h') (Var?.PSSplit.s1_23_12 hvw hvw')
+
+def Ctx?.PSSplit.c12_3_23 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α ε}
+  : Γ₁₂₃.PSSplit Γ₁₂ Γ₃ → Γ₁₂.PSSplit Γ₁ Γ₂ → Ctx? α ε
+  | .nil, .nil => .nil
+  | .cons h hvw, .cons h' hvw' => .cons (c12_3_23 h h') (Var?.PSSplit.v12_3_23 hvw hvw')
+
+def Ctx?.PSSplit.s12_3_1_23 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α ε}
+  : (h12_3 : Γ₁₂₃.PSSplit Γ₁₂ Γ₃) → (h12 : Γ₁₂.PSSplit Γ₁ Γ₂)
+    → Γ₁₂₃.PSSplit Γ₁ (h12_3.c12_3_23 h12)
+  | .nil, .nil => .nil
+  | .cons h hvw, .cons h' hvw' => .cons (s12_3_1_23 h h') (Var?.PSSplit.s12_3_1_23 hvw hvw')
+
+def Ctx?.PSSplit.s12_3_23 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α ε}
+  : (h12_3 : Γ₁₂₃.PSSplit Γ₁₂ Γ₃) → (h12 : Γ₁₂.PSSplit Γ₁ Γ₂) → (h12_3.c12_3_23 h12).PSSplit Γ₂ Γ₃
+  | .nil, .nil => .nil
+  | .cons h hvw, .cons h' hvw' => .cons (s12_3_23 h h') (Var?.PSSplit.s12_3_23 hvw hvw')
+
+theorem Ctx?.PSSplit.erase_eq_left {Γ Δ Ξ : Ctx? α ε} (h : Γ.PSSplit Δ Ξ)
+  : Γ.erase = Δ.erase := by induction h with
+  | nil => rfl
+  | cons h hvw I => simp [I, hvw.erase_eq_left]
+
+theorem Ctx?.PSSplit.erase_eq_right {Γ Δ Ξ : Ctx? α ε} (h : Γ.PSSplit Δ Ξ)
+  : Γ.erase = Ξ.erase := h.comm.erase_eq_left
+
+theorem Ctx?.PSSplit.erase_eq {Γ Δ Ξ : Ctx? α ε} (h : Γ.PSSplit Δ Ξ)
+  : Δ.erase = Ξ.erase := h.erase_eq_left.symm.trans h.erase_eq_right
+
+def Ctx?.PSSplit.cast {Γ Δ Ξ Γ' Δ' Ξ' : Ctx? α ε}
+  (h : Γ.PSSplit Δ Ξ) (hΓ : Γ = Γ') (hΔ : Δ = Δ') (hΞ : Ξ = Ξ')
+  : Γ'.PSSplit Δ' Ξ' := hΓ ▸ hΔ ▸ hΞ ▸ h
+
+abbrev Ctx?.PSSplit.cast_src {Γ Δ Ξ Γ' : Ctx? α ε}
+  (h : Γ.PSSplit Δ Ξ) (hΓ : Γ = Γ')
+  : Γ'.PSSplit Δ Ξ := h.cast hΓ rfl rfl
+
+abbrev Ctx?.PSSplit.cast_left {Γ Δ Ξ Δ' : Ctx? α ε}
+  (h : Γ.PSSplit Δ Ξ) (hΔ : Δ = Δ')
+  : Γ.PSSplit Δ' Ξ := h.cast rfl hΔ rfl
+
+abbrev Ctx?.PSSplit.cast_right {Γ Δ Ξ Ξ' : Ctx? α ε}
+  (h : Γ.PSSplit Δ Ξ) (hΞ : Ξ = Ξ')
+  : Γ.PSSplit Δ Ξ' := h.cast rfl rfl hΞ
+
+abbrev Ctx?.PSSplit.c12_3_13 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α ε}
+  (h12_3 : Γ₁₂₃.PSSplit Γ₁₂ Γ₃) (h12 : Γ₁₂.PSSplit Γ₁ Γ₂)
+  : Ctx? α ε := h12_3.comm.c1_23_12 h12
+
+abbrev Ctx?.PSSplit.s12_3_13_2 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α ε}
+  (h12_3 : Γ₁₂₃.PSSplit Γ₁₂ Γ₃) (h12 : Γ₁₂.PSSplit Γ₁ Γ₂)
+  : Γ₁₂₃.PSSplit (h12_3.c12_3_13 h12) Γ₂
+  := h12_3.comm.s1_23_12_3 h12
+
+abbrev Ctx?.PSSplit.s12_3_31 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α ε}
+  (h12_3 : Γ₁₂₃.PSSplit Γ₁₂ Γ₃) (h12 : Γ₁₂.PSSplit Γ₁ Γ₂)
+  : (h12_3.c12_3_13 h12).PSSplit Γ₃ Γ₁
+  := h12_3.comm.s1_23_12 h12
+
+abbrev Ctx?.PSSplit.s12_3_13 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α ε}
+  (h12_3 : Γ₁₂₃.PSSplit Γ₁₂ Γ₃) (h12 : Γ₁₂.PSSplit Γ₁ Γ₂)
+  : (h12_3.c12_3_13 h12).PSSplit Γ₁ Γ₃
+  := (h12_3.s12_3_31 h12).comm
+
+abbrev Ctx?.PSSplit.c12_34_123 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α ε}
+  (h12_34 : Γ₁₂₃₄.PSSplit Γ₁₂ Γ₃₄) (h34 : Γ₃₄.PSSplit Γ₃ Γ₄)
+  : Ctx? α ε := h12_34.c1_23_12 h34
+
+abbrev Ctx?.PSSplit.s12_34_123_4 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α ε}
+  (h12_34 : Γ₁₂₃₄.PSSplit Γ₁₂ Γ₃₄) (h34 : Γ₃₄.PSSplit Γ₃ Γ₄)
+  : Γ₁₂₃₄.PSSplit (h12_34.c12_34_123 h34) Γ₄ := h12_34.s1_23_12_3 h34
+
+abbrev Ctx?.PSSplit.s12_34_12_3 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α ε}
+  (h12_34 : Γ₁₂₃₄.PSSplit Γ₁₂ Γ₃₄) (h34 : Γ₃₄.PSSplit Γ₃ Γ₄)
+  : (h12_34.c12_34_123 h34).PSSplit Γ₁₂ Γ₃ := h12_34.s1_23_12 h34
+
+abbrev Ctx?.PSSplit.c12_34_13 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α ε}
+  (h12_34 : Γ₁₂₃₄.PSSplit Γ₁₂ Γ₃₄) (h12 : Γ₁₂.PSSplit Γ₁ Γ₂) (h34 : Γ₃₄.PSSplit Γ₃ Γ₄)
+  : Ctx? α ε := (h12_34.s12_34_12_3 h34).c12_3_13 h12
+
+abbrev Ctx?.PSSplit.s12_34_13 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α ε}
+  (h12_34 : Γ₁₂₃₄.PSSplit Γ₁₂ Γ₃₄) (h12 : Γ₁₂.PSSplit Γ₁ Γ₂) (h34 : Γ₃₄.PSSplit Γ₃ Γ₄)
+  : (h12_34.c12_34_13 h12 h34).PSSplit Γ₁ Γ₃ := (h12_34.s12_34_12_3 h34).s12_3_13 h12
+
+abbrev Ctx?.PSSplit.s12_34_13_2 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α ε}
+  (h12_34 : Γ₁₂₃₄.PSSplit Γ₁₂ Γ₃₄) (h12 : Γ₁₂.PSSplit Γ₁ Γ₂) (h34 : Γ₃₄.PSSplit Γ₃ Γ₄)
+  : (h12_34.c12_34_123 h34).PSSplit (h12_34.c12_34_13 h12 h34) Γ₂
+  := (h12_34.s12_34_12_3 h34).s12_3_13_2 h12
+
+abbrev Ctx?.PSSplit.c12_34_24 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α ε}
+  (h12_34 : Γ₁₂₃₄.PSSplit Γ₁₂ Γ₃₄) (h12 : Γ₁₂.PSSplit Γ₁ Γ₂) (h34 : Γ₃₄.PSSplit Γ₃ Γ₄)
+  : Ctx? α ε
+  := (h12_34.s12_34_123_4 h34).c12_3_23 (h12_34.s12_34_13_2 h12 h34)
+
+abbrev Ctx?.PSSplit.s12_34_13_24 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α ε}
+  (h12_34 : Γ₁₂₃₄.PSSplit Γ₁₂ Γ₃₄) (h12 : Γ₁₂.PSSplit Γ₁ Γ₂) (h34 : Γ₃₄.PSSplit Γ₃ Γ₄)
+  : Γ₁₂₃₄.PSSplit (h12_34.c12_34_13 h12 h34) (h12_34.c12_34_24 h12 h34)
+  := (h12_34.s12_34_123_4 h34).s12_3_1_23 (h12_34.s12_34_13_2 h12 h34)
+
+abbrev Ctx?.PSSplit.s12_34_24 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α ε}
+  (h12_34 : Γ₁₂₃₄.PSSplit Γ₁₂ Γ₃₄) (h12 : Γ₁₂.PSSplit Γ₁ Γ₂) (h34 : Γ₃₄.PSSplit Γ₃ Γ₄)
+  : (h12_34.c12_34_24 h12 h34).PSSplit Γ₂ Γ₄
+  := (h12_34.s12_34_123_4 h34).s12_3_23 (h12_34.s12_34_13_2 h12 h34)
 
 variable [PartialOrder ε]
 
