@@ -38,6 +38,6 @@ def Deriv.den {e : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
         ≫ ((!_ Γl.ety ▷ _ ≫ (λ_ _).hom) ⊕ₕ 𝟙 _))
 
 @[simp]
-theorem Deriv.den_mono {e e' : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
-  (he : e ≤ e') (D : Γ ⊢[e] a : A) : (D.mono he).den = D.den (C := C)
-  := by induction D <;> simp only [den, mono, *]; rfl
+theorem Deriv.den_withEff {e e' : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
+   (D : Γ ⊢[e] a : A) (ha : HasEff e' a) : (D.withEff ha).den = D.den (C := C)
+  := by induction D <;> simp only [den, withEff, *]; rfl
