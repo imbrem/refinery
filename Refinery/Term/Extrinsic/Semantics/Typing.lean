@@ -17,7 +17,7 @@ variable {φ : Type _} {α : outParam (Type _)} {ε : outParam (Type _)} [S : Si
 
 namespace Term
 
-def Deriv.den {e : ε} {Γ : Ctx? α ε} {A : Ty α} {a : Term φ (Ty α)}
+def Deriv.den {e : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
   : (Γ ⊢[e] a : A) → ((g⟦ Γ ⟧ : C) ⟶ t⟦ A ⟧)
   | .bv hv => hv.den
   | .op hf da => da.den ≫ hf.den
@@ -38,8 +38,6 @@ def Deriv.den {e : ε} {Γ : Ctx? α ε} {A : Ty α} {a : Term φ (Ty α)}
         ≫ ((!_ Γl.ety ▷ _ ≫ (λ_ _).hom) ⊕ₕ 𝟙 _))
 
 @[simp]
-theorem Deriv.den_mono {e e' : ε} {Γ : Ctx? α ε} {A : Ty α} {a : Term φ (Ty α)}
+theorem Deriv.den_mono {e e' : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
   (he : e ≤ e') (D : Γ ⊢[e] a : A) : (D.mono he).den = D.den (C := C)
-  := by induction D with
-  | bv => simp only [den, mono]; rw [Ctx?.At.den_eff]
-  | _ => simp only [den, mono, *] <;> rfl
+  := by induction D <;> simp only [den, mono, *]; rfl

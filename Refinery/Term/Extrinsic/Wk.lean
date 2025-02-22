@@ -7,7 +7,7 @@ namespace Term
 
 variable {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε]
 
-def Deriv.wkTerm {e : ε} {Γ Δ : Ctx? α ε} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)}
+def Deriv.wkTerm {e : ε} {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)}
   : (Δ ⊢[e] a : A) → Term φ (Ty α)
   | .bv (n := n) hv => .bv (ρ n)
   | .op (f := f) hf da => .op f (da.wkTerm ρ)
@@ -28,11 +28,11 @@ def Deriv.wkTerm {e : ε} {Γ Δ : Ctx? α ε} (ρ : Γ.Wk Δ) {A : Ty α} {a : 
     .iter (da.wkTerm (hΓ.rightWk ρ)) A B (db.wkTerm ((hΓ.leftWk ρ).scons _))
 
 @[simp]
-theorem Deriv.wkTerm_eq {e : ε} {Γ Δ : Ctx? α ε} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)}
+theorem Deriv.wkTerm_eq {e : ε} {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)}
   (D : Δ ⊢[e] a : A) : D.wkTerm ρ = a.ren ρ
   := by induction D generalizing Γ <;> simp [wkTerm, *]
 
-def Deriv.wkD {e : ε} {Γ Δ : Ctx? α ε} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)}
+def Deriv.wkD {e : ε} {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)}
   : (D : Δ ⊢[e] a : A) → (Γ ⊢[e] D.wkTerm ρ : A)
   | .bv hv => .bv (hv.wkIn ρ)
   | .op hf da => .op hf (da.wkD ρ)
@@ -54,7 +54,7 @@ def Deriv.wkD {e : ε} {Γ Δ : Ctx? α ε} (ρ : Γ.Wk Δ) {A : Ty α} {a : Ter
     .iter (hΓ.wk ρ) hei (hΓ.wkLeft_copy ρ) (hΓ.wkLeft_del ρ)
                         (da.wkD (hΓ.rightWk ρ)) (db.wkD ((hΓ.leftWk ρ).scons _))
 
-def Deriv.wk {e : ε} {Γ Δ : Ctx? α ε} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)}
+def Deriv.wk {e : ε} {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)}
   (D : Δ ⊢[e] a : A) : (Γ ⊢[e] a.ren ρ : A)
   := (D.wkD ρ).cast_term (D.wkTerm_eq ρ)
 
