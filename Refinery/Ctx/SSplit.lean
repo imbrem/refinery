@@ -372,15 +372,6 @@ abbrev Ctx?.SSplit.s12_34_24 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx
   : (h12_34.c12_34_24 h12 h34).SSplit Γ₂ Γ₄
   := (h12_34.s12_34_123_4 h34).s12_3_23 (h12_34.s12_34_13_2 h12 h34)
 
-def Var?.SSplit.toSplit {u v w : Var? α} (h : u.SSplit v w) : u.Split v w := match h with
-  | Var?.SSplit.left _ => Var?.Split.left (le_refl _)
-  | Var?.SSplit.right _ => Var?.Split.right (le_refl _)
-  | Var?.SSplit.sboth hu => Var?.Split.sboth hu (le_refl _) (le_refl _)
-
-def Ctx?.SSplit.toSplit {Γ Δ Ξ : Ctx? α} : Ctx?.SSplit Γ Δ Ξ → Ctx?.Split Γ Δ Ξ
-  | .nil => .nil
-  | .cons h hvw => .cons h.toSplit hvw.toSplit
-
 def Var?.SSplit.wk {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.SSplit v w) :
   u'.SSplit (σ.wkLeft u') (σ.wkRight u') := match u, σ with
   | ⟨A, (q : Quant)⟩, .left _ => .left _

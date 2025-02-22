@@ -309,7 +309,7 @@ theorem Var?.scopy.anti {v w : Var? α} (h : v ≤ w) (hw : w.scopy) : v.scopy w
 theorem Var?.used.scopy_anti {v w : Var? α} (h : v ≤ w) (hw' : w.used) [hw : w.copy] : v.scopy
   := by rw [copy_iff] at *; exact (hw hw').anti h
 
-theorem Var?.copy.anti {v w : Var? α} (h : v ≤ w) [hw : IsRel w] (hw' : w.used) : v.copy
+theorem Var?.copy.anti {v w : Var? α} (h : v ≤ w) [hw : w.copy] (hw' : w.used) : v.copy
   := (hw'.scopy_anti h).copy
 
 theorem Var?.used.quant_anti {v w : Var? α} (h : v ≤ w) (hw : w.used) : quant w ≤ quant v := by
