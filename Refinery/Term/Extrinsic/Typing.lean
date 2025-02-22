@@ -46,6 +46,7 @@ notation Γ "⊢[" e "]" a ":" A => Deriv e Γ A a
 theorem Deriv.has_eff {e : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢[e] a : A)
   : HasEff e a := by induction D <;> simp [*]; apply Signature.IsFn.eff; assumption
 
+@[simp]
 def Deriv.withEff {e e' : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (h : HasEff e' a)
   : (Γ ⊢[e] a : A) → (Γ ⊢[e'] a : A)
   | .bv hv => .bv hv
@@ -61,6 +62,10 @@ def Deriv.withEff {e e' : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (
   | .abort da => .abort (withEff h.abort_arg da)
   | .iter dΓ _ hc hd da db =>
     .iter dΓ h.iter_eff hc hd (withEff h.iter_init da) (withEff h.iter_body db)
+
+@[simp]
+theorem Deriv.withEff_id {e : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢[e] a : A)
+  : D.withEff D.has_eff = D := by induction D <;> simp [*]
 
 abbrev Deriv.mono {e e' : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (he : e ≤ e')
   (D : Γ ⊢[e] a : A) : (Γ ⊢[e'] a : A) := D.withEff (D.has_eff.mono he)
