@@ -45,6 +45,11 @@ theorem Deriv?.copy {Γ : Ctx? α ε} {v : Var? α ε} {a : Term φ (Ty α)}
       exact hc.q
   | zero => cases hv
 
+theorem Deriv?.del_of_unused {Γ : Ctx? α ε} {v : Var? α ε} {a : Term φ (Ty α)}
+  (D : Γ ⊢? a : v) (hv : v.unused) : Γ.del := by cases D with
+  | valid D q hΓ => cases hv; exact ⟨hΓ⟩
+  | zero hΓ _ _ => exact hΓ
+
 inductive SubstDS (φ) {α ε} [S : Signature φ α ε] : Ctx? α ε → Ctx? α ε → Type _
   | nil {Γ} (hΓ : Γ.del) : SubstDS φ Γ .nil
   | cons {Γ Γl Γr Δ} {v} {a : Term φ _} (hΓ : Γ.PSSplit Γl Γr)
@@ -95,7 +100,6 @@ def SubstSplit.erase_right (Γ : Ctx? α ε) [hΓ : Γ.del] : SubstSplit φ Γ .
 def SubstSplit.erase_left (Γ : Ctx? α ε) [hΓ : Γ.del] : SubstSplit φ Γ .nil .nil .nil
   := ⟨Γ.erase, Γ, Γ.erase_left, .nil inferInstance, .nil hΓ⟩
 
---TODO: make sure copyability is left-biased here...
 def SubstDS.split {Γ Δl Δr : Ctx? α ε}
   : SubstDS φ Γ Δ → Δ.PSSplit Δl Δr → SubstSplit φ Γ Δ Δl Δr
   | .nil hΓ, .nil => SubstSplit.erase_right _
@@ -103,13 +107,22 @@ def SubstDS.split {Γ Δl Δr : Ctx? α ε}
     let s := σ.split hΔ
     match hlr with
     | .left _ =>
-      let Ξ := hΓ.c12_3_23 s.splitIn.comm
-      let s1_23 : Γ.PSSplit s.inRight Ξ := hΓ.s12_3_1_23 s.splitIn.comm
-      let s23 : Ξ.PSSplit s.inLeft Γr := hΓ.s12_3_23 s.splitIn.comm
-      ⟨Ξ, s.inRight,
-        s1_23.comm,
-        s.substLeft.cons s23 da,
-        s.substRight.cons s.inRight.erase_right (.zero inferInstance a _ _)⟩
+      if hv : v.used then
+        let Ξ := hΓ.c12_3_23 s.splitIn.comm
+        let s1_23 : Γ.PSSplit s.inRight Ξ := hΓ.s12_3_1_23 s.splitIn.comm
+        let s23 : Ξ.PSSplit s.inLeft Γr := hΓ.s12_3_23 s.splitIn.comm
+        ⟨Ξ, s.inRight,
+          s1_23.comm,
+          s.substLeft.cons s23 da,
+          s.substRight.cons s.inRight.erase_right (.zero inferInstance a _ _)⟩
+      else
+        let Ξ := hΓ.c12_3_23 s.splitIn
+        let s1_23 : Γ.PSSplit s.inLeft Ξ := hΓ.s12_3_1_23 s.splitIn
+        let s23 : Ξ.PSSplit s.inRight Γr := hΓ.s12_3_23 s.splitIn
+        ⟨s.inLeft, Ξ,
+          s1_23,
+          s.substLeft.cons s.inLeft.erase_right (.unused inferInstance a (Var?.unused_iff.mpr hv)),
+          s.substRight.cons s23 (.unused (da.del_of_unused (Var?.unused_iff.mpr hv)) a rfl)⟩
     | .right _ =>
       let Ξ := hΓ.c12_3_23 s.splitIn
       let s1_23 : Γ.PSSplit s.inLeft Ξ := hΓ.s12_3_1_23 s.splitIn
@@ -126,13 +139,12 @@ def SubstDS.split {Γ Δl Δr : Ctx? α ε}
           s.substLeft.cons (hΓ.s12_34_13 s.splitIn sr) da,
           s.substRight.cons (hΓ.s12_34_24 s.splitIn sr) da⟩
       else
-        have hv := ((Var?.unused_iff _).mpr hv);
         let Ξ := hΓ.c12_3_23 s.splitIn
         let s1_23 : Γ.PSSplit s.inLeft Ξ := hΓ.s12_3_1_23 s.splitIn
         let s23 : Ξ.PSSplit s.inRight Γr := hΓ.s12_3_23 s.splitIn
         ⟨s.inLeft, Ξ,
           s1_23,
-          s.substLeft.cons s.inLeft.erase_right (.unused inferInstance a hv),
+          s.substLeft.cons s.inLeft.erase_right (.unused inferInstance a (Var?.unused_iff.mpr hv)),
           s.substRight.cons s23 da⟩
 
 -- instance SubstDS.split_copy_left {Γ Δl Δr : Ctx? α ε} (σ : SubstDS φ Γ Δ) (hΔ : Δ.PSSplit Δl Δr)

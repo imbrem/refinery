@@ -97,9 +97,9 @@ theorem Var?.unused.eq_erase {v : Var? α ε} (h : v.unused) : v.erase = v
 
 abbrev Var?.used (v : Var? α ε) : Prop := 1 ≤ v.q
 
-theorem Var?.used_iff (v : Var? α ε) : v.used ↔ ¬v.unused := EQuant.one_le_iff_ne_zero _
+theorem Var?.used_iff {v : Var? α ε} : v.used ↔ ¬v.unused := EQuant.one_le_iff_ne_zero _
 
-theorem Var?.unused_iff (v : Var? α ε) : v.unused ↔ ¬v.used := by simp [used_iff]
+theorem Var?.unused_iff {v : Var? α ε} : v.unused ↔ ¬v.used := by simp [used_iff]
 
 variable [HasQuant α]
 
@@ -181,7 +181,7 @@ theorem Var?.scopy.copy {v : Var? α ε} (h : v.scopy) : v.copy := by
   | rest => simp [IsRel.is_rel_iff, quant]; constructor; exact h.q; exact h.ty.copy_le_quant
 
 theorem Var?.copy_iff (v : Var? α ε) : v.copy ↔ (v.used -> v.scopy)
-  := ⟨λ_ u => u.scopy, λh => if u : v.unused then u.copy else (h ((used_iff _).mpr u)).copy⟩
+  := ⟨λ_ u => u.scopy, λh => if u : v.unused then u.copy else (h (used_iff.mpr u)).copy⟩
 
 instance Var?.del.instTopQuant (A : Ty α) [IsAff A] (e : ε) : (⟨A, ⊤, e⟩ : Var? α ε).del
   := by simp [del_iff, *]
@@ -343,11 +343,11 @@ def Var?.PSSplit.choose {u v w : Var? α ε} (h : Nonempty (u.PSSplit v w)) : u.
         have hc := let ⟨h⟩ := h; h.scopy hv hw;
         (Var?.PSSplit.sboth hc).cast rfl ev ew
       else
-        have ew := Eq.symm <| let ⟨h⟩ := h; h.right_eq_erase ((Var?.unused_iff _).mpr hw);
+        have ew := Eq.symm <| let ⟨h⟩ := h; h.right_eq_erase (unused_iff.mpr hw);
         (Var?.PSSplit.left u).cast rfl ev ew
     else
-      have ev := Eq.symm <| let ⟨h⟩ := h; h.left_eq_erase ((Var?.unused_iff _).mpr hv);
-      have ew := Eq.symm <| let ⟨h⟩ := h; h.right_eq_of_left ((Var?.unused_iff _).mpr hv);
+      have ev := Eq.symm <| let ⟨h⟩ := h; h.left_eq_erase (Var?.unused_iff.mpr hv);
+      have ew := Eq.symm <| let ⟨h⟩ := h; h.right_eq_of_left (Var?.unused_iff.mpr hv);
       (Var?.PSSplit.right u).cast rfl ev ew
 
 inductive Ctx?.PSSplit : Ctx? α ε → Ctx? α ε → Ctx? α ε → Type _ where
@@ -678,7 +678,7 @@ theorem Var?.del.anti {v w : Var? α ε} (h : v ≤ w) [hw : w.del] : v.del := o
   if hw' : w.used then
     by rw [del_iff] at *; exact ⟨hw.1.trans h.q, λ_ => h.ty ▸ hw.2 hw'⟩
   else
-    h.unused_del ((unused_iff w).mpr hw')
+    h.unused_del (unused_iff.mpr hw')
 
 theorem Var?.scopy.anti {v w : Var? α ε} (h : v ≤ w) (hw : w.scopy) : v.scopy where
   q := hw.q.trans h.q
