@@ -32,27 +32,31 @@ theorem Deriv.wkTerm_eq {e : ε} {Γ Δ : Ctx? α ε} (ρ : Γ.Wk Δ) {A : Ty α
   (D : Δ ⊢[e] a : A) : D.wkTerm ρ = a.ren ρ
   := by induction D generalizing Γ <;> simp [wkTerm, *]
 
-def Deriv.wk {e : ε} {Γ Δ : Ctx? α ε} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)}
+def Deriv.wkD {e : ε} {Γ Δ : Ctx? α ε} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)}
   : (D : Δ ⊢[e] a : A) → (Γ ⊢[e] D.wkTerm ρ : A)
   | .bv hv => .bv (hv.wkIn ρ)
-  | .op hf da => .op hf (da.wk ρ)
+  | .op hf da => .op hf (da.wkD ρ)
   | .let₁ (A := A) (B := B) hΓ da db =>
-    .let₁ (A := A) (B := B) (hΓ.wk ρ) (da.wk (hΓ.rightWk ρ)) (db.wk ((hΓ.leftWk ρ).scons _))
+    .let₁ (A := A) (B := B) (hΓ.wk ρ) (da.wkD (hΓ.rightWk ρ)) (db.wkD ((hΓ.leftWk ρ).scons _))
   | .unit hv => .unit (hv.wk ρ)
   | .pair hΓ da db =>
-    .pair (hΓ.wk ρ) (da.wk (hΓ.leftWk ρ)) (db.wk (hΓ.rightWk ρ))
+    .pair (hΓ.wk ρ) (da.wkD (hΓ.leftWk ρ)) (db.wkD (hΓ.rightWk ρ))
   | .let₂ (A := A) (B := B) hΓ da db =>
-    .let₂ (A := A) (B := B) (hΓ.wk ρ) (da.wk (hΓ.rightWk ρ))
-      (db.wk (((hΓ.leftWk ρ).scons _).scons _))
-  | .inl (A := A) (B := B) da => .inl (da.wk ρ)
-  | .inr (A := A) (B := B) db => .inr (db.wk ρ)
+    .let₂ (A := A) (B := B) (hΓ.wk ρ) (da.wkD (hΓ.rightWk ρ))
+      (db.wkD (((hΓ.leftWk ρ).scons _).scons _))
+  | .inl (A := A) (B := B) da => .inl (da.wkD ρ)
+  | .inr (A := A) (B := B) db => .inr (db.wkD ρ)
   | .case (A := A) (B := B) hΓ da db dc =>
-    .case (hΓ.wk ρ) (da.wk (hΓ.rightWk ρ)) (db.wk ((hΓ.leftWk ρ).scons _))
-          (dc.wk ((hΓ.leftWk ρ).scons _))
-  | .abort (A := A) da => .abort (da.wk ρ)
+    .case (hΓ.wk ρ) (da.wkD (hΓ.rightWk ρ)) (db.wkD ((hΓ.leftWk ρ).scons _))
+          (dc.wkD ((hΓ.leftWk ρ).scons _))
+  | .abort (A := A) da => .abort (da.wkD ρ)
   | .iter (A := A) (B := B) hΓ hei _ _ da db =>
     .iter (hΓ.wk ρ) hei (hΓ.wkLeft_copy ρ) (hΓ.wkLeft_del ρ)
-                        (da.wk (hΓ.rightWk ρ)) (db.wk ((hΓ.leftWk ρ).scons _))
+                        (da.wkD (hΓ.rightWk ρ)) (db.wkD ((hΓ.leftWk ρ).scons _))
+
+def Deriv.wk {e : ε} {Γ Δ : Ctx? α ε} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)}
+  (D : Δ ⊢[e] a : A) : (Γ ⊢[e] a.ren ρ : A)
+  := (D.wkD ρ).cast_term (D.wkTerm_eq ρ)
 
 end Term
 

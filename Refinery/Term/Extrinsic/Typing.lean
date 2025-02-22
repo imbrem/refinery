@@ -1,4 +1,5 @@
 import Refinery.Ctx.Basic
+import Refinery.Ctx.SSplit
 import Refinery.Signature
 import Refinery.Term.Syntax
 
@@ -16,25 +17,25 @@ inductive Deriv : ε → Ctx? α ε → Ty α → Term φ (Ty α) → Type _
   | bv {Γ} : Γ.At ⟨A, 1, e⟩ n → Deriv e Γ A (.bv n)
   | op {Γ e A B f a} : S.IsFn f e A B → Deriv e Γ A a → Deriv e Γ B (.op f a)
   | let₁ {Γ Γl Γr e A B a b} :
-    Γ.PSSplit Γl Γr →
+    Γ.SSplit Γl Γr →
     Deriv e Γr A a → Deriv e (Γl.cons ⟨A, ⊤, ⊥⟩) B b → Deriv e Γ B (.let₁ a A b)
   | unit {Γ} : Γ.del → Deriv e Γ .unit .unit
   | pair {Γ Γl Γr e A B a b} :
-    Γ.PSSplit Γl Γr →
+    Γ.SSplit Γl Γr →
     Deriv e Γl A a → Deriv e Γr B b → Deriv e Γ (.tensor A B) (.pair a b)
   | let₂ {Γ Γl Γr e A B C a b} :
-    Γ.PSSplit Γl Γr →
+    Γ.SSplit Γl Γr →
     Deriv e Γr (.tensor A B) a → Deriv e ((Γl.cons ⟨A, ⊤, ⊥⟩).cons ⟨B, ⊤, ⊥⟩) C b
       → Deriv e Γ C (.let₂ a A B b)
   | inl {Γ e A B a} : Deriv e Γ A a → Deriv e Γ (.coprod A B) (.inl A B a)
   | inr {Γ e A B b} : Deriv e Γ B b → Deriv e Γ (.coprod A B) (.inr A B b)
   | case {Γ Γl Γr e A B C a b c} :
-    Γ.PSSplit Γl Γr →
+    Γ.SSplit Γl Γr →
     Deriv e Γr (.coprod A B) a → Deriv e (Γl.cons ⟨A, ⊤, ⊥⟩) C b → Deriv e (Γl.cons ⟨B, ⊤, ⊥⟩) C c
       → Deriv e Γ C (.case a A B b c)
   | abort {Γ e A a} : Deriv e Γ .empty a → Deriv e Γ A (.abort A a)
   | iter {Γ Γl Γr e A B a b} :
-    Γ.PSSplit Γl Γr →
+    Γ.SSplit Γl Γr →
     e ∈ S.iterative →
     Γl.copy → Γl.del →
     Deriv e Γr A a → Deriv e (Γl.cons ⟨A, ⊤, ⊥⟩) (.coprod B A) b → Deriv e Γ B (.iter a A B b)
@@ -122,7 +123,7 @@ def Deriv.let₁_splitRight {e : ε} {Γ : Ctx? α ε} {A B : Ty α} {a b : Term
   := match D with | .let₁ (Γr := Γr) .. => Γr
 
 def Deriv.let₁_split {e : ε} {Γ : Ctx? α ε} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.let₁ a A b) : B) : Γ.PSSplit (D.let₁_splitLeft) (D.let₁_splitRight)
+  (D : Γ ⊢[e] (.let₁ a A b) : B) : Γ.SSplit (D.let₁_splitLeft) (D.let₁_splitRight)
   := match D with | .let₁ dΓ _ _ => dΓ
 
 def Deriv.let₁_bind {e : ε} {Γ : Ctx? α ε} {A B : Ty α} {a b : Term φ (Ty α)}
@@ -148,7 +149,7 @@ def Deriv.pair_splitRight {e : ε} {Γ : Ctx? α ε} {A B : Ty α} {a b : Term �
   := match D with | .pair (Γr := Γr) .. => Γr
 
 def Deriv.pair_split {e : ε} {Γ : Ctx? α ε} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.pair a b) : .tensor A B) : Γ.PSSplit (D.pair_splitLeft) (D.pair_splitRight)
+  (D : Γ ⊢[e] (.pair a b) : .tensor A B) : Γ.SSplit (D.pair_splitLeft) (D.pair_splitRight)
   := match D with | .pair dΓ _ _ => dΓ
 
 def Deriv.pair_left {e : ε} {Γ : Ctx? α ε} {A B : Ty α} {a b : Term φ (Ty α)}
@@ -168,7 +169,7 @@ def Deriv.let₂_splitRight {e : ε} {Γ : Ctx? α ε} {A B C : Ty α} {a b : Te
   := match D with | .let₂ (Γr := Γr) .. => Γr
 
 def Deriv.let₂_split {e : ε} {Γ : Ctx? α ε} {A B C : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.let₂ a A B b) : C) : Γ.PSSplit (D.let₂_splitLeft) (D.let₂_splitRight)
+  (D : Γ ⊢[e] (.let₂ a A B b) : C) : Γ.SSplit (D.let₂_splitLeft) (D.let₂_splitRight)
   := match D with | .let₂ dΓ _ _ => dΓ
 
 def Deriv.let₂_bind {e : ε} {Γ : Ctx? α ε} {A B C : Ty α} {a b : Term φ (Ty α)}
@@ -220,7 +221,7 @@ def Deriv.iter_splitRight {e : ε} {Γ : Ctx? α ε} {A B : Ty α} {a b : Term �
   := match D with | .iter (Γr := Γr) .. => Γr
 
 def Deriv.iter_split {e : ε} {Γ : Ctx? α ε} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.iter a A B b) : B) : Γ.PSSplit (D.iter_splitLeft) (D.iter_splitRight)
+  (D : Γ ⊢[e] (.iter a A B b) : B) : Γ.SSplit (D.iter_splitLeft) (D.iter_splitRight)
   := match D with | .iter dΓ _ _ _ _ _ => dΓ
 
 theorem Deriv.iter_eff {e : ε} {Γ : Ctx? α ε} {A B : Ty α} {a b : Term φ (Ty α)}

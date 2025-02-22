@@ -1,5 +1,5 @@
 import Refinery.Ctx.Basic
-
+import Refinery.Ctx.PSSplit
 namespace Refinery
 
 def Var?.add (v w : Var? α ε) : Var? α ε := ⟨v.ty, v.q + w.q, v.eff⟩

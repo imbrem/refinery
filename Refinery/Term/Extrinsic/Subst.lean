@@ -1,5 +1,5 @@
 import Refinery.Term.Extrinsic.Typing
-import Refinery.Ctx.Add
+import Refinery.Term.Extrinsic.Wk
 
 namespace Refinery
 
@@ -19,13 +19,13 @@ notation Γ "⊢?" a ":" v => Deriv? Γ v a
 abbrev Deriv?.erase {Γ : Ctx? α ε} {v : Var? α ε} {a : Term φ (Ty α)} (_D : Γ ⊢? a : v)
   : (Γ.erase ⊢? a : v.erase) := .zero inferInstance _ _ _
 
-def Deriv?.splitLeft {Γ : Ctx? α ε} {u v w : Var? α ε} {a : Term φ (Ty α)}
-  : (h : u.PSSplit v w) → (Γ ⊢? a : u) → (h.leftCtx Γ ⊢? a : v)
+def Deriv?.ssplitLeft {Γ : Ctx? α ε} {u v w : Var? α ε} {a : Term φ (Ty α)}
+  : (h : u.SSplit v w) → (Γ ⊢? a : u) → (h.leftCtx Γ ⊢? a : v)
   | .left _, D => D | .sboth _, D => D
   | .right _, D => D.erase
 
-def Deriv?.splitRight {Γ : Ctx? α ε} {u v w : Var? α ε} {a : Term φ (Ty α)}
-  : (h : u.PSSplit v w) → (Γ ⊢? a : u) → (h.rightCtx Γ ⊢? a : w)
+def Deriv?.ssplitRight {Γ : Ctx? α ε} {u v w : Var? α ε} {a : Term φ (Ty α)}
+  : (h : u.SSplit v w) → (Γ ⊢? a : u) → (h.rightCtx Γ ⊢? a : w)
   | .left _, D => D.erase | .sboth _, D => D
   | .right _, D => D
 
@@ -50,9 +50,14 @@ theorem Deriv?.del_of_unused {Γ : Ctx? α ε} {v : Var? α ε} {a : Term φ (Ty
   | valid D q hΓ => cases hv; exact ⟨hΓ⟩
   | zero hΓ _ _ => exact hΓ
 
+def Deriv?.wk {Γ Δ : Ctx? α ε} (ρ : Γ.Wk Δ) {v : Var? α ε} {a : Term φ (Ty α)}
+  (hΓΔ : quant Δ ≤ quant Γ) : (D : Δ ⊢? a : v) → (Γ ⊢? a.ren ρ : v)
+  | .valid D q hΔ => .valid (D.wk ρ) q (le_trans hΔ (EQuant.coe_le_coe.mpr hΓΔ))
+  | .zero hΓ a A e => .zero (hΓ.wk ρ) (a.ren ρ) A e
+
 inductive SubstDS (φ) {α ε} [S : Signature φ α ε] : Ctx? α ε → Ctx? α ε → Type _
   | nil {Γ} (hΓ : Γ.del) : SubstDS φ Γ .nil
-  | cons {Γ Γl Γr Δ} {v} {a : Term φ _} (hΓ : Γ.PSSplit Γl Γr)
+  | cons {Γ Γl Γr Δ} {v} {a : Term φ _} (hΓ : Γ.SSplit Γl Γr)
     (σ : SubstDS φ Γl Δ) (da : Γr ⊢? a : v) : SubstDS φ Γ (Δ.cons v)
 
 def SubstDS.toSubst {Γ Δ} : SubstDS φ Γ Δ → Subst φ (Ty α)
@@ -71,7 +76,7 @@ def SubstDS.headCtx {Γ Δ} : SubstDS φ Γ Δ → Ctx? α ε
   | .nil _ => Γ.erase
   | .cons (Γr := Γr) .. => Γr
 
-def SubstDS.headSplit {Γ Δ} : (σ : SubstDS φ Γ Δ) → Γ.PSSplit (σ.tailCtx) (σ.headCtx)
+def SubstDS.headSplit {Γ Δ} : (σ : SubstDS φ Γ Δ) → Γ.SSplit (σ.tailCtx) (σ.headCtx)
   | .nil _ => Γ.erase_right
   | .cons hΓ .. => hΓ
 
@@ -87,46 +92,51 @@ def SubstDS.tail {Γ Δ} : (σ : SubstDS φ Γ Δ) → SubstDS φ σ.tailCtx Δ.
   | .nil hΓ => .nil hΓ
   | .cons _ σ _ => σ
 
-structure SubstSplit (φ) {α ε} [S : Signature φ α ε] (inCtx outCtx outLeft outRight : Ctx? α ε)
+def SubstDS.wkIn {Γ' Γ Δ} (ρ : Γ'.Wk Γ) : SubstDS φ Γ Δ → SubstDS φ Γ' Δ
+  | .nil hΓ => .nil (hΓ.wk ρ)
+  | .cons hΓ σ da =>
+    .cons (hΓ.wk' ρ) (σ.wkIn (hΓ.leftWk' ρ)) (da.wk (hΓ.rightWk' ρ) (hΓ.wkRight_quant' ρ))
+
+structure SubstSSplit (φ) {α ε} [S : Signature φ α ε] (inCtx outCtx outLeft outRight : Ctx? α ε)
   where
   (inLeft inRight : Ctx? α ε)
-  (splitIn : inCtx.PSSplit inLeft inRight)
+  (ssplitIn : inCtx.SSplit inLeft inRight)
   (substLeft : SubstDS φ inLeft outLeft)
   (substRight : SubstDS φ inRight outRight)
 
-def SubstSplit.erase_right (Γ : Ctx? α ε) [hΓ : Γ.del] : SubstSplit φ Γ .nil .nil .nil
+def SubstSSplit.erase_right (Γ : Ctx? α ε) [hΓ : Γ.del] : SubstSSplit φ Γ .nil .nil .nil
   := ⟨Γ, Γ.erase, Γ.erase_right, .nil hΓ, .nil inferInstance⟩
 
-def SubstSplit.erase_left (Γ : Ctx? α ε) [hΓ : Γ.del] : SubstSplit φ Γ .nil .nil .nil
+def SubstSSplit.erase_left (Γ : Ctx? α ε) [hΓ : Γ.del] : SubstSSplit φ Γ .nil .nil .nil
   := ⟨Γ.erase, Γ, Γ.erase_left, .nil inferInstance, .nil hΓ⟩
 
-def SubstDS.split {Γ Δl Δr : Ctx? α ε}
-  : SubstDS φ Γ Δ → Δ.PSSplit Δl Δr → SubstSplit φ Γ Δ Δl Δr
-  | .nil hΓ, .nil => SubstSplit.erase_right _
+def SubstDS.ssplit {Γ Δl Δr : Ctx? α ε}
+  : SubstDS φ Γ Δ → Δ.SSplit Δl Δr → SubstSSplit φ Γ Δ Δl Δr
+  | .nil hΓ, .nil => SubstSSplit.erase_right _
   | .cons (Γr := Γr) (v := v) (a := a) hΓ σ da, .cons hΔ hlr =>
-    let s := σ.split hΔ
+    let s := σ.ssplit hΔ
     match hlr with
     | .left _ =>
       if hv : v.used then
-        let Ξ := hΓ.c12_3_23 s.splitIn.comm
-        let s1_23 : Γ.PSSplit s.inRight Ξ := hΓ.s12_3_1_23 s.splitIn.comm
-        let s23 : Ξ.PSSplit s.inLeft Γr := hΓ.s12_3_23 s.splitIn.comm
+        let Ξ := hΓ.c12_3_23 s.ssplitIn.comm
+        let s1_23 : Γ.SSplit s.inRight Ξ := hΓ.s12_3_1_23 s.ssplitIn.comm
+        let s23 : Ξ.SSplit s.inLeft Γr := hΓ.s12_3_23 s.ssplitIn.comm
         ⟨Ξ, s.inRight,
           s1_23.comm,
           s.substLeft.cons s23 da,
           s.substRight.cons s.inRight.erase_right (.zero inferInstance a _ _)⟩
       else
-        let Ξ := hΓ.c12_3_23 s.splitIn
-        let s1_23 : Γ.PSSplit s.inLeft Ξ := hΓ.s12_3_1_23 s.splitIn
-        let s23 : Ξ.PSSplit s.inRight Γr := hΓ.s12_3_23 s.splitIn
+        let Ξ := hΓ.c12_3_23 s.ssplitIn
+        let s1_23 : Γ.SSplit s.inLeft Ξ := hΓ.s12_3_1_23 s.ssplitIn
+        let s23 : Ξ.SSplit s.inRight Γr := hΓ.s12_3_23 s.ssplitIn
         ⟨s.inLeft, Ξ,
           s1_23,
           s.substLeft.cons s.inLeft.erase_right (.unused inferInstance a (Var?.unused_iff.mpr hv)),
           s.substRight.cons s23 (.unused (da.del_of_unused (Var?.unused_iff.mpr hv)) a rfl)⟩
     | .right _ =>
-      let Ξ := hΓ.c12_3_23 s.splitIn
-      let s1_23 : Γ.PSSplit s.inLeft Ξ := hΓ.s12_3_1_23 s.splitIn
-      let s23 : Ξ.PSSplit s.inRight Γr := hΓ.s12_3_23 s.splitIn
+      let Ξ := hΓ.c12_3_23 s.ssplitIn
+      let s1_23 : Γ.SSplit s.inLeft Ξ := hΓ.s12_3_1_23 s.ssplitIn
+      let s23 : Ξ.SSplit s.inRight Γr := hΓ.s12_3_23 s.ssplitIn
       ⟨s.inLeft, Ξ,
         s1_23,
         s.substLeft.cons s.inLeft.erase_right (.zero inferInstance a _ _),
@@ -134,25 +144,40 @@ def SubstDS.split {Γ Δl Δr : Ctx? α ε}
     | .sboth h =>
       if hv : v.used then
         have sr := Γr.both (hΓ := da.copy hv h.copy);
-        ⟨hΓ.c12_34_13 s.splitIn sr, hΓ.c12_34_24 s.splitIn sr,
-          hΓ.s12_34_13_24 s.splitIn sr,
-          s.substLeft.cons (hΓ.s12_34_13 s.splitIn sr) da,
-          s.substRight.cons (hΓ.s12_34_24 s.splitIn sr) da⟩
+        ⟨hΓ.c12_34_13 s.ssplitIn sr, hΓ.c12_34_24 s.ssplitIn sr,
+          hΓ.s12_34_13_24 s.ssplitIn sr,
+          s.substLeft.cons (hΓ.s12_34_13 s.ssplitIn sr) da,
+          s.substRight.cons (hΓ.s12_34_24 s.ssplitIn sr) da⟩
       else
-        let Ξ := hΓ.c12_3_23 s.splitIn
-        let s1_23 : Γ.PSSplit s.inLeft Ξ := hΓ.s12_3_1_23 s.splitIn
-        let s23 : Ξ.PSSplit s.inRight Γr := hΓ.s12_3_23 s.splitIn
+        let Ξ := hΓ.c12_3_23 s.ssplitIn
+        let s1_23 : Γ.SSplit s.inLeft Ξ := hΓ.s12_3_1_23 s.ssplitIn
+        let s23 : Ξ.SSplit s.inRight Γr := hΓ.s12_3_23 s.ssplitIn
         ⟨s.inLeft, Ξ,
           s1_23,
           s.substLeft.cons s.inLeft.erase_right (.unused inferInstance a (Var?.unused_iff.mpr hv)),
           s.substRight.cons s23 da⟩
 
--- instance SubstDS.split_copy_left {Γ Δl Δr : Ctx? α ε} (σ : SubstDS φ Γ Δ) (hΔ : Δ.PSSplit Δl Δr)
---   [hl : Δl.copy] : (σ.split hΔ).inLeft.copy
+abbrev SubstDS.inLeft {Γ Δl Δr : Ctx? α ε} (σ : SubstDS φ Γ Δ) (hΔ : Δ.SSplit Δl Δr) : Ctx? α ε
+  := (σ.ssplit hΔ).inLeft
+
+abbrev SubstDS.inRight {Γ Δl Δr : Ctx? α ε} (σ : SubstDS φ Γ Δ) (hΔ : Δ.SSplit Δl Δr) : Ctx? α ε
+  := (σ.ssplit hΔ).inRight
+
+abbrev SubstDS.ssplitIn {Γ Δl Δr : Ctx? α ε} (σ : SubstDS φ Γ Δ) (hΔ : Δ.SSplit Δl Δr)
+  : Γ.SSplit (σ.inLeft hΔ) (σ.inRight hΔ) := (σ.ssplit hΔ).ssplitIn
+
+abbrev SubstDS.substLeft {Γ Δl Δr : Ctx? α ε} (σ : SubstDS φ Γ Δ) (hΔ : Δ.SSplit Δl Δr)
+  : SubstDS φ (σ.inLeft hΔ) Δl := (σ.ssplit hΔ).substLeft
+
+abbrev SubstDS.substRight {Γ Δl Δr : Ctx? α ε} (σ : SubstDS φ Γ Δ) (hΔ : Δ.SSplit Δl Δr)
+  : SubstDS φ (σ.inRight hΔ) Δr := (σ.ssplit hΔ).substRight
+
+-- instance SubstDS.split_copy_left {Γ Δl Δr : Ctx? α ε} (σ : SubstDS φ Γ Δ) (hΔ : Δ.SSplit Δl Δr)
+--   [hl : Δl.copy] : (σ.inLeft hΔ).copy
 --   := sorry
 
--- instance SubstDS.split_del_left {Γ Δl Δr : Ctx? α ε} (σ : SubstDS φ Γ Δ) (hΔ : Δ.PSSplit Δl Δr)
---   [hl : Δl.del] : (σ.split hΔ).inLeft.del
+-- instance SubstDS.split_del_left {Γ Δl Δr : Ctx? α ε} (σ : SubstDS φ Γ Δ) (hΔ : Δ.SSplit Δl Δr)
+--   [hl : Δl.del] : (σ.inLeft hΔ).del
 --   := sorry
 
 -- def SubstDS.lift {Γ Δ : Ctx? α ε} (σ : SubstDS φ Γ Δ) (v : Var? α ε)

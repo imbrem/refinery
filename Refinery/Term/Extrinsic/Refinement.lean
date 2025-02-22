@@ -24,21 +24,21 @@ inductive RWS.cc (R : RWS φ α ε) : RWS φ α ε
   | symm {Γ a b A} : cc R Γ A a b → cc R Γ A b a
   | trans {Γ a b c A} : cc R Γ A a b → cc R Γ A b c → cc R Γ A a c
   | let₁ {Γ Γl Γr A B a b a' b'} :
-    Γ.PSSplit Γl Γr →
+    Γ.SSplit Γl Γr →
     cc R Γr A a a' → cc R (Γl.cons ⟨A, ⊤, ⊥⟩) B b b'
       → cc R Γ B (.let₁ a A b) (.let₁ a' A b')
   | let₂ {Γ Γl Γr A B C a b a' b'} :
-    Γ.PSSplit Γl Γr →
+    Γ.SSplit Γl Γr →
     cc R Γr (.tensor A B) a a' → cc R ((Γl.cons ⟨A, ⊤, ⊥⟩).cons ⟨B, ⊤, ⊥⟩) C b b'
       → cc R Γ C (.let₂ a A B b) (.let₂ a' A B b')
   | pair {Γ Γl Γr A B a b a' b'} :
-    Γ.PSSplit Γl Γr →
+    Γ.SSplit Γl Γr →
     cc R Γl A a a' → cc R Γr B b b' → cc R Γ (.tensor A B) (.pair a b) (.pair a' b')
   | inl {Γ A B a a'} : cc R Γ A a a' → cc R Γ (.coprod A B) (.inl A B a) (.inl A B a')
   | inr {Γ A B b b'} : cc R Γ B b b' → cc R Γ (.coprod A B) (.inr A B b) (.inr A B b')
   | abort {Γ A a a'} : cc R Γ .empty a a' → cc R Γ A (.abort A a) (.abort A a')
   | iter {Γ Γl Γr A B a b a' b'} :
-    Γ.PSSplit Γl Γr →
+    Γ.SSplit Γl Γr →
     Γl.copy → Γl.del →
     cc R Γr A a a' →
     cc R (Γl.cons ⟨A, ⊤, ⊥⟩) (.coprod B A) b b' →
@@ -60,7 +60,7 @@ instance RWS.cc.instWt (R : RWS φ α ε) [RWS.IsWt R] : RWS.IsWt (RWS.cc R) whe
 
 inductive Rewrite : RWS φ α ε
   | let_op {Γ Γl Γr A B C a c} :
-    Γ.PSSplit Γl Γr → S.IsFn f e A B → (Γr ⊢[⊤] a : A) → (Γl.cons ⟨B, ⊤, ⊥⟩ ⊢[⊤] c : C) →
+    Γ.SSplit Γl Γr → S.IsFn f e A B → (Γr ⊢[⊤] a : A) → (Γl.cons ⟨B, ⊤, ⊥⟩ ⊢[⊤] c : C) →
     Rewrite Γ C (.let₁ (.op f a) A c) (.let₁ a A (.let₁ (.op f (.bv 0)) B (↑¹ c)))
   -- | let_let₁ {Γ Γc Γl Γm Γr} :
-  --   Γ.PSSplit Γc Γr → Γc.PSSplit Γl Γm → Rewrite R _ _ .invalid .invalid
+  --   Γ.SSplit Γc Γr → Γc.SSplit Γl Γm → Rewrite R _ _ .invalid .invalid
