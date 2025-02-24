@@ -158,3 +158,63 @@ def Var?.Split.wk {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.Split v w) :
     | .left _ _ => .left _ _
     | .right _ _ => .right _ _
     | .both h => .both (Var?.copy.anti ρ (by simp))
+
+@[simp]
+def Var?.Split.comm {u v w : Var? α} : u.Split v w → u.Split w v
+  | .neither h => .neither h
+  | .left _ _ => .right _ _
+  | .right _ _ => .left _ _
+  | .both h => .both h
+
+@[simp]
+def Ctx?.Split.wkLeft {Γ' Γ Δ Ξ : Ctx? α} : Γ'.Wk Γ → Γ.Split Δ Ξ → Ctx? α
+  | .nil, _ => .nil
+  | .skip (v := v) ρ _, σ => (wkLeft ρ σ).cons v.erase
+  | .cons (v := v) ρ _, .cons σ hlr => (wkLeft ρ σ).cons (hlr.wkLeft v)
+
+@[simp]
+def Ctx?.Split.wkRight {Γ' Γ Δ Ξ : Ctx? α} : Γ'.Wk Γ → Γ.Split Δ Ξ → Ctx? α
+  | .nil, _ => .nil
+  | .skip (v := v) ρ _, σ => (wkRight ρ σ).cons v.erase
+  | .cons (v := v) ρ _, .cons σ hlr => (wkRight ρ σ).cons (hlr.wkRight v)
+
+@[simp]
+instance Ctx?.Split.wkLeft_del {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ : Γ.Split Δ Ξ) [hΔ : Δ.del]
+  : (σ.wkLeft ρ).del := by
+  induction ρ generalizing Δ Ξ with
+  | cons =>
+    cases σ; have _ := hΔ.head; have _ := hΔ.tail;
+    simp [wkLeft, cons_del_iff, Var?.Split.wkLeft_del, *]
+  | _ => simp [*]
+
+@[simp]
+instance Ctx?.Split.wkLeft_copy {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ : Γ.Split Δ Ξ) [hΔ : Δ.copy]
+  : (σ.wkLeft ρ).copy := by
+  induction ρ generalizing Δ Ξ with
+  | cons =>
+    cases σ; have _ := hΔ.head; have _ := hΔ.tail;
+    simp [wkLeft, cons_copy_iff, Var?.Split.wkLeft_copy, *]
+  | _ => simp [*]
+
+@[simp]
+instance Ctx?.Split.wkRight_del {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ : Γ.Split Δ Ξ) [hΞ : Ξ.del]
+  : (σ.wkRight ρ).del := by
+  induction ρ generalizing Δ Ξ with
+  | cons =>
+    cases σ; have _ := hΞ.head; have _ := hΞ.tail;
+    simp [wkRight, cons_del_iff, Var?.Split.wkRight_del, *]
+  | _ => simp [*]
+
+@[simp]
+instance Ctx?.Split.wkRight_copy {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ : Γ.Split Δ Ξ) [hΞ : Ξ.copy]
+  : (σ.wkRight ρ).copy := by
+  induction ρ generalizing Δ Ξ with
+  | cons =>
+    cases σ; have _ := hΞ.head; have _ := hΞ.tail;
+    simp [wkRight, cons_copy_iff, Var?.Split.wkRight_copy, *]
+  | _ => simp [*]
+
+def Var?.Split.v12_3_23 {u₁₂₃ u₁₂ u₁ u₂ u₃ : Var? α}
+  : u₁₂₃.Split u₁₂ u₃ → u₁₂.Split u₁ u₂ → Var? α
+  | .left A q, .left _ _ => ⟨A, 0⟩
+  | _, _ => u₁₂₃

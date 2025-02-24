@@ -197,6 +197,18 @@ def Var?.SSplit.v12_3_23 {u₁₂₃ u₁₂ u₁ u₂ u₃ : Var? α}
   | .left _, .left _ => u₁₂₃.erase
   | _, _ => u₁₂₃
 
+@[simp]
+instance Var?.SSplit.v12_3_23_del {u₁₂₃ u₁₂ u₁ u₂ u₃ : Var? α}
+  (h12_3 : u₁₂₃.SSplit u₁₂ u₃) (h12 : u₁₂.SSplit u₁ u₂) [h2 : u₂.del] [h3 : u₃.del]
+  : (h12_3.v12_3_23 h12).del
+  := by cases h12_3 <;> cases h12 <;> assumption
+
+@[simp]
+instance Var?.SSplit.v12_3_23_copy {u₁₂₃ u₁₂ u₁ u₂ u₃ : Var? α}
+  (h12_3 : u₁₂₃.SSplit u₁₂ u₃) (h12 : u₁₂.SSplit u₁ u₂) [h2 : u₂.copy] [h3 : u₃.copy]
+  : (h12_3.v12_3_23 h12).copy
+  := by cases h12_3 <;> cases h12 <;> assumption
+
 def Var?.SSplit.s12_3_1_23 {u₁₂₃ u₁₂ u₁ u₂ u₃ : Var? α}
   : (h12_3 : u₁₂₃.SSplit u₁₂ u₃) → (h12 : u₁₂.SSplit u₁ u₂) → u₁₂₃.SSplit u₁ (h12_3.v12_3_23 h12)
   | .left _, .left _ => .left _
@@ -225,6 +237,18 @@ def Var?.SSplit.v1_23_12 {u₁₂₃ u₂₃ u₁ u₂ u₃ : Var? α}
   : u₁₂₃.SSplit u₁ u₂₃ → u₂₃.SSplit u₂ u₃ → Var? α
   | .right _, .right _ => u₁₂₃.erase
   | _, _ => u₁₂₃
+
+@[simp]
+instance Var?.SSplit.v1_23_12_del {u₁₂₃ u₂₃ u₁ u₂ u₃ : Var? α}
+  (h12_3 : u₁₂₃.SSplit u₁ u₂₃) (h23 : u₂₃.SSplit u₂ u₃) [h1 : u₁.del] [h2 : u₂.del]
+  : (h12_3.v1_23_12 h23).del
+  := by cases h12_3 <;> cases h23 <;> assumption
+
+@[simp]
+instance Var?.SSplit.v1_23_12_copy {u₁₂₃ u₂₃ u₁ u₂ u₃ : Var? α}
+  (h12_3 : u₁₂₃.SSplit u₁ u₂₃) (h23 : u₂₃.SSplit u₂ u₃) [h1 : u₁.copy] [h2 : u₂.copy]
+  : (h12_3.v1_23_12 h23).copy
+  := by cases h12_3 <;> cases h23 <;> assumption
 
 def Var?.SSplit.s1_23_12_3 {u₁₂₃ u₂₃ u₁ u₂ u₃ : Var? α}
   : (h12_3 : u₁₂₃.SSplit u₁ u₂₃) → (h23 : u₂₃.SSplit u₂ u₃) → u₁₂₃.SSplit (h12_3.v1_23_12 h23) u₃
@@ -259,6 +283,26 @@ def Ctx?.SSplit.c1_23_12 {Γ₁₂₃ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}
   | .nil, .nil => .nil
   | .cons h hvw, .cons h' hvw' => .cons (c1_23_12 h h') (Var?.SSplit.v1_23_12 hvw hvw')
 
+@[simp]
+instance Ctx?.SSplit.c1_23_12_del {Γ₁₂₃ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h12_3 : Γ₁₂₃.SSplit Γ₁ Γ₂₃) (h23 : Γ₂₃.SSplit Γ₂ Γ₃) [h1 : Γ₁.del] [h2 : Γ₂.del]
+  : (h12_3.c1_23_12 h23).del
+  := by
+  generalize h1 = h1
+  induction h12_3 generalizing Γ₂ Γ₃ <;> cases h23
+  simp [c1_23_12]
+  simp [c1_23_12, h2.head, h2.tail, h1.head, h1.tail, *]
+
+@[simp]
+instance Ctx?.SSplit.c1_23_12_copy {Γ₁₂₃ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h12_3 : Γ₁₂₃.SSplit Γ₁ Γ₂₃) (h23 : Γ₂₃.SSplit Γ₂ Γ₃) [h1 : Γ₁.copy] [h2 : Γ₂.copy]
+  : (h12_3.c1_23_12 h23).copy
+  := by
+  generalize h1 = h1
+  induction h12_3 generalizing Γ₂ Γ₃ <;> cases h23
+  simp [c1_23_12]
+  simp [c1_23_12, h2.head, h2.tail, h1.head, h1.tail, *]
+
 def Ctx?.SSplit.s1_23_12_3 {Γ₁₂₃ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}
   : (h12_3 : Γ₁₂₃.SSplit Γ₁ Γ₂₃) → (h23 : Γ₂₃.SSplit Γ₂ Γ₃)
     → Γ₁₂₃.SSplit (h12_3.c1_23_12 h23) Γ₃
@@ -274,6 +318,26 @@ def Ctx?.SSplit.c12_3_23 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
   : Γ₁₂₃.SSplit Γ₁₂ Γ₃ → Γ₁₂.SSplit Γ₁ Γ₂ → Ctx? α
   | .nil, .nil => .nil
   | .cons h hvw, .cons h' hvw' => .cons (c12_3_23 h h') (Var?.SSplit.v12_3_23 hvw hvw')
+
+@[simp]
+instance Ctx?.SSplit.c12_3_23_del {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h12_3 : Γ₁₂₃.SSplit Γ₁₂ Γ₃) (h12 : Γ₁₂.SSplit Γ₁ Γ₂) [h2 : Γ₂.del] [h3 : Γ₃.del]
+  : (h12_3.c12_3_23 h12).del
+  := by
+  generalize h3 = h3
+  induction h12_3 generalizing Γ₁ Γ₂ <;> cases h12
+  simp [c12_3_23]
+  simp [c12_3_23, h2.head, h2.tail, h3.head, h3.tail, *]
+
+@[simp]
+instance Ctx?.SSplit.c12_3_23_copy {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h12_3 : Γ₁₂₃.SSplit Γ₁₂ Γ₃) (h12 : Γ₁₂.SSplit Γ₁ Γ₂) [h2 : Γ₂.copy] [h3 : Γ₃.copy]
+  : (h12_3.c12_3_23 h12).copy
+  := by
+  generalize h3 = h3
+  induction h12_3 generalizing Γ₁ Γ₂ <;> cases h12
+  simp [c12_3_23]
+  simp [c12_3_23, h2.head, h2.tail, h3.head, h3.tail, *]
 
 def Ctx?.SSplit.s12_3_1_23 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
   : (h12_3 : Γ₁₂₃.SSplit Γ₁₂ Γ₃) → (h12 : Γ₁₂.SSplit Γ₁ Γ₂)
@@ -317,6 +381,14 @@ abbrev Ctx?.SSplit.c12_3_13 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
   (h12_3 : Γ₁₂₃.SSplit Γ₁₂ Γ₃) (h12 : Γ₁₂.SSplit Γ₁ Γ₂)
   : Ctx? α := h12_3.comm.c1_23_12 h12
 
+theorem Ctx?.SSplit.c12_3_13_del {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h12_3 : Γ₁₂₃.SSplit Γ₁₂ Γ₃) (h12 : Γ₁₂.SSplit Γ₁ Γ₂) [h1 : Γ₁.del] [h3 : Γ₃.del]
+  : (h12_3.c12_3_13 h12).del := inferInstance
+
+theorem Ctx?.SSplit.c12_3_13_copy {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h12_3 : Γ₁₂₃.SSplit Γ₁₂ Γ₃) (h12 : Γ₁₂.SSplit Γ₁ Γ₂) [h1 : Γ₁.copy] [h3 : Γ₃.copy]
+  : (h12_3.c12_3_13 h12).copy := inferInstance
+
 abbrev Ctx?.SSplit.s12_3_13_2 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
   (h12_3 : Γ₁₂₃.SSplit Γ₁₂ Γ₃) (h12 : Γ₁₂.SSplit Γ₁ Γ₂)
   : Γ₁₂₃.SSplit (h12_3.c12_3_13 h12) Γ₂
@@ -336,6 +408,14 @@ abbrev Ctx?.SSplit.c12_34_123 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ct
   (h12_34 : Γ₁₂₃₄.SSplit Γ₁₂ Γ₃₄) (h34 : Γ₃₄.SSplit Γ₃ Γ₄)
   : Ctx? α := h12_34.c1_23_12 h34
 
+theorem Ctx?.SSplit.c12_34_123_del {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.SSplit Γ₁₂ Γ₃₄) (h34 : Γ₃₄.SSplit Γ₃ Γ₄) [h12 : Γ₁₂.del] [h3 : Γ₃.del]
+  : (h12_34.c12_34_123 h34).del := inferInstance
+
+theorem Ctx?.SSplit.c12_34_123_copy {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.SSplit Γ₁₂ Γ₃₄) (h34 : Γ₃₄.SSplit Γ₃ Γ₄) [h12 : Γ₁₂.copy] [h3 : Γ₃.copy]
+  : (h12_34.c12_34_123 h34).copy := inferInstance
+
 abbrev Ctx?.SSplit.s12_34_123_4 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
   (h12_34 : Γ₁₂₃₄.SSplit Γ₁₂ Γ₃₄) (h34 : Γ₃₄.SSplit Γ₃ Γ₄)
   : Γ₁₂₃₄.SSplit (h12_34.c12_34_123 h34) Γ₄ := h12_34.s1_23_12_3 h34
@@ -347,6 +427,16 @@ abbrev Ctx?.SSplit.s12_34_12_3 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : C
 abbrev Ctx?.SSplit.c12_34_13 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
   (h12_34 : Γ₁₂₃₄.SSplit Γ₁₂ Γ₃₄) (h12 : Γ₁₂.SSplit Γ₁ Γ₂) (h34 : Γ₃₄.SSplit Γ₃ Γ₄)
   : Ctx? α := (h12_34.s12_34_12_3 h34).c12_3_13 h12
+
+theorem Ctx.SSplit.c12_34_13_del {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.SSplit Γ₁₂ Γ₃₄) (h12 : Γ₁₂.SSplit Γ₁ Γ₂) (h34 : Γ₃₄.SSplit Γ₃ Γ₄)
+  [h1 : Γ₁.del] [h3 : Γ₃.del]
+  : (h12_34.c12_34_13 h12 h34).del := inferInstance
+
+theorem Ctx.SSplit.c12_34_13_copy {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.SSplit Γ₁₂ Γ₃₄) (h12 : Γ₁₂.SSplit Γ₁ Γ₂) (h34 : Γ₃₄.SSplit Γ₃ Γ₄)
+  [h1 : Γ₁.copy] [h3 : Γ₃.copy]
+  : (h12_34.c12_34_13 h12 h34).copy := inferInstance
 
 abbrev Ctx?.SSplit.s12_34_13 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
   (h12_34 : Γ₁₂₃₄.SSplit Γ₁₂ Γ₃₄) (h12 : Γ₁₂.SSplit Γ₁ Γ₂) (h34 : Γ₃₄.SSplit Γ₃ Γ₄)
@@ -361,6 +451,16 @@ abbrev Ctx?.SSplit.c12_34_24 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx
   (h12_34 : Γ₁₂₃₄.SSplit Γ₁₂ Γ₃₄) (h12 : Γ₁₂.SSplit Γ₁ Γ₂) (h34 : Γ₃₄.SSplit Γ₃ Γ₄)
   : Ctx? α
   := (h12_34.s12_34_123_4 h34).c12_3_23 (h12_34.s12_34_13_2 h12 h34)
+
+theorem Ctx?.SSplit.c12_34_24_del {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.SSplit Γ₁₂ Γ₃₄) (h12 : Γ₁₂.SSplit Γ₁ Γ₂) (h34 : Γ₃₄.SSplit Γ₃ Γ₄)
+  [h2 : Γ₂.del] [h4 : Γ₄.del]
+  : (h12_34.c12_34_24 h12 h34).del := inferInstance
+
+theorem Ctx?.SSplit.c12_34_24_copy {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.SSplit Γ₁₂ Γ₃₄) (h12 : Γ₁₂.SSplit Γ₁ Γ₂) (h34 : Γ₃₄.SSplit Γ₃ Γ₄)
+  [h2 : Γ₂.copy] [h4 : Γ₄.copy]
+  : (h12_34.c12_34_24 h12 h34).copy := inferInstance
 
 abbrev Ctx?.SSplit.s12_34_13_24 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
   (h12_34 : Γ₁₂₃₄.SSplit Γ₁₂ Γ₃₄) (h12 : Γ₁₂.SSplit Γ₁ Γ₂) (h34 : Γ₃₄.SSplit Γ₃ Γ₄)
