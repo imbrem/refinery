@@ -14,251 +14,198 @@ variable {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε]
 
 --TODO: port to Split for hax?
 
-inductive Deriv : ε → Ctx? α → Ty α → Term φ (Ty α) → Type _
-  | bv {Γ} : Γ.At ⟨A, 1⟩ n → Deriv e Γ A (.bv n)
-  | op {Γ e A B f a} : S.IsFn f e A B → Deriv e Γ A a → Deriv e Γ B (.op f a)
-  | let₁ {Γ Γl Γr e A B a b} :
+inductive Deriv : Ctx? α → Ty α → Term φ (Ty α) → Type _
+  | bv {Γ} : Γ.At ⟨A, 1⟩ n → Deriv Γ A (.bv n)
+  | op {Γ A B f a} : S.FnTy f A B → Deriv Γ A a → Deriv Γ B (.op f a)
+  | let₁ {Γ Γl Γr A B a b} :
     Γ.SSplit Γl Γr →
-    Deriv e Γr A a → Deriv e (Γl.cons ⟨A, ⊤⟩) B b → Deriv e Γ B (.let₁ a A b)
-  | unit {Γ} : Γ.del → Deriv e Γ .unit .unit
-  | pair {Γ Γl Γr e A B a b} :
+    Deriv Γr A a → Deriv (Γl.cons ⟨A, ⊤⟩) B b → Deriv Γ B (.let₁ a A b)
+  | unit {Γ} : Γ.del → Deriv Γ .unit .unit
+  | pair {Γ Γl Γr A B a b} :
     Γ.SSplit Γl Γr →
-    Deriv e Γl A a → Deriv e Γr B b → Deriv e Γ (.tensor A B) (.pair a b)
-  | let₂ {Γ Γl Γr e A B C a b} :
+    Deriv Γl A a → Deriv Γr B b → Deriv Γ (.tensor A B) (.pair a b)
+  | let₂ {Γ Γl Γr A B C a b} :
     Γ.SSplit Γl Γr →
-    Deriv e Γr (.tensor A B) a → Deriv e ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C b
-      → Deriv e Γ C (.let₂ a A B b)
-  | inl {Γ e A B a} : Deriv e Γ A a → Deriv e Γ (.coprod A B) (.inl A B a)
-  | inr {Γ e A B b} : Deriv e Γ B b → Deriv e Γ (.coprod A B) (.inr A B b)
-  | case {Γ Γl Γr e A B C a b c} :
+    Deriv Γr (.tensor A B) a → Deriv ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C b
+      → Deriv Γ C (.let₂ a A B b)
+  | inl {Γ A B a} : Deriv Γ A a → Deriv Γ (.coprod A B) (.inl A B a)
+  | inr {Γ A B b} : Deriv Γ B b → Deriv Γ (.coprod A B) (.inr A B b)
+  | case {Γ Γl Γr A B C a b c} :
     Γ.SSplit Γl Γr →
-    Deriv e Γr (.coprod A B) a → Deriv e (Γl.cons ⟨A, ⊤⟩) C b → Deriv e (Γl.cons ⟨B, ⊤⟩) C c
-      → Deriv e Γ C (.case a A B b c)
-  | abort {Γ e A a} : Deriv e Γ .empty a → Deriv e Γ A (.abort A a)
-  | iter {Γ Γl Γr e A B a b} :
+    Deriv Γr (.coprod A B) a → Deriv (Γl.cons ⟨A, ⊤⟩) C b → Deriv (Γl.cons ⟨B, ⊤⟩) C c
+      → Deriv Γ C (.case a A B b c)
+  | abort {Γ A a} : Deriv Γ .empty a → Deriv Γ A (.abort A a)
+  | iter {Γ Γl Γr A B a b} :
     Γ.SSplit Γl Γr →
-    e ∈ S.iterative →
     Γl.copy → Γl.del →
-    Deriv e Γr A a → Deriv e (Γl.cons ⟨A, ⊤⟩) (.coprod B A) b → Deriv e Γ B (.iter a A B b)
+    Deriv Γr A a → Deriv (Γl.cons ⟨A, ⊤⟩) (.coprod B A) b → Deriv Γ B (.iter a A B b)
 
-notation Γ "⊢[" e "]" a ":" A => Deriv e Γ A a
+notation Γ "⊢" a ":" A => Deriv Γ A a
 
-theorem Deriv.has_eff {e : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢[e] a : A)
-  : HasEff e a := by induction D <;> simp [*]; apply Signature.IsFn.eff; assumption
+def Deriv.cast {Γ Γ' : Ctx? α} {A A' : Ty α} {a a' : Term φ (Ty α)}
+  (hΓ : Γ = Γ') (hA : A = A') (ha : a = a')
+  (D : Γ ⊢ a : A) : (Γ' ⊢ a' : A') := hΓ ▸ hA ▸ ha ▸ D
 
-@[simp]
-def Deriv.withEff {e e' : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (h : HasEff e' a)
-  : (Γ ⊢[e] a : A) → (Γ ⊢[e'] a : A)
-  | .bv hv => .bv hv
-  | .op hf da => .op (hf.withEff h.op_fn) (withEff h.op_arg da)
-  | .let₁ dΓ da db => .let₁ dΓ (withEff h.let₁_bind da) (withEff h.let₁_body db)
-  | .unit dΓ => .unit dΓ
-  | .pair dΓ da db => .pair dΓ (withEff h.pair_fst da) (withEff h.pair_snd db)
-  | .let₂ dΓ da db => .let₂ dΓ (withEff h.let₂_bind da) (withEff h.let₂_body db)
-  | .inl da => .inl (withEff h.inl_arg da)
-  | .inr db => .inr (withEff h.inr_arg db)
-  | .case dΓ da db dc =>
-    .case dΓ (withEff h.case_desc da) (withEff h.case_left db) (withEff h.case_right dc)
-  | .abort da => .abort (withEff h.abort_arg da)
-  | .iter dΓ _ hc hd da db =>
-    .iter dΓ h.iter_eff hc hd (withEff h.iter_init da) (withEff h.iter_body db)
+abbrev Deriv.cast_ctx {Γ Γ' : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
+  (hΓ : Γ = Γ') (D : Γ ⊢ a : A) : Γ' ⊢ a : A := D.cast hΓ rfl rfl
 
-@[simp]
-theorem Deriv.withEff_id {e : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢[e] a : A)
-  : D.withEff D.has_eff = D := by induction D <;> simp [*]
+abbrev Deriv.cast_ty {Γ : Ctx? α} {A A' : Ty α} {a : Term φ (Ty α)}
+  (hA : A = A') (D : Γ ⊢ a : A) : Γ ⊢ a : A' := D.cast rfl hA rfl
 
-abbrev Deriv.mono {e e' : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (he : e ≤ e')
-  (D : Γ ⊢[e] a : A) : (Γ ⊢[e'] a : A) := D.withEff (D.has_eff.mono he)
+abbrev Deriv.cast_term {Γ : Ctx? α} {A : Ty α} {a a' : Term φ (Ty α)}
+  (ha : a = a') (D : Γ ⊢ a : A) : Γ ⊢ a' : A := D.cast rfl rfl ha
 
-abbrev Deriv.top {e : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
-  (D : Γ ⊢[e] a : A) : (Γ ⊢[⊤] a : A) := D.mono le_top
-
-def Deriv.cast {e e' : ε} {Γ Γ' : Ctx? α} {A A' : Ty α} {a a' : Term φ (Ty α)}
-  (he : e = e') (hΓ : Γ = Γ') (hA : A = A') (ha : a = a')
-  (D : Γ ⊢[e] a : A) : (Γ' ⊢[e'] a' : A') := he ▸ hΓ ▸ hA ▸ ha ▸ D
-
-abbrev Deriv.cast_eff {e e' : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
-  (he : e = e') (D : Γ ⊢[e] a : A) : Γ ⊢[e'] a : A := D.cast he rfl rfl rfl
-
-abbrev Deriv.cast_ctx {e : ε} {Γ Γ' : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
-  (hΓ : Γ = Γ') (D : Γ ⊢[e] a : A) : Γ' ⊢[e] a : A := D.cast rfl hΓ rfl rfl
-
-abbrev Deriv.cast_ty {e : ε} {Γ : Ctx? α} {A A' : Ty α} {a : Term φ (Ty α)}
-  (hA : A = A') (D : Γ ⊢[e] a : A) : Γ ⊢[e] a : A' := D.cast rfl rfl hA rfl
-
-abbrev Deriv.cast_term {e : ε} {Γ : Ctx? α} {A : Ty α} {a a' : Term φ (Ty α)}
-  (ha : a = a') (D : Γ ⊢[e] a : A) : Γ ⊢[e] a' : A := D.cast rfl rfl rfl ha
-
-def IsWt (e : ε) (Γ : Ctx? α) (A : Ty α) (a : Term φ (Ty α)) : Prop := Nonempty (Γ ⊢[e] a : A)
+def IsWt (Γ : Ctx? α) (A : Ty α) (a : Term φ (Ty α)) : Prop := Nonempty (Γ ⊢ a : A)
 
 @[match_pattern]
-theorem Deriv.wt {e : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢[e] a : A)
-  : IsWt e Γ A a := ⟨D⟩
+theorem Deriv.wt {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ a : A)
+  : IsWt Γ A a := ⟨D⟩
 
-theorem IsWt.mono {e e' : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (he : e ≤ e')
-  : IsWt e Γ A a → IsWt e' Γ A a := λ ⟨D⟩ => ⟨D.mono he⟩
-
-theorem IsWt.top {e : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
-  (D : IsWt e Γ A a) : IsWt ⊤ Γ A a := D.mono le_top
-
-theorem Deriv.wt_top {e : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢[e] a : A)
-  : IsWt ⊤ Γ A a := D.wt.top
-
-theorem IsWt.exists_iff {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
-  : (∃e, IsWt e Γ A a) ↔ IsWt ⊤ Γ A a := ⟨λ⟨_, h⟩ => h.top, λh => ⟨⊤, h⟩⟩
-
-def Deriv.bv_at {e : ε} {Γ : Ctx? α} {A : Ty α} {n : ℕ} (D : Γ ⊢[e] (.bv (φ := φ) n) : A)
+def Deriv.bv_at {Γ : Ctx? α} {A : Ty α} {n : ℕ} (D : Γ ⊢ (.bv (φ := φ) n) : A)
   : Γ.At ⟨A, 1⟩ n := match D with | .bv hv => hv
 
--- theorem IsWt.bv_at {e : ε} {Γ : Ctx? α} {A : Ty α} {n : ℕ} (D : IsWt (φ := φ) e Γ A (.bv n))
+-- theorem IsWt.bv_at {Γ : Ctx? α} {A : Ty α} {n : ℕ} (D : IsWt (φ := φ) e Γ A (.bv n))
 --   : Γ.At ⟨A, 1⟩ n := D.elim Deriv.bv_at
 
-theorem Deriv.op_fn {e : ε} {Γ : Ctx? α} {B : Ty α} {f : φ} {a : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.op f a) : B) : S.IsFn f e (S.src f) B
+theorem Deriv.op_fn {Γ : Ctx? α} {B : Ty α} {f : φ} {a : Term φ (Ty α)}
+  (D : Γ ⊢ (.op f a) : B) : S.FnTy f (S.src f) B
   := match D with | .op hf da => by cases hf.src; exact hf
 
-theorem IsWt.op_fn {e : ε} {Γ : Ctx? α} {B : Ty α} {f : φ} {a : Term φ (Ty α)}
-  (D : IsWt e Γ B (.op f a)) : S.IsFn f e (S.src f) B := D.elim Deriv.op_fn
+theorem IsWt.op_fn {Γ : Ctx? α} {B : Ty α} {f : φ} {a : Term φ (Ty α)}
+  (D : IsWt Γ B (.op f a)) : S.FnTy f (S.src f) B := D.elim Deriv.op_fn
 
-def Deriv.op_arg {e : ε} {Γ : Ctx? α} {B : Ty α} {f : φ} {a : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.op f a) : B) : Γ ⊢[e] a : S.src f
+def Deriv.op_arg {Γ : Ctx? α} {B : Ty α} {f : φ} {a : Term φ (Ty α)}
+  (D : Γ ⊢ (.op f a) : B) : Γ ⊢ a : S.src f
   := match D with | .op hf da => da.cast_ty hf.src
 
-theorem IsWt.op_arg {e : ε} {Γ : Ctx? α} {B : Ty α} {f : φ} {a : Term φ (Ty α)}
-  (D : IsWt e Γ B (.op f a)) : IsWt e Γ (S.src f) a := ⟨(Classical.choice D).op_arg⟩
+theorem IsWt.op_arg {Γ : Ctx? α} {B : Ty α} {f : φ} {a : Term φ (Ty α)}
+  (D : IsWt Γ B (.op f a)) : IsWt Γ (S.src f) a := ⟨(Classical.choice D).op_arg⟩
 
-def Deriv.let₁_splitLeft {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.let₁ a A b) : B) : Ctx? α
+def Deriv.let₁_splitLeft {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.let₁ a A b) : B) : Ctx? α
   := match D with | .let₁ (Γl := Γl) .. => Γl
 
-def Deriv.let₁_splitRight {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.let₁ a A b) : B) : Ctx? α
+def Deriv.let₁_splitRight {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.let₁ a A b) : B) : Ctx? α
   := match D with | .let₁ (Γr := Γr) .. => Γr
 
-def Deriv.let₁_split {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.let₁ a A b) : B) : Γ.SSplit (D.let₁_splitLeft) (D.let₁_splitRight)
+def Deriv.let₁_split {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.let₁ a A b) : B) : Γ.SSplit (D.let₁_splitLeft) (D.let₁_splitRight)
   := match D with | .let₁ dΓ _ _ => dΓ
 
-def Deriv.let₁_bind {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.let₁ a A b) : B) : D.let₁_splitRight ⊢[e] a : A
+def Deriv.let₁_bind {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.let₁ a A b) : B) : D.let₁_splitRight ⊢ a : A
   := match D with | .let₁ _ da _ => da
 
-def Deriv.let₁_body {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.let₁ a A b) : B) : (D.let₁_splitLeft.cons ⟨A, ⊤⟩) ⊢[e] b : B
+def Deriv.let₁_body {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.let₁ a A b) : B) : (D.let₁_splitLeft.cons ⟨A, ⊤⟩) ⊢ b : B
   := match D with | .let₁ _ _ db => db
 
-theorem Deriv.unit_wk {e : ε} {Γ : Ctx? α} {A : Ty α} (D : Γ ⊢[e] .unit (φ := φ) : A) : Γ.del
+theorem Deriv.unit_wk {Γ : Ctx? α} {A : Ty α} (D : Γ ⊢ .unit (φ := φ) : A) : Γ.del
   := match D with | .unit dΓ => dΓ
 
-theorem IsWt.unit_wk {e : ε} {Γ : Ctx? α} (D : IsWt (φ := φ) e Γ A .unit) : Γ.del
+theorem IsWt.unit_wk {Γ : Ctx? α} (D : IsWt (φ := φ) Γ A .unit) : Γ.del
   := D.elim Deriv.unit_wk
 
-def Deriv.pair_splitLeft {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.pair a b) : .tensor A B) : Ctx? α
+def Deriv.pair_splitLeft {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.pair a b) : .tensor A B) : Ctx? α
   := match D with | .pair (Γl := Γl) .. => Γl
 
-def Deriv.pair_splitRight {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.pair a b) : .tensor A B) : Ctx? α
+def Deriv.pair_splitRight {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.pair a b) : .tensor A B) : Ctx? α
   := match D with | .pair (Γr := Γr) .. => Γr
 
-def Deriv.pair_split {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.pair a b) : .tensor A B) : Γ.SSplit (D.pair_splitLeft) (D.pair_splitRight)
+def Deriv.pair_split {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.pair a b) : .tensor A B) : Γ.SSplit (D.pair_splitLeft) (D.pair_splitRight)
   := match D with | .pair dΓ _ _ => dΓ
 
-def Deriv.pair_fst {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.pair a b) : .tensor A B) : D.pair_splitLeft ⊢[e] a : A
+def Deriv.pair_fst {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.pair a b) : .tensor A B) : D.pair_splitLeft ⊢ a : A
   := match D with | .pair _ da _ => da
 
-def Deriv.pair_snd {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.pair a b) : .tensor A B) : D.pair_splitRight ⊢[e] b : B
+def Deriv.pair_snd {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.pair a b) : .tensor A B) : D.pair_splitRight ⊢ b : B
   := match D with | .pair _ _ db => db
 
-def Deriv.let₂_splitLeft {e : ε} {Γ : Ctx? α} {A B C : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.let₂ a A B b) : C) : Ctx? α
+def Deriv.let₂_splitLeft {Γ : Ctx? α} {A B C : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.let₂ a A B b) : C) : Ctx? α
   := match D with | .let₂ (Γl := Γl) .. => Γl
 
-def Deriv.let₂_splitRight {e : ε} {Γ : Ctx? α} {A B C : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.let₂ a A B b) : C) : Ctx? α
+def Deriv.let₂_splitRight {Γ : Ctx? α} {A B C : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.let₂ a A B b) : C) : Ctx? α
   := match D with | .let₂ (Γr := Γr) .. => Γr
 
-def Deriv.let₂_split {e : ε} {Γ : Ctx? α} {A B C : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.let₂ a A B b) : C) : Γ.SSplit (D.let₂_splitLeft) (D.let₂_splitRight)
+def Deriv.let₂_split {Γ : Ctx? α} {A B C : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.let₂ a A B b) : C) : Γ.SSplit (D.let₂_splitLeft) (D.let₂_splitRight)
   := match D with | .let₂ dΓ _ _ => dΓ
 
-def Deriv.let₂_bind {e : ε} {Γ : Ctx? α} {A B C : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.let₂ a A B b) : C) : D.let₂_splitRight ⊢[e] a : .tensor A B
+def Deriv.let₂_bind {Γ : Ctx? α} {A B C : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.let₂ a A B b) : C) : D.let₂_splitRight ⊢ a : .tensor A B
   := match D with | .let₂ _ da _ => da
 
-def Deriv.let₂_body {e : ε} {Γ : Ctx? α} {A B C : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.let₂ a A B b) : C) : (D.let₂_splitLeft.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢[e] b : C
+def Deriv.let₂_body {Γ : Ctx? α} {A B C : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.let₂ a A B b) : C) : (D.let₂_splitLeft.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ b : C
   := match D with | .let₂ _ _ db => db
 
-def Deriv.inl_arg {e : ε} {Γ : Ctx? α} {A B : Ty α} {a : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.inl A B a) : .coprod A B) : Γ ⊢[e] a : A
+def Deriv.inl_arg {Γ : Ctx? α} {A B : Ty α} {a : Term φ (Ty α)}
+  (D : Γ ⊢ (.inl A B a) : .coprod A B) : Γ ⊢ a : A
   := match D with | .inl da => da
 
-def Deriv.inr_arg {e : ε} {Γ : Ctx? α} {A B : Ty α} {b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.inr A B b) : .coprod A B) : Γ ⊢[e] b : B
+def Deriv.inr_arg {Γ : Ctx? α} {A B : Ty α} {b : Term φ (Ty α)}
+  (D : Γ ⊢ (.inr A B b) : .coprod A B) : Γ ⊢ b : B
   := match D with | .inr db => db
 
-def Deriv.case_splitLeft {e : ε} {Γ : Ctx? α} {A B C : Ty α} {a b c : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.case a A B b c) : C) : Ctx? α
+def Deriv.case_splitLeft {Γ : Ctx? α} {A B C : Ty α} {a b c : Term φ (Ty α)}
+  (D : Γ ⊢ (.case a A B b c) : C) : Ctx? α
   := match D with | .case (Γl := Γl) .. => Γl
 
-def Deriv.case_splitRight {e : ε} {Γ : Ctx? α} {A B C : Ty α} {a b c : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.case a A B b c) : C) : Ctx? α
+def Deriv.case_splitRight {Γ : Ctx? α} {A B C : Ty α} {a b c : Term φ (Ty α)}
+  (D : Γ ⊢ (.case a A B b c) : C) : Ctx? α
   := match D with | .case (Γr := Γr) .. => Γr
 
-def Deriv.case_bind {e : ε} {Γ : Ctx? α} {A B C : Ty α} {a b c : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.case a A B b c) : C) : D.case_splitRight ⊢[e] a : .coprod A B
+def Deriv.case_bind {Γ : Ctx? α} {A B C : Ty α} {a b c : Term φ (Ty α)}
+  (D : Γ ⊢ (.case a A B b c) : C) : D.case_splitRight ⊢ a : .coprod A B
   := match D with | .case _ da _ _ => da
 
-def Deriv.case_left {e : ε} {Γ : Ctx? α} {A B C : Ty α} {a b c : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.case a A B b c) : C) : D.case_splitLeft.cons ⟨A, ⊤⟩ ⊢[e] b : C
+def Deriv.case_left {Γ : Ctx? α} {A B C : Ty α} {a b c : Term φ (Ty α)}
+  (D : Γ ⊢ (.case a A B b c) : C) : D.case_splitLeft.cons ⟨A, ⊤⟩ ⊢ b : C
   := match D with | .case _ _ db _ => db
 
-def Deriv.case_right {e : ε} {Γ : Ctx? α} {A B C : Ty α} {a b c : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.case a A B b c) : C) : D.case_splitLeft.cons ⟨B, ⊤⟩ ⊢[e] c : C
+def Deriv.case_right {Γ : Ctx? α} {A B C : Ty α} {a b c : Term φ (Ty α)}
+  (D : Γ ⊢ (.case a A B b c) : C) : D.case_splitLeft.cons ⟨B, ⊤⟩ ⊢ c : C
   := match D with | .case _ _ _ dc => dc
 
-def Deriv.abort_arg {e : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.abort A a) : A) : Γ ⊢[e] a : .empty
+def Deriv.abort_arg {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
+  (D : Γ ⊢ (.abort A a) : A) : Γ ⊢ a : .empty
   := match D with | .abort da => da
 
-def Deriv.iter_splitLeft {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.iter a A B b) : B) : Ctx? α
+def Deriv.iter_splitLeft {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.iter a A B b) : B) : Ctx? α
   := match D with | .iter (Γl := Γl) .. => Γl
 
-def Deriv.iter_splitRight {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.iter a A B b) : B) : Ctx? α
+def Deriv.iter_splitRight {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.iter a A B b) : B) : Ctx? α
   := match D with | .iter (Γr := Γr) .. => Γr
 
-def Deriv.iter_split {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.iter a A B b) : B) : Γ.SSplit (D.iter_splitLeft) (D.iter_splitRight)
-  := match D with | .iter dΓ _ _ _ _ _ => dΓ
+def Deriv.iter_split {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.iter a A B b) : B) : Γ.SSplit (D.iter_splitLeft) (D.iter_splitRight)
+  := match D with | .iter dΓ _ _ _ _ => dΓ
 
-theorem Deriv.iter_eff {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.iter a A B b) : B) : e ∈ S.iterative
-  := match D with | .iter _ hei _ _ _ _ => hei
+theorem Deriv.iter_copy {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.iter a A B b) : B) : D.iter_splitLeft.copy
+  := match D with | .iter _ hc _ _ _ => hc
 
-theorem IsWt.iter_eff {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : IsWt e Γ B (.iter a A B b)) : e ∈ S.iterative := D.elim Deriv.iter_eff
+theorem Deriv.iter_del {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.iter a A B b) : B) : D.iter_splitLeft.del
+  := match D with | .iter _ _ hd _ _ => hd
 
-theorem Deriv.iter_copy {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.iter a A B b) : B) : D.iter_splitLeft.copy
-  := match D with | .iter _ _ hc _ _ _ => hc
+def Deriv.iter_bind {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.iter a A B b) : B) : D.iter_splitRight ⊢ a : A
+  := match D with | .iter _ _ _ da _ => da
 
-theorem Deriv.iter_del {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.iter a A B b) : B) : D.iter_splitLeft.del
-  := match D with | .iter _ _ _ hd _ _ => hd
-
-def Deriv.iter_bind {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.iter a A B b) : B) : D.iter_splitRight ⊢[e] a : A
-  := match D with | .iter _ _ _ _ da _ => da
-
-def Deriv.iter_body {e : ε} {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
-  (D : Γ ⊢[e] (.iter a A B b) : B) : D.iter_splitLeft.cons ⟨A, ⊤⟩ ⊢[e] b : .coprod B A
-  := match D with | .iter _ _ _ _ _ db => db
+def Deriv.iter_body {Γ : Ctx? α} {A B : Ty α} {a b : Term φ (Ty α)}
+  (D : Γ ⊢ (.iter a A B b) : B) : D.iter_splitLeft.cons ⟨A, ⊤⟩ ⊢ b : .coprod B A
+  := match D with | .iter _ _ _ _ db => db
 
 --TODO: want minimization for IsWt inversion...
 

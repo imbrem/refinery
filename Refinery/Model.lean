@@ -66,8 +66,8 @@ variable {φ : Type _} {α : Type _} {ε : Type _} [S : Signature φ α ε]
          {C : Type _} [Category C] [PremonoidalCategory C] [ChosenFiniteCoproducts C]
         [BraidedCategory' C]
 
-def Signature.IsFn.den [Effectful2 C ε] [SigModel φ α ε C]
-  {f : φ} {e : ε} {A B : Ty α} (h : IsFn f e A B)
+def Signature.FnTy.den [Effectful2 C ε] [SigModel φ α ε C]
+  {f : φ} {A B : Ty α} (h : FnTy f A B)
   : (t⟦ A ⟧ : C) ⟶ t⟦ B ⟧ := eqToHom (by rw [h.src]) ≫ i⟦ f ⟧ ≫ eqToHom (by rw [h.trg])
 
 class Model

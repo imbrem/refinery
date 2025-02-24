@@ -17,8 +17,8 @@ variable {φ : Type _} {α : outParam (Type _)} {ε : outParam (Type _)} [S : Si
 
 namespace Term
 
-def Deriv.den {e : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
-  : (Γ ⊢[e] a : A) → ((g⟦ Γ ⟧ : C) ⟶ t⟦ A ⟧)
+def Deriv.den {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
+  : (Γ ⊢ a : A) → ((g⟦ Γ ⟧ : C) ⟶ t⟦ A ⟧)
   | .bv hv => hv.den
   | .op hf da => da.den ≫ hf.den
   | .let₁ dΓ da db => dΓ.den ≫ (_ ◁ da.den) ≫ db.den
@@ -29,15 +29,10 @@ def Deriv.den {e : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
   | .inr db => db.den ≫ CC.inr _ _
   | .case dΓ da db dc => dΓ.den ≫ (_ ◁ da.den) ≫ (∂L _ _ _).inv ≫ desc db.den dc.den
   | .abort da => da.den ≫ CC.fromZero _
-  | .iter (A := A) (B := B) (Γl := Γl) dΓ _ _ _ da db =>
+  | .iter (A := A) (B := B) (Γl := Γl) dΓ _ _ da db =>
     dΓ.den ≫ (_ ◁ da.den) ≫ iterate (
       Δ_ Γl.ety ▷ _
         ≫ (α_ _ _ _).hom
         ≫ _ ◁ db.den
         ≫ (∂L g⟦Γl⟧ t⟦B⟧ t⟦A⟧).inv
         ≫ ((!_ Γl.ety ▷ _ ≫ (λ_ _).hom) ⊕ₕ 𝟙 _))
-
-@[simp]
-theorem Deriv.den_withEff {e e' : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
-   (D : Γ ⊢[e] a : A) (ha : HasEff e' a) : (D.withEff ha).den = D.den (C := C)
-  := by induction D <;> simp only [den, withEff, *]; rfl
