@@ -2,7 +2,6 @@ import Refinery.Ctx.Basic
 import Refinery.Ctx.SSplit
 import Refinery.Signature
 import Refinery.Term.Syntax
-import Refinery.Term.Extrinsic.Effect
 
 namespace Refinery
 
@@ -76,7 +75,7 @@ theorem IsWt.op_fn {Γ : Ctx? α} {B : Ty α} {f : φ} {a : Term φ (Ty α)}
 
 def Deriv.op_arg {Γ : Ctx? α} {B : Ty α} {f : φ} {a : Term φ (Ty α)}
   (D : Γ ⊢ (.op f a) : B) : Γ ⊢ a : S.src f
-  := match D with | .op hf da => da.cast_ty hf.src
+  := match D with | .op hf da => da.cast_ty hf.src.symm
 
 theorem IsWt.op_arg {Γ : Ctx? α} {B : Ty α} {f : φ} {a : Term φ (Ty α)}
   (D : IsWt Γ B (.op f a)) : IsWt Γ (S.src f) a := ⟨(Classical.choice D).op_arg⟩

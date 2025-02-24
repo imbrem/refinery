@@ -12,27 +12,28 @@ class Signature (φ : Type _) (α : outParam (Type _)) (ε : outParam (Type _))
 
 variable {φ : Type _} {α : Type _} {ε : Type _} [Signature φ α ε]
 
-def Signature.HasEff (e : ε) (f : φ) := eff f ≤ e
+class Signature.FnEff (e : ε) (f : φ) : Prop where
+  eff : eff f ≤ e
 
-theorem Signature.HasEff.mono {e e' : ε} (he : e ≤ e') {f : φ} (h : HasEff e f) : HasEff e' f
-  := le_trans h he
+attribute [simp] Signature.FnEff.eff
 
-structure Signature.FnTy (f : φ) (A B : Ty α) where
-  src : A = src f
-  trg : B = trg f
+theorem Signature.FnEff.mono {e e' : ε} (he : e ≤ e') {f : φ} (h : FnEff e f) : FnEff e' f
+  := ⟨le_trans h.eff he⟩
 
-structure Signature.IsFn (f : φ) (e : ε) (A B : Ty α) extends FnTy f A B where
-  eff : HasEff e f
+@[simp]
+instance Signature.FnEff.instTop {f : φ} : FnEff ⊤ f where
+  eff := le_top
 
-attribute [simp] Signature.IsFn.eff
+class Signature.FnTy (f : φ) (A B : Ty α) : Prop where
+  src : src f = A
+  trg : trg f = B
 
-theorem Signature.IsFn.withEff {f : φ} {e e' : ε} {A B : Ty α} (h : IsFn f e A B) (he : HasEff e' f)
-  : IsFn f e' A B := ⟨⟨h.src, h.trg⟩, he⟩
+class Signature.IsFn (f : φ) (e : ε) (A B : Ty α) extends FnTy f A B, FnEff e f : Prop where
+
+instance Signature.IsFn.instMk {f : φ} {e : ε} {A B : Ty α} [h : FnTy f A B] [he : FnEff e f]
+  : IsFn f e A B := ⟨⟩
 
 theorem Signature.IsFn.mono {f : φ} {e e' : ε} {A B : Ty α} (h : IsFn f e A B) (he : e ≤ e')
-  : IsFn f e' A B := ⟨⟨h.src, h.trg⟩, h.eff.mono he⟩
-
-theorem Signature.IsFn.top {f : φ} {e : ε} {A B : Ty α} (h : IsFn f e A B) : IsFn f ⊤ A B
-  := h.mono le_top
+  : IsFn f e' A B := have _ := h.toFnEff.mono he; ⟨⟩
 
 end Refinery

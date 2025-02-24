@@ -11,7 +11,7 @@ variable {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε]
 
 inductive HasEff : ε → Term φ (Ty α) → Prop
   | bv (n) : HasEff e .(bv n)
-  | op {e f a} : S.HasEff e f → HasEff e a → HasEff e (.op f a)
+  | op {e f a} : S.FnEff e f → HasEff e a → HasEff e (.op f a)
   | let₁ {e A a b} : HasEff e a → HasEff e b → HasEff e (.let₁ a A b)
   | let₂ {e A B a b} : HasEff e a → HasEff e b → HasEff e (.let₂ a A B b)
   | unit : HasEff e .unit
@@ -21,8 +21,36 @@ inductive HasEff : ε → Term φ (Ty α) → Prop
   | case {e A B a b c} : HasEff e a → HasEff e b → HasEff e c → HasEff e (.case a A B b c)
   | abort {e A a} : HasEff e a → HasEff e (.abort A a)
   | iter {e A B a b} : e ∈ S.iterative → HasEff e a → HasEff e b → HasEff e (.iter a A B b)
+  | invalid {e} : HasEff e .invalid
 
-attribute [simp] HasEff.bv HasEff.unit
+attribute [class] HasEff
+
+attribute [simp, instance] HasEff.bv HasEff.unit HasEff.invalid
+
+instance HasEff.instOp {e : ε} {f : φ} {a : Term φ (Ty α)} [hf : S.FnEff e f] [ha : HasEff e a]
+  : HasEff e (.op f a) := HasEff.op hf ha
+
+instance HasEff.instLet₁ {e : ε} {A : Ty α} {a b : Term φ (Ty α)}
+  [ha : HasEff e a] [hb : HasEff e b] : HasEff e (.let₁ a A b) := HasEff.let₁ ha hb
+
+instance HasEff.instLet₂ {e : ε} {A B : Ty α} {a b : Term φ (Ty α)}
+  [ha : HasEff e a] [hb : HasEff e b] : HasEff e (.let₂ a A B b) := HasEff.let₂ ha hb
+
+instance HasEff.instPair {e : ε} {a b : Term φ (Ty α)} [ha : HasEff e a] [hb : HasEff e b]
+  : HasEff e (.pair a b) := HasEff.pair ha hb
+
+instance HasEff.instInl {e : ε} {A B : Ty α} {a : Term φ (Ty α)} [ha : HasEff e a]
+  : HasEff e (.inl A B a) := HasEff.inl ha
+
+instance HasEff.instInr {e : ε} {A B : Ty α} {b : Term φ (Ty α)} [hb : HasEff e b]
+  : HasEff e (.inr A B b) := HasEff.inr hb
+
+instance HasEff.instCase {e : ε} {A B : Ty α} {a b c : Term φ (Ty α)}
+  [ha : HasEff e a] [hb : HasEff e b] [hc : HasEff e c] : HasEff e (.case a A B b c)
+  := HasEff.case ha hb hc
+
+instance HasEff.instAbort {e : ε} {A : Ty α} {a : Term φ (Ty α)} [ha : HasEff e a]
+  : HasEff e (.abort A a) := HasEff.abort ha
 
 syntax "inductive_and" : tactic
 
@@ -35,10 +63,10 @@ macro_rules
 
 @[simp]
 theorem HasEff.op_iff {e : ε} {f : φ} {a : Term φ (Ty α)}
-  : HasEff e (.op f a) ↔ S.HasEff e f ∧ HasEff e a := by inductive_and
+  : HasEff e (.op f a) ↔ S.FnEff e f ∧ HasEff e a := by inductive_and
 
 theorem HasEff.op_fn {e : ε} {f : φ} {a : Term φ (Ty α)} (h : HasEff e (.op f a))
-  : S.HasEff e f := by rw [HasEff.op_iff] at h; exact h.1
+  : S.FnEff e f := by rw [HasEff.op_iff] at h; exact h.1
 
 theorem HasEff.op_arg {e : ε} {f : φ} {a : Term φ (Ty α)} (h : HasEff e (.op f a))
   : HasEff e a := by rw [HasEff.op_iff] at h; exact h.2
@@ -128,7 +156,9 @@ theorem HasEff.wk_iff (ρ : ℕ → ℕ) {e : ε} {a : Term φ (Ty α)} : HasEff
   by induction a generalizing ρ <;> simp [*]
 
 theorem HasEff.mono {e e' : ε} (he : e ≤ e') {a : Term φ (Ty α)} (h : HasEff e a) : HasEff e' a :=
-  by induction h <;> simp [Signature.HasEff.mono he, S.iterative_is_upper he, *]
+  by induction h <;> simp [Signature.FnEff.mono he, S.iterative_is_upper he, *]
+
+instance HasEff.top {a : Term φ (Ty α)} : HasEff ⊤ a := by induction a <;> simp [*]
 
 end Term
 

@@ -62,6 +62,7 @@ class SigModel
 
 notation "i⟦" f "⟧" => SigModel.den_inst f
 
+
 variable {φ : Type _} {α : Type _} {ε : Type _} [S : Signature φ α ε]
          {C : Type _} [Category C] [PremonoidalCategory C] [ChosenFiniteCoproducts C]
         [BraidedCategory' C]
@@ -69,6 +70,14 @@ variable {φ : Type _} {α : Type _} {ε : Type _} [S : Signature φ α ε]
 def Signature.FnTy.den [Effectful2 C ε] [SigModel φ α ε C]
   {f : φ} {A B : Ty α} (h : FnTy f A B)
   : (t⟦ A ⟧ : C) ⟶ t⟦ B ⟧ := eqToHom (by rw [h.src]) ≫ i⟦ f ⟧ ≫ eqToHom (by rw [h.trg])
+
+instance Signature.FnEff.instHasEff [E : Effectful2 C ε] [S : SigModel φ α ε C]
+  {f : φ} {e : ε} [h : FnEff e f] : E.HasEff e (S.den_inst f)
+  := (EffectfulCategory.HasEff.mk (S.den_eff f)).mono h.eff
+
+instance Signature.IsFn.instHasEff [E : Effectful2 C ε] [SigModel φ α ε C]
+  {f : φ} {A B : Ty α} [h : IsFn f e A B] : E.HasEff e h.den
+  := by unfold FnTy.den; infer_instance
 
 class Model
   (φ : Type _) (α : outParam (Type _)) (ε : outParam (Type _)) [S : Signature φ α ε]
