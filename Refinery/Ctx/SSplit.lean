@@ -533,6 +533,12 @@ theorem Var?.SSplit.leftWk {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.SSplit v
   : (σ.wkLeft u') ≤ v := by cases u with | mk A q =>
     cases q using EQuant.casesZero <;> cases σ <;> first | exact ρ | exact (erase_mono ρ)
 
+theorem Var?.SSplit.wk_left_del {u v w : Var? α} (σ : u.SSplit v w) [hv : v.del]
+  : u ≤ w := by cases σ <;> simp [Var?.del.erase_le]
+
+theorem Var?.SSplit.wk_right_del {u v w : Var? α} (σ : u.SSplit v w) [hw : w.del]
+  : u ≤ v := by cases σ <;> simp [Var?.del.erase_le]
+
 @[simp]
 theorem Var?.SSplit.rightWk {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.SSplit v w)
   : (σ.wkRight u') ≤ w := by cases u with | mk A q =>
@@ -659,6 +665,16 @@ instance Ctx?.SSplit.wkLeft_copy
   | cons ρ hvw I =>
     cases σ; have _ := hΔ.head; have _ := hΔ.tail;
     simp [wkLeft, cons_copy_iff, Var?.SSplit.wkLeft_copy, *]
+
+theorem Ctx?.SSplit.pwk_left_del {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) [hΔ : Δ.del]
+  : Γ.PWk Ξ := by generalize hΔ = hΔ; induction σ with
+  | nil => simp
+  | cons _ hvw I => constructor; apply I hΔ.tail; apply hvw.wk_left_del (hv := hΔ.head)
+
+theorem Ctx?.SSplit.pwk_right_del {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) [hΞ : Ξ.del]
+  : Γ.PWk Δ := by generalize hΞ = hΞ; induction σ with
+  | nil => simp
+  | cons _ hvw I => constructor; apply I hΞ.tail; apply hvw.wk_right_del (hw := hΞ.head)
 
 @[simp]
 def Ctx?.SSplit.wkLeft' {Γ' Γ Δ Ξ : Ctx? α}

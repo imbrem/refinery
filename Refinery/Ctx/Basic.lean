@@ -339,6 +339,21 @@ theorem Var?.Wk.ety_eq_used {v w : Var? α} (h : v ≤ w) (hw : w.used) : v.ety 
     | zero => cases hw
     | rest => rw [ety_eq_quant h]
 
+theorem Var?.del.erase_le (v : Var? α) [hv : v.del] : v ≤ v.erase := ⟨
+  rfl,
+  by cases v with | mk A q => cases q using EQuant.casesZero with | zero => rfl | rest q =>
+    simp [IsAff.is_aff_iff', quant] at *; apply le_trans hv; simp,
+  λ_ => hv
+⟩
+
+theorem Var?.del.of_erase_le {v : Var? α} (h : v ≤ v.erase) : v.del := by
+  cases v with | mk A q => cases q using EQuant.casesZero with
+  | zero => infer_instance
+  | rest q => exact h.unused_del (by simp)
+
+theorem Var?.del_iff_erase_le (v : Var? α) : v.del ↔ v ≤ v.erase
+  := ⟨λ_ => del.erase_le v, del.of_erase_le⟩
+
 inductive Ctx?.PWk : Ctx? α → Ctx? α → Prop where
   | nil : Ctx?.PWk .nil .nil
   | cons {Γ Δ v w} (h : Ctx?.PWk Γ Δ) (hvw : v ≤ w) : Ctx?.PWk (Ctx?.cons Γ v) (Ctx?.cons Δ w)
@@ -476,6 +491,8 @@ theorem Ctx?.Wk.ix_length_eq {Γ Δ : Ctx? α} (h : Γ.Wk Δ) (hl : Γ.length = 
   : h.ix = id := funext (λi => ix_length_eq_applied h hl i)
 
 theorem Ctx?.Wk.ix_refl {Γ : Ctx? α} (h : Γ.Wk Γ) : h.ix = id := ix_length_eq _ rfl
+
+theorem Ctx?.Wk.ix_pwk {Γ Δ : Ctx? α} (h : Γ.PWk Δ) : h.toWk.ix = id := ix_length_eq _ h.length
 
 -- TODO: ix is an injection...
 

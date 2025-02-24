@@ -58,6 +58,10 @@ def Deriv.wk {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)}
   (D : Δ ⊢ a : A) : (Γ ⊢ a.ren ρ : A)
   := (D.wkD ρ).cast_term (D.wkTerm_eq ρ)
 
+def Deriv.pwk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} {a : Term φ (Ty α)}
+  (D : Δ ⊢ a : A) : (Γ ⊢ a : A)
+  := (D.wk ρ.toWk).cast_term (by simp [Ctx?.Wk.ix_pwk])
+
 end Term
 
 end Refinery

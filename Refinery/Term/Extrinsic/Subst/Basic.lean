@@ -10,8 +10,8 @@ open HasQuant
 variable {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε]
 
 inductive Deriv? : Ctx? α → Var? α → Term φ (Ty α) → Type _
-  | valid {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ a : A) (q : EQuant)
-    (hΓ : q ≤ quant Γ) : Deriv? Γ ⟨A, q⟩ a
+  | valid {Γ : Ctx? α} {v : Var? α} {a : Term φ (Ty α)} (D : Γ ⊢ a : v.ty)
+    (hΓ : quant v ≤ quant Γ) : Deriv? Γ v a
   | zero {Γ : Ctx? α} (hΓ : Γ.del) (a A) : Deriv? Γ ⟨A, 0⟩ a
 
 notation Γ "⊢?" a ":" v => Deriv? Γ v a
@@ -34,32 +34,35 @@ def Deriv?.unused {Γ : Ctx? α} {v : Var? α} (hΓ : Γ.del)  (a : Term φ (Ty 
 
 theorem Deriv?.copy {Γ : Ctx? α} {v : Var? α} {a : Term φ (Ty α)}
   (D : Γ ⊢? a : v) (hv : v.used) (hc : v.copy) : Γ.copy := by cases D with
-  | valid D q hΓ =>
-    cases q using EQuant.casesZero with
+  | valid D hΓ =>
+    cases v with | mk A q => cases q using EQuant.casesZero with
     | zero => cases hv
     | rest q =>
       constructor
       rw [<-EQuant.coe_le_coe]
       apply le_trans _ hΓ
       simp [Var?.copy_iff] at hc
+      simp [quant]
+      constructor
       exact hc.q
+      exact hc.ty.copy_le_quant
   | zero => cases hv
 
 theorem Deriv?.del_of_unused {Γ : Ctx? α} {v : Var? α} {a : Term φ (Ty α)}
   (D : Γ ⊢? a : v) (hv : v.unused) : Γ.del := by cases D with
-  | valid D q hΓ => cases hv; exact ⟨hΓ⟩
+  | valid D hΓ => cases v with | mk A q => exact ⟨le_trans (by cases hv; simp [quant]) hΓ⟩
   | zero hΓ _ _ => exact hΓ
 
 theorem Deriv?.del {Γ : Ctx? α} {v : Var? α} {a : Term φ (Ty α)}
   (D : Γ ⊢? a : v) (hv : v.del) : Γ.del := by cases D with
-  | valid D q hΓ => cases q using EQuant.casesZero with
-    | zero => exact IsAff.of_zero_le_quant hΓ
-    | rest q => exact ⟨le_trans hv.q (EQuant.coe_le_coe.mpr hΓ)⟩
+  | valid D hΓ => cases v with | mk A q => cases q using EQuant.casesZero with
+    | zero => simp at hΓ; exact ⟨by simp [hΓ]⟩
+    | rest q => exact ⟨le_trans hv.del_le_quant (le_trans (by simp [quant]) hΓ)⟩
   | zero hΓ _ _ => exact hΓ
 
 def Deriv?.wk {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {v : Var? α} {a : Term φ (Ty α)}
   (hΓΔ : quant Δ ≤ quant Γ) : (D : Δ ⊢? a : v) → (Γ ⊢? a.ren ρ : v)
-  | .valid D q hΔ => .valid (D.wk ρ) q (le_trans hΔ (EQuant.coe_le_coe.mpr hΓΔ))
+  | .valid D hΔ => .valid (D.wk ρ) (le_trans hΔ (EQuant.coe_le_coe.mpr hΓΔ))
   | .zero hΓ a A => .zero (hΓ.wk ρ) (a.ren ρ) A
 
 inductive SubstDS (φ) {α ε} [S : Signature φ α ε] : Ctx? α → Ctx? α → Type _
@@ -101,11 +104,6 @@ def SubstDS.headD {Γ Δ} : (σ : SubstDS φ Γ Δ) → σ.headCtx ⊢? σ 0 : �
 def SubstDS.tail {Γ Δ} : (σ : SubstDS φ Γ Δ) → SubstDS φ σ.tailCtx Δ.tail
   | .nil hΓ => .nil hΓ
   | .cons _ σ _ => σ
-
--- def SubstDS.at {Γ Δ : Ctx? α} {q : Quant}
---   : (σ : SubstDS φ Γ Δ) →  (hv : Δ.At ⟨A, q⟩ n) → Γ ⊢ σ n : A
---   | .cons hΓ σ (.valid da q h), .here d hvw => sorry
---   | .cons hΓ σ da, .there _ _ => sorry
 
 def SubstDS.wkIn {Γ' Γ Δ} (ρ : Γ'.Wk Γ) : SubstDS φ Γ Δ → SubstDS φ Γ' Δ
   | .nil hΓ => .nil (hΓ.wk ρ)
@@ -230,56 +228,66 @@ theorem SubstDS.del {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [hΔ : Δ.del] : �
     have hΓr := da.del hΔ.head
     apply hΓ.in_del
 
--- def SubstDS.lift {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (v : Var? α)
---   : SubstDS φ (Γ.cons v) (Δ.cons v) := sorry
+def SubstDS.at {Γ Δ : Ctx? α} {q : Quant}
+  : (σ : SubstDS φ Γ Δ) →  (hv : Δ.At ⟨A, q⟩ n) → Γ ⊢ σ n : A
+  | .cons hΓ σ (.valid da _), .here d hvw
+    => (da.pwk (hΓ.pwk_left_del (hΔ := σ.del))).cast_ty hvw.ty
+  | .cons hΓ σ da, .there x hv => (σ.at x).pwk (hΓ.pwk_right_del (hΞ := da.del hv))
 
--- def Deriv.substTerm {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A : Ty α} {a : Term φ (Ty α)}
---   : (Δ ⊢ a : A) → Term φ (Ty α)
---   | .bv (n := n) hv => σ.toSubst n
---   | .op (f := f) hf da => .op f (da.substTerm σ)
---   | .let₁ (A := A) (B := B) hΔ da db =>
---     let s := σ.ssplit hΔ;
---     .let₁ (da.substTerm s.substRight) A (db.substTerm (s.substLeft.lift _))
---   | .unit hv => .unit
---   | .pair hΔ da db =>
---     let s := σ.ssplit hΔ;
---     .pair (da.substTerm s.substLeft) (db.substTerm s.substRight)
---   | .let₂ (A := A) (B := B) hΔ da db =>
---     let s := σ.ssplit hΔ;
---     .let₂ (da.substTerm s.substRight) A B (db.substTerm ((s.substLeft.lift _).lift _))
---   | .inl (A := A) (B := B) da => .inl A B (da.substTerm σ)
---   | .inr (A := A) (B := B) db => .inr A B (db.substTerm σ)
---   | .case (A := A) (B := B) hΔ da db dc =>
---     let s := σ.ssplit hΔ;
---     .case (da.substTerm s.substRight) A B (db.substTerm (s.substLeft.lift _))
---           (dc.substTerm (s.substLeft.lift _))
---   | .abort (A := A) da => .abort A (da.substTerm σ)
---   | .iter (A := A) (B := B) hΔ _ _ da db =>
---     let s := σ.ssplit hΔ;
---     .iter (da.substTerm s.substRight) A B (db.substTerm (s.substLeft.lift _))
+def SubstDS.lift {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (A : Ty α)
+  : SubstDS φ (Γ.cons ⟨A, ⊤⟩) (Δ.cons ⟨A, ⊤⟩)
+  := .cons (a := .bv 0)
+           (.cons Γ.erase_right (.right _))
+           (σ.wkIn (Γ.wk0 ⟨A, 0⟩)) (.valid (.bv (.here inferInstance ⟨rfl, by simp, by simp⟩))
+                                                                    (by simp))
 
--- def Deriv.subst {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A : Ty α} {a : Term φ (Ty α)}
---   : (D : Δ ⊢ a : A) → (Γ ⊢ D.substTerm σ : A)
---   | .bv hv => σ.at hv
---   | .op hf da => .op hf (da.subst σ)
---   | .let₁ hΔ da db =>
---     let s := σ.ssplit hΔ;
---     .let₁ s.ssplitIn (da.subst s.substRight) (db.subst (s.substLeft.lift _))
---   | .unit _ => .unit σ.del
---   | .pair hΔ da db =>
---     let s := σ.ssplit hΔ;
---     .pair s.ssplitIn (da.subst s.substLeft) (db.subst s.substRight)
---   | .let₂ hΔ da db =>
---     let s := σ.ssplit hΔ;
---     .let₂ s.ssplitIn (da.subst s.substRight) (db.subst ((s.substLeft.lift _).lift _))
---   | .inl da => .inl (da.subst σ)
---   | .inr db => .inr (db.subst σ)
---   | .case hΔ da db dc =>
---     let s := σ.ssplit hΔ;
---     .case s.ssplitIn (da.subst s.substRight) (db.subst (s.substLeft.lift _))
---           (dc.subst (s.substLeft.lift _))
---   | .abort da => .abort (da.subst σ)
---   | .iter hΔ _ _ da db =>
---     let s := σ.ssplit hΔ;
---     .iter s.ssplitIn (σ.split_copy_left hΔ) (σ.split_del_left hΔ)
---                         (da.subst s.substRight) (db.subst (s.substLeft.lift _))
+def Deriv.substTerm {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A : Ty α} {a : Term φ (Ty α)}
+  : (Δ ⊢ a : A) → Term φ (Ty α)
+  | .bv (n := n) hv => σ.toSubst n
+  | .op (f := f) hf da => .op f (da.substTerm σ)
+  | .let₁ (A := A) (B := B) hΔ da db =>
+    let s := σ.ssplit hΔ;
+    .let₁ (da.substTerm s.substRight) A (db.substTerm (s.substLeft.lift _))
+  | .unit hv => .unit
+  | .pair hΔ da db =>
+    let s := σ.ssplit hΔ;
+    .pair (da.substTerm s.substLeft) (db.substTerm s.substRight)
+  | .let₂ (A := A) (B := B) hΔ da db =>
+    let s := σ.ssplit hΔ;
+    .let₂ (da.substTerm s.substRight) A B (db.substTerm ((s.substLeft.lift _).lift _))
+  | .inl (A := A) (B := B) da => .inl A B (da.substTerm σ)
+  | .inr (A := A) (B := B) db => .inr A B (db.substTerm σ)
+  | .case (A := A) (B := B) hΔ da db dc =>
+    let s := σ.ssplit hΔ;
+    .case (da.substTerm s.substRight) A B (db.substTerm (s.substLeft.lift _))
+          (dc.substTerm (s.substLeft.lift _))
+  | .abort (A := A) da => .abort A (da.substTerm σ)
+  | .iter (A := A) (B := B) hΔ _ _ da db =>
+    let s := σ.ssplit hΔ;
+    .iter (da.substTerm s.substRight) A B (db.substTerm (s.substLeft.lift _))
+
+def Deriv.subst {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A : Ty α} {a : Term φ (Ty α)}
+  : (D : Δ ⊢ a : A) → (Γ ⊢ D.substTerm σ : A)
+  | .bv hv => σ.at hv
+  | .op hf da => .op hf (da.subst σ)
+  | .let₁ hΔ da db =>
+    let s := σ.ssplit hΔ;
+    .let₁ s.ssplitIn (da.subst s.substRight) (db.subst (s.substLeft.lift _))
+  | .unit _ => .unit σ.del
+  | .pair hΔ da db =>
+    let s := σ.ssplit hΔ;
+    .pair s.ssplitIn (da.subst s.substLeft) (db.subst s.substRight)
+  | .let₂ hΔ da db =>
+    let s := σ.ssplit hΔ;
+    .let₂ s.ssplitIn (da.subst s.substRight) (db.subst ((s.substLeft.lift _).lift _))
+  | .inl da => .inl (da.subst σ)
+  | .inr db => .inr (db.subst σ)
+  | .case hΔ da db dc =>
+    let s := σ.ssplit hΔ;
+    .case s.ssplitIn (da.subst s.substRight) (db.subst (s.substLeft.lift _))
+          (dc.subst (s.substLeft.lift _))
+  | .abort da => .abort (da.subst σ)
+  | .iter hΔ _ _ da db =>
+    let s := σ.ssplit hΔ;
+    .iter s.ssplitIn (σ.split_copy_left hΔ) (σ.split_del_left hΔ)
+                        (da.subst s.substRight) (db.subst (s.substLeft.lift _))

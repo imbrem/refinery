@@ -159,6 +159,14 @@ def Var?.Split.wk {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.Split v w) :
     | .right _ _ => .right _ _
     | .both h => .both (Var?.copy.anti ρ (by simp))
 
+theorem Var?.Split.leftWk {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.Split v w) :
+  σ.wkLeft u' ≤ v := by cases u' with | mk A q' => cases u with | mk _ q =>
+    cases v; cases ρ.ty; cases σ <;> cases q using EQuant.casesZero <;> simp [ρ]
+
+theorem Var?.Split.rightWk {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.Split v w) :
+  σ.wkRight u' ≤ w := by cases u' with | mk A q' => cases u with | mk _ q =>
+    cases w; cases ρ.ty; cases σ <;> cases q using EQuant.casesZero <;> simp [ρ]
+
 @[simp]
 def Var?.Split.comm {u v w : Var? α} : u.Split v w → u.Split w v
   | .neither h => .neither h
@@ -218,6 +226,50 @@ instance Ctx?.Split.wkRight_copy {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ :
     cases σ; have _ := hΞ.head; have _ := hΞ.tail;
     simp [wkRight, cons_copy_iff, Var?.Split.wkRight_copy, *]
   | _ => simp [*]
+
+def Ctx?.Split.wk {Γ' Γ Δ Ξ : Ctx? α}
+  : (ρ : Γ'.Wk Γ) → (σ : Γ.Split Δ Ξ) → Γ'.Split (σ.wkLeft ρ) (σ.wkRight ρ)
+  | .nil, .nil => .nil
+  | .skip ρ hv, σ => .cons (σ.wk ρ) (.neither hv)
+  | .cons (v := v) ρ hvw, .cons σ hlr => .cons (σ.wk ρ) (hlr.wk hvw)
+
+@[simp]
+def Ctx?.Split.leftWk {Γ' Γ Δ Ξ : Ctx? α} : (ρ : Γ'.Wk Γ) → (σ : Γ.Split Δ Ξ) → (σ.wkLeft ρ).Wk Δ
+  | .nil, .nil => .nil
+  | .skip ρ _, σ => .skip (σ.leftWk ρ) inferInstance
+  | .cons (v := v) ρ hvw, .cons σ hlr => .cons (σ.leftWk ρ) (hlr.leftWk hvw)
+
+@[simp]
+def Ctx?.Split.rightWk {Γ' Γ Δ Ξ : Ctx? α} : (ρ : Γ'.Wk Γ) → (σ : Γ.Split Δ Ξ) → (σ.wkRight ρ).Wk Ξ
+  | .nil, .nil => .nil
+  | .skip ρ _, σ => .skip (σ.rightWk ρ) inferInstance
+  | .cons (v := v) ρ hvw, .cons σ hlr => .cons (σ.rightWk ρ) (hlr.rightWk hvw)
+
+@[simp]
+theorem Ctx?.Split.ix_leftWk {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ : Γ.Split Δ Ξ)
+  : (σ.leftWk ρ).ix = ρ := by
+    induction ρ generalizing Δ Ξ <;> cases σ <;> simp [*]
+
+theorem Ctx?.Split.leftWk_applied {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ : Γ.Split Δ Ξ) (i : ℕ)
+  : (σ.leftWk ρ) i = ρ i := by simp
+
+@[simp]
+theorem Ctx?.Split.ix_rightWk {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ : Γ.Split Δ Ξ)
+  : (σ.rightWk ρ).ix = ρ := by
+    induction ρ generalizing Δ Ξ <;> cases σ <;> simp [*]
+
+theorem Ctx?.Split.rightWk_applied {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ : Γ.Split Δ Ξ) (i : ℕ)
+  : (σ.rightWk ρ) i = ρ i := by simp
+
+@[simp]
+def Var?.Split.leftCtx {u v w : Var? α} : u.Split v w → Ctx? α → Ctx? α
+  | .left _ _, Γ | .both _, Γ => Γ
+  | .right _ _, Γ | .neither _, Γ => Γ.erase
+
+@[simp]
+def Var?.Split.rightCtx {u v w : Var? α} : u.Split v w → Ctx? α → Ctx? α
+  | .left _ _, Γ | .neither _, Γ => Γ.erase
+  | .right _ _, Γ | .both _, Γ => Γ
 
 def Var?.Split.v12_3_23 {u₁₂₃ u₁₂ u₁ u₂ u₃ : Var? α} : u₁₂₃.Split u₁₂ u₃ → u₁₂.Split u₁ u₂ → Var? α
   | .neither _, _ | .left _ _, .neither _ | .left _ _, .left _ _ => u₁₂₃.erase
