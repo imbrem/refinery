@@ -107,12 +107,35 @@ def Ctx?.At.den {v : Var? α} {Γ : Ctx? α} {n} : Γ.At v n → ((g⟦ Γ ⟧ :
 --   = (h.succ_cons_tail.den (C := C) ⊗ h.succ_cons_head.den) ≫ (ρ_ _).hom
 --   := by cases h; rfl
 
+--NOTE: simp lemmas for this break; go fix later...
+def Var?.Split.den {u v w : Var? α} : u.Split v w → ((v⟦ u ⟧ : C) ⟶ v⟦ v ⟧ ⊗ v⟦ w ⟧)
+  | .neither _ => !_ _ ≫ (ρ_ _).inv
+  | .left _ _ => (ρ_ _).inv
+  | .right _ _ => (λ_ _).inv
+  | .both _ => Δ_ _
+
+@[simp]
+theorem Var?.Split.den_neither {v : Var? α} [hv : v.del]
+  : (Split.neither hv).den (C := C) = !_ _ ≫ (ρ_ _).inv := rfl
+
+@[simp]
+theorem Var?.Split.den_left {A : Ty α} {q} : (Split.left A q).den (C := C) = (ρ_ _).inv := rfl
+
+@[simp]
+theorem Var?.Split.den_right {A : Ty α} {q} : (Split.right A q).den (C := C) = (λ_ _).inv := rfl
+
+@[simp]
+theorem Var?.Split.den_both {v : Var? α} (h : v.copy)
+  : (Split.both h).den (C := C) = Δ_ _ := rfl
+
+notation "vs⟦" ρ "⟧" => Var?.Split.den ρ
+
 def Var?.SSplit.den {u v w : Var? α} : u.SSplit v w → ((v⟦ u ⟧ : C) ⟶ v⟦ v ⟧ ⊗ v⟦ w ⟧)
   | .left _ => (ρ_ _).inv
   | .right _ => (λ_ _).inv
   | .sboth h => have _ := h.copy; Δ_ _
 
-notation "vs⟦" ρ "⟧" => Var?.SSplit.den ρ
+notation "vss⟦" ρ "⟧" => Var?.SSplit.den ρ
 
 @[simp]
 theorem Var?.SSplit.den_left (v : Var? α) : (SSplit.left v).den (C := C) = (ρ_ _).inv := rfl
@@ -136,11 +159,18 @@ section BraidedCategory
 variable [PremonoidalCategory C] [BraidedCategory' C] [VarModel α C]
 
 @[simp]
+def Ctx?.Split.den {Γ Δ Ξ : Ctx? α} : Γ.Split Δ Ξ → ((g⟦ Γ ⟧ : C) ⟶ g⟦ Δ ⟧ ⊗ g⟦ Ξ ⟧)
+  | .nil => (λ_ _).inv
+  | .cons σ hlr => (σ.den ⊗ hlr.den) ≫ (βi_ _ _ _ _).hom
+
+notation "cs⟦" ρ "⟧" => Ctx?.SSplit.den ρ
+
+@[simp]
 def Ctx?.SSplit.den {Γ Δ Ξ : Ctx? α} : Γ.SSplit Δ Ξ → ((g⟦ Γ ⟧ : C) ⟶ g⟦ Δ ⟧ ⊗ g⟦ Ξ ⟧)
   | .nil => (λ_ _).inv
   | .cons σ hlr => (σ.den ⊗ hlr.den) ≫ (βi_ _ _ _ _).hom
 
-notation "ps⟦" ρ "⟧" => Ctx?.SSplit.den ρ
+notation "css⟦" ρ "⟧" => Ctx?.SSplit.den ρ
 
 end BraidedCategory
 
@@ -206,6 +236,10 @@ theorem Var?.Wk.den_from_erase {v w : Var? α} (h : v.erase ≤ w)
   := by simp
 
 @[simp]
+instance Var?.Split.den_pure {u v w : Var? α} (h : u.Split v w) : E.HasEff e h.den
+  := by cases h <;> simp; infer_instance
+
+@[simp]
 instance Var?.SSplit.den_pure {u v w : Var? α} (h : u.SSplit v w) : E.HasEff e h.den
   := by cases h <;> simp; infer_instance
 
@@ -249,6 +283,10 @@ instance Ctx?.At.den_central {v : Var? α} {Γ : Ctx? α} {n} (h : Γ.At v n)
   := (den_pure h).pure_central
 
 @[simp]
+instance Ctx?.Split.den_pure {Γ Δ Ξ : Ctx? α} (h : Γ.Split Δ Ξ) : E.HasEff e h.den
+  := by induction h <;> simp; infer_instance
+
+@[simp]
 instance Ctx?.SSplit.den_pure {Γ Δ Ξ : Ctx? α} (h : Γ.SSplit Δ Ξ) : E.HasEff e h.den
   := by induction h <;> simp; infer_instance
 
@@ -278,6 +316,35 @@ theorem Ctx?.At.den_wkIn {Γ Δ : Ctx? α} (w : Γ.Wk Δ) {v n} (hΔv : Δ.At v 
     <-PremonoidalCategory.rightUnitor_naturality, <-tensorHom_id,
     <-tensor_comp_of_left_assoc, Ctx?.At.wkIn, *]
   | cons ρ _ => cases hΔv <;> simp [<-tensor_comp_of_left_assoc, Wk.den_comp, Ctx?.At.wkIn, *]
+
+-- theorem Var?.Split.wk_den {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.Split v w)
+--   : Var?.Wk.den ρ ≫ σ.den (C := C)
+--   = (σ.wk ρ).den ≫ (Var?.Wk.den (C := C) (σ.leftWk ρ) ⊗ Var?.Wk.den (σ.rightWk ρ))
+--   := by cases u with | mk A q => cases q using EQuant.casesZero with
+--   | zero => cases σ with
+--     | sboth h => cases h.q using EQuant.le.casesLE
+--     | right =>
+--       simp only [
+--         ety_quant_zero, leftUnitor_inv_naturality, rightUnitor_inv_naturality,
+--         id_tensorHom, wk, Wk.den_zero, den_right
+--       ]
+--       simp
+--     | left =>
+--       apply (cancel_mono (f := (ρ_ (𝟙_ C)).hom)).mp
+--       simp [ety_quant_zero, id_tensorHom, unitors_inv_equal]
+--   | rest => cases σ with
+--     | sboth h =>
+--       simp [den, wkLeft_sboth, wkRight_sboth]
+--       rw [
+--         Model.copy_rel_ltimes ⊥ _ (hA := (h.anti ρ).copy.ety_rel) (hB := h.copy.ety_rel),
+--         tensorHom_def
+--       ]
+--     | _ =>
+--       simp only [
+--         leftUnitor_inv_naturality, rightUnitor_inv_naturality,
+--         tensorHom_id, id_tensorHom, Wk.den_quant, den_left, den_right
+--       ]
+--       simp
 
 theorem Var?.SSplit.wk_den {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.SSplit v w)
   : Var?.Wk.den ρ ≫ σ.den (C := C)
@@ -384,13 +451,13 @@ local notation "WL" => Ctx?.SSplit.wkLeft
 --   | cons ρ hvw I => cases σ with
 --   | cons σ hlr =>
 --     calc
---     _ = (ρ.den (C := C) ⊗ vw⟦hvw⟧) ≫ (ps⟦σ⟧ ⊗ vs⟦hlr⟧) ≫ (βi_ _ _ _ _).hom := by simp
---     _ = ((ρ.den (C := C) ≫ ps⟦σ⟧) ⊗ (vw⟦hvw⟧ ≫ vs⟦hlr⟧)) ≫ (βi_ _ _ _ _).hom
+--     _ = (ρ.den (C := C) ⊗ vw⟦hvw⟧) ≫ (css⟦σ⟧ ⊗ vss⟦hlr⟧) ≫ (βi_ _ _ _ _).hom := by simp
+--     _ = ((ρ.den (C := C) ≫ css⟦σ⟧) ⊗ (vw⟦hvw⟧ ≫ vss⟦hlr⟧)) ≫ (βi_ _ _ _ _).hom
 --       := by rw [<-tensor_comp_of_left_assoc]
---     _ = (((PW ρ σ).den (C := C) ≫ (w⟦LW ρ σ⟧ ⊗ w⟦RW ρ σ⟧)) ⊗ (vw⟦hvw⟧ ≫ vs⟦hlr⟧))
+--     _ = (((PW ρ σ).den (C := C) ≫ (w⟦LW ρ σ⟧ ⊗ w⟦RW ρ σ⟧)) ⊗ (vw⟦hvw⟧ ≫ vss⟦hlr⟧))
 --       ≫ (βi_ _ _ _ _).hom := by rw [I]
 --     _ = _ := by sorry
---     ((PW ρ σ).den (C := C) ⊗ vs⟦hlr.wk hvw⟧)
+--     ((PW ρ σ).den (C := C) ⊗ vss⟦hlr.wk hvw⟧)
 --       ≫ (βi_ _ _ _ _).hom
 --       ≫ ((w⟦LW ρ σ⟧ ⊗ vw⟦hlr.leftWk hvw⟧) ⊗ (w⟦RW ρ σ⟧ ⊗ vw⟦hlr.rightWk hvw⟧))
 --       = _ := by simp only [Ctx?.SSplit.wkLeft.eq_3,
