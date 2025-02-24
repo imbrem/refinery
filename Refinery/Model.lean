@@ -44,8 +44,8 @@ class VarModel
   (α : Type _) [HasQuant α]
   (C : Type _) [Category C] [MC : MonoidalCategoryStruct C] [ChosenFiniteCoproducts C]
   extends TyModel α C where
-  drop (A : Ty α) [IsAff A] : t⟦ A ⟧ ⟶ 𝟙_ C
-  copy (A : Ty α) [IsRel A] : (t⟦ A ⟧ : C) ⟶ t⟦ A ⟧ ⊗ t⟦ A ⟧
+  drop (A : Ty α) [hA : IsAff A] : t⟦ A ⟧ ⟶ 𝟙_ C
+  copy (A : Ty α) [hA : IsRel A] : (t⟦ A ⟧ : C) ⟶ t⟦ A ⟧ ⊗ t⟦ A ⟧
 
 notation "!_" => VarModel.drop
 

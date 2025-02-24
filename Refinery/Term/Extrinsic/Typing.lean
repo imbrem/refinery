@@ -107,11 +107,11 @@ theorem Deriv.wt_top {e : ε} {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (
 theorem IsWt.exists_iff {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
   : (∃e, IsWt e Γ A a) ↔ IsWt ⊤ Γ A a := ⟨λ⟨_, h⟩ => h.top, λh => ⟨⊤, h⟩⟩
 
-theorem Deriv.bv_at {e : ε} {Γ : Ctx? α} {A : Ty α} {n : ℕ} (D : Γ ⊢[e] (.bv (φ := φ) n) : A)
+def Deriv.bv_at {e : ε} {Γ : Ctx? α} {A : Ty α} {n : ℕ} (D : Γ ⊢[e] (.bv (φ := φ) n) : A)
   : Γ.At ⟨A, 1⟩ n := match D with | .bv hv => hv
 
-theorem IsWt.bv_at {e : ε} {Γ : Ctx? α} {A : Ty α} {n : ℕ} (D : IsWt (φ := φ) e Γ A (.bv n))
-  : Γ.At ⟨A, 1⟩ n := D.elim Deriv.bv_at
+-- theorem IsWt.bv_at {e : ε} {Γ : Ctx? α} {A : Ty α} {n : ℕ} (D : IsWt (φ := φ) e Γ A (.bv n))
+--   : Γ.At ⟨A, 1⟩ n := D.elim Deriv.bv_at
 
 theorem Deriv.op_fn {e : ε} {Γ : Ctx? α} {B : Ty α} {f : φ} {a : Term φ (Ty α)}
   (D : Γ ⊢[e] (.op f a) : B) : S.IsFn f e (S.src f) B

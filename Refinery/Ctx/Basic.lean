@@ -598,55 +598,43 @@ theorem Var?.Ix.ix_wk_le {Γ Δ : Ctx? α} (h : Γ.Wk Δ) {v} (x : Ix Δ v) : x.
 
 -- TODO: ix is an injection on variables...
 
-inductive Ctx?.At (v : Var? α) : Ctx? α → ℕ → Prop where
-  | here {Γ} (d : Ctx?.Wk Γ .nil) {w} : w ≤ v → Ctx?.At v (Ctx?.cons Γ w) 0
+inductive Ctx?.At (v : Var? α) : Ctx? α → ℕ → Type _ where
+  | here {Γ} (d : Γ.del) {w} : w ≤ v → Ctx?.At v (Ctx?.cons Γ w) 0
   | there {Γ w n} (x : Ctx?.At v Γ n) (hw : w.del) : Ctx?.At v (Ctx?.cons Γ w) (n + 1)
 
 theorem Ctx?.At.zero_cons_head {Γ : Ctx? α} {v} (h : (Γ.cons w).At v 0) : w ≤ v
   := by cases h; assumption
 
-def Ctx?.At.zero_cons_tail {Γ : Ctx? α} {v} (h : (Γ.cons w).At v 0) : Γ.Wk .nil
-  := Γ.choose_drop (by cases h; constructor; assumption)
+theorem Ctx?.At.zero_cons_tail {Γ : Ctx? α} {v} (h : (Γ.cons w).At v 0) : Γ.del
+  := by cases h; assumption
 
 theorem Ctx?.At.succ_cons_head {Γ : Ctx? α} {v w} (h : (Γ.cons w).At v (n + 1)) : w.del
   := by cases h; assumption
 
-theorem Ctx?.At.succ_cons_tail {Γ : Ctx? α} {v w} (h : (Γ.cons w).At v (n + 1)) : Γ.At v n
+def Ctx?.At.succ_cons_tail {Γ : Ctx? α} {v w} (h : (Γ.cons w).At v (n + 1)) : Γ.At v n
   := by cases h; assumption
 
-theorem Ctx?.At.succ_cons_iff (Γ : Ctx? α) (v w) : (Γ.cons w).At v (n + 1) ↔ w.del ∧ Γ.At v n
-  := ⟨λh => ⟨h.succ_cons_head, h.succ_cons_tail⟩, λ⟨h, h'⟩ => At.there h' h⟩
+def Ctx?.At.wkOut {v : Var? α} {Γ : Ctx? α} {n} (h : Γ.At v n) (hvw : v ≤ w)
+  : Γ.At w n := match h with
+  | .here d hw => .here d (le_trans hw hvw)
+  | .there x hw => .there (x.wkOut hvw) hw
 
-@[elab_as_elim, induction_eliminator]
-def Ctx?.At.inductionOn {v : Var? α} {motive : ∀ (Γ n), Ctx?.At v Γ n → Sort _}
-  (h : Ctx?.At v Γ n)
-  (here : ∀ (Γ : Ctx? α) (d : Γ.Wk .nil) (w) (hw : w ≤ v), motive (Γ.cons w) 0 (here d hw))
-  (there : ∀ (Γ) (w : Var? α) (n) (x : Ctx?.At v Γ n) (hw : w.del),
-    motive Γ n x → motive (Γ.cons w) (n + 1) (there x hw))
-  : motive Γ n h := match Γ, n, h with
-  | .cons Γ w, 0, h => here Γ h.zero_cons_tail w h.zero_cons_head
-  | .cons Γ w, n + 1, h
-    => there Γ w n h.succ_cons_tail h.succ_cons_head (h.succ_cons_tail.inductionOn here there)
+def Ctx?.At.wkIn {Γ Δ : Ctx? α}
+  : (ρ : Γ.Wk Δ) → ∀{v : Var? α} {n}, Δ.At v n → Γ.At v (ρ n)
+  | .cons ρ hvw, _, _, .here d hw => .here (d.wk ρ) (le_trans hvw hw)
+  | .cons ρ hvw, _, _, .there a hw => .there (a.wkIn ρ) (hw.anti hvw)
+  | .skip ρ hv, _, _, a => .there (a.wkIn ρ) hv
 
-theorem Ctx?.At.wkOut {v : Var? α} {Γ : Ctx? α} {n} (h : Γ.At v n) (h' : v ≤ w)
-  : Γ.At w n := by induction h <;> constructor <;> (try apply le_trans) <;> assumption
-
-theorem Ctx?.At.wkIn {Γ Δ : Ctx? α} (w : Γ.Wk Δ) {v : Var? α} {n} (h : Δ.At v n)
-  : Γ.At v (w n) := by induction w generalizing n with
-  | nil => cases h
-  | skip w hv I => constructor <;> apply_assumption; assumption
-  | cons w hv I => cases h with
-  | here => constructor; (apply Wk.comp <;> assumption); (apply le_trans <;> assumption)
-  | there => constructor; (apply I; assumption); (exact Var?.del.anti hv)
-
-def Ctx?.At.ix {Γ : Ctx? α} {v n} (h : Γ.At v n) : v.Ix Γ
-  := h.inductionOn (λ_ d _ h => Var?.zero_le d h) (λ_ _ _ _ _ I => I.succ _)
+def Ctx?.At.ix {Γ : Ctx? α} {v n} : Γ.At v n → v.Ix Γ
+  | .here _ hw => Var?.zero_le (Ctx?.drop _) hw
+  | .there x hw => x.ix.succ _
 
 @[simp]
 theorem Ctx?.At.ix_ix {Γ : Ctx? α} {v n} (h : Γ.At v n) : h.ix.ix = n
-  := by induction h <;> simp [ix, inductionOn]; assumption
+  := by induction h <;> simp [ix, wkIn]; assumption
 
-theorem Var?.Ix.at {Γ : Ctx? α} {v} (x : Ix Γ v) : Γ.At v x.ix
-  := by induction x <;> constructor <;> assumption
+def Var?.Ix.at {Γ : Ctx? α} {v} : (x : Ix Γ v) → Γ.At v x.ix
+  | .cons ρ hvw => .here ρ.drop_del hvw
+  | .skip ρ hv => .there (Ix.at ρ) hv
 
 -- TODO: so therefore at_ix is just the identity

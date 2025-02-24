@@ -38,36 +38,26 @@ variable {φ : Type _} {α : Type _} {ε : Type _} [Signature φ α ε]
 
 section MonoidalCategoryStruct
 
-variable [MonoidalCategoryStruct C] [VarModel α C]
+variable [MonoidalCategoryStruct C] [VM : VarModel α C]
 
-abbrev Var?.del.den {v : Var? α} (h : v.del) : (v⟦ v ⟧ : C) ⟶ 𝟙_ C
-  := !_ v.ety
-
-abbrev Ctx?.del.den {Γ : Ctx? α} (h : Γ.del) : (g⟦ Γ ⟧ : C) ⟶ 𝟙_ C
-  := !_ Γ.ety
-
-abbrev Var?.copy.den {v : Var? α} (h : v.copy) : (v⟦ v ⟧ : C) ⟶ v⟦ v ⟧ ⊗ v⟦ v ⟧
-  := Δ_ v.ety
-
-abbrev Ctx?.copy.den {Γ : Ctx? α} (h : Γ.copy) : (g⟦ Γ ⟧ : C) ⟶ g⟦ Γ ⟧ ⊗ g⟦ Γ ⟧
-  := Δ_ Γ.ety
 
 def Var?.Wk.den {v w : Var? α} (h : v ≤ w) : (v⟦ v ⟧ : C) ⟶ v⟦ w ⟧
   := match v, w, h with
-  | v, ⟨B, 0⟩, h => (h.unused_del rfl).den
+  | v, ⟨B, 0⟩, h => haveI _ := (h.unused_del rfl); !_ _
   | ⟨A, (_ : Quant)⟩, ⟨B, (_ : Quant)⟩, h => eqToHom (by cases h.ty; rfl)
 
 theorem Var?.Wk.den_zero {v : Var? α} {A : Ty α} (h : v ≤ ⟨A, 0⟩)
-  : Var?.Wk.den (C := C) h = (h.unused_del rfl).den
+  : Var?.Wk.den (C := C) h = (haveI _ := (h.unused_del rfl); !_ _)
   := by cases v with | mk _ q => cases q <;> rfl
 
 @[simp]
 theorem Var?.Wk.den_unused {v w : Var? α} (h : v ≤ w) (hw : w.unused)
-  : Var?.Wk.den (C := C) h = ((Var?.unused.del hw).anti h).den ≫ eqToHom (by simp [ety, hw])
+  : Var?.Wk.den (C := C) h
+  = (haveI _ := (Var?.unused.del hw).anti h; !_ _) ≫ eqToHom (by simp [ety, hw])
   := by cases w; cases hw; rw [den_zero]; simp
 
 theorem Var?.Wk.den_erase {v  w: Var? α} (h : v ≤ w.erase)
-  : Var?.Wk.den (C := C) h = (h.unused_del rfl).den
+  : Var?.Wk.den (C := C) h = (haveI _ := h.unused_del rfl; !_ _)
   := by simp
 
 theorem Var?.Wk.den_quant {v : Var? α} {A : Ty α} {q : Quant} (h : v ≤ ⟨A, q⟩)
@@ -93,29 +83,29 @@ def Ctx?.PWk.den {Γ Δ : Ctx? α} (h : Γ.PWk Δ) : (g⟦ Γ ⟧ : C) ⟶ g⟦ 
 def Ctx?.Wk.den {Γ Δ : Ctx? α} : Γ.Wk Δ → ((g⟦ Γ ⟧ : C) ⟶ g⟦ Δ ⟧)
   | .nil => 𝟙 (𝟙_ C)
   | .cons ρ hvw => ρ.den ⊗ vw⟦ hvw ⟧
-  | .skip hΓ hv => (hΓ.den ⊗ hv.den) ≫ (ρ_ _).hom
+  | .skip hΓ hv => (hΓ.den ⊗ !_ _) ≫ (ρ_ _).hom
 
 notation "w⟦" ρ "⟧" => Ctx?.Wk.den ρ
 
 def Var.Ix.den {Γ : Ctx? α} {v : Var? α} (h : v.Ix Γ) : (g⟦ Γ ⟧ : C) ⟶ v⟦ v ⟧
   := Ctx?.Wk.den h ≫ (λ_ _).hom
 
-def Ctx?.At.den {v : Var? α} {Γ : Ctx? α} {n} (h : Γ.At v n) : (g⟦ Γ ⟧ : C) ⟶ v⟦ v ⟧ :=
-  h.inductionOn
-    (λ _ d _ h => (d.den ⊗ (Var?.Wk.den h)) ≫ (λ_ _).hom)
-    (λ _ _ _ _ hw p => (p ⊗ hw.den) ≫ (ρ_ _).hom)
-
 @[simp]
-theorem Ctx?.At.den_zero {v w : Var? α} {Γ : Ctx? α} (h : (Γ.cons w).At v 0)
-  : h.den (C := C)
-  = (h.zero_cons_tail.den (C := C) ⊗ (Var?.Wk.den h.zero_cons_head)) ≫ (λ_ _).hom
-  := rfl
+def Ctx?.At.den {v : Var? α} {Γ : Ctx? α} {n} : Γ.At v n → ((g⟦ Γ ⟧ : C) ⟶ v⟦ v ⟧)
+  | .here _ h => (!_ _ ⊗ (Var?.Wk.den h)) ≫ (λ_ _).hom
+  | .there p hw => (p.den ⊗ !_ _) ≫ (ρ_ _).hom
 
-@[simp]
-theorem Ctx?.At.den_succ {v w : Var? α} {Γ : Ctx? α} (h : (Γ.cons w).At v (n + 1))
-  : h.den (C := C)
-  = (h.succ_cons_tail.den (C := C) ⊗ h.succ_cons_head.den) ≫ (ρ_ _).hom
-  := rfl
+-- @[simp]
+-- theorem Ctx?.At.den_zero {v w : Var? α} {Γ : Ctx? α} (h : (Γ.cons w).At v 0)
+--   : h.den (C := C)
+--   = (h.zero_cons_tail.den (C := C) ⊗ (Var?.Wk.den h.zero_cons_head)) ≫ (λ_ _).hom
+--   := by cases h; rfl
+
+-- @[simp]
+-- theorem Ctx?.At.den_succ {v w : Var? α} {Γ : Ctx? α} (h : (Γ.cons w).At v (n + 1))
+--   : h.den (C := C)
+--   = (h.succ_cons_tail.den (C := C) ⊗ h.succ_cons_head.den) ≫ (ρ_ _).hom
+--   := by cases h; rfl
 
 def Var?.SSplit.den {u v w : Var? α} : u.SSplit v w → ((v⟦ u ⟧ : C) ⟶ v⟦ v ⟧ ⊗ v⟦ w ⟧)
   | .left _ => (ρ_ _).inv
@@ -162,10 +152,10 @@ variable {φ : Type _} {α : Type _} {ε : Type _} [Signature φ α ε]
          [M : Model φ α ε C]
 
 @[simp]
-theorem Var?.del.den_pure {v : Var? α} (h : v.del) : E.HasEff e h.den := inferInstance
+theorem Var?.del.den_pure {v : Var? α} (h : v.del) : E.HasEff e (!_ v.ety) := inferInstance
 
 @[simp]
-theorem Var?.copy.den_pure {v : Var? α} (h : v.copy) : E.HasEff e h.den := inferInstance
+theorem Var?.copy.den_pure {v : Var? α} (h : v.copy) : E.HasEff e (Δ_ v.ety) := inferInstance
 
 @[simp]
 instance Var?.Wk.den_pure {e : ε} {v w : Var? α} (h : v ≤ w)
@@ -184,7 +174,7 @@ theorem Var?.Wk.den_comp {u v w : Var? α} (h : u ≤ v) (h' : v ≤ w)
   := by cases u with | mk _ qu => cases v with | mk _ qv => cases w with | mk _ qw =>
     cases qw using EQuant.casesZero with
     | zero =>
-      simp [Var?.del.den]
+      simp
       exact M.drop_aff (⊥ : ε) _ (hA := ety_aff_zero (le_trans h h')) (hB := ety_aff_zero h')
     | rest qw =>  cases qv using EQuant.casesZero with
     | zero => cases h'.q using EQuant.le.casesLE
@@ -192,13 +182,13 @@ theorem Var?.Wk.den_comp {u v w : Var? α} (h : u ≤ v) (h' : v ≤ w)
 
 @[simp]
 theorem Var?.Wk.den_comp_drop {v w : Var? α} (h : v ≤ w) [hw : w.del]
-  : Var?.Wk.den h ≫ !_ w.ety = (hw.anti h).den (C := C)
+  : Var?.Wk.den (C := C) h ≫ !_ w.ety = (haveI _ := hw.anti h; !_ v.ety)
   := by rw [M.drop_aff ⊥ _ (hA := (hw.anti h).ety_aff)]
 
 @[simp]
 theorem Var?.del.den_unused {v : Var? α} (hv : v.unused)
-  : hv.del.den (C := C) = eqToHom (by simp [ety, hv])
-  := by cases v; cases hv; simp [den, M.drop_unit]
+  : (haveI _  := hv.del; !_ v.ety) = eqToHom (C := C) (by simp [ety, hv])
+  := by cases v; cases hv; simp [M.drop_unit]
 
 @[simp]
 theorem Var?.Wk.den_from_unused {v w : Var? α} (h : v ≤ w) (h' : v.unused)
@@ -245,6 +235,11 @@ theorem Ctx?.Wk.den_comp {Γ Δ Ξ : Ctx? α} (h : Γ.Wk Δ) (h' : Δ.Wk Ξ)
   | skip _ hw => simp [den, Wk.comp, <-tensor_comp_of_left_assoc, I]
   | cons => simp [den, Wk.comp, <-tensor_comp_of_left, I]
 
+@[simp]
+theorem Ctx?.Wk.den_comp_drop {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) [hΔ : Δ.del]
+  : ρ.den (C := C) ≫ !_ Δ.ety = (haveI _ := hΔ.wk ρ; !_ Γ.ety)
+  := have _ := hΔ.wk ρ; M.drop_aff ⊥ _
+
 instance Ctx?.At.den_pure {v : Var? α} {Γ : Ctx? α} {n} (h : Γ.At v n)
   : E.HasEff e h.den
   := by induction h <;> simp <;> infer_instance
@@ -266,12 +261,11 @@ theorem Ctx?.At.den_wkOut {v w : Var? α} {Γ : Ctx? α} {n} (hΓv : Γ.At v n) 
   : hΓv.den (C := C) ≫ Var?.Wk.den hvw = (hΓv.wkOut hvw).den
   := by induction hΓv with
   | here =>
-    simp only [Ctx?.den, ety, Ty.den, den_zero, tensorHom_def, Category.assoc, ←
-      leftUnitor_naturality]
+    simp only [Ctx?.den, ety, Ty.den, tensorHom_def, Category.assoc, ←
+      leftUnitor_naturality, Ctx?.At.den, Ctx?.At.wkOut]
     rw [<-PremonoidalCategory.whiskerLeft_comp_assoc, Var?.Wk.den_comp]
-    rfl
-  | there _ _ _ _ _ I =>
-    simp only [den_succ, Category.assoc, ← rightUnitor_naturality]
+  | there _ _ I =>
+    simp only [Ctx?.At.den, Ctx?.At.wkOut, Category.assoc, ← rightUnitor_naturality]
     rw [tensorHom_def_of_left, tensorHom_def_of_left]
     simp only [Category.assoc]
     rw [<-comp_whiskerRight_assoc, I]
@@ -282,13 +276,8 @@ theorem Ctx?.At.den_wkIn {Γ Δ : Ctx? α} (w : Γ.Wk Δ) {v n} (hΔv : Δ.At v 
   | nil => cases hΔv
   | skip => simp [
     <-PremonoidalCategory.rightUnitor_naturality, <-tensorHom_id,
-    <-tensor_comp_of_left_assoc, *]
-  | cons => cases hΔv with
-  | here =>
-    simp [<-tensor_comp_of_left_assoc, Wk.den_comp]
-    congr
-    apply wk_nil_unique
-  | there => simp [<-tensor_comp_of_left_assoc, Wk.den_comp, *]
+    <-tensor_comp_of_left_assoc, Ctx?.At.wkIn, *]
+  | cons ρ _ => cases hΔv <;> simp [<-tensor_comp_of_left_assoc, Wk.den_comp, Ctx?.At.wkIn, *]
 
 theorem Var?.SSplit.wk_den {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.SSplit v w)
   : Var?.Wk.den ρ ≫ σ.den (C := C)
