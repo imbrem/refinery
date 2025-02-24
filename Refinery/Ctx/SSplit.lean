@@ -33,6 +33,12 @@ theorem Var?.SSplit.erase_eq_right {u v w : Var? α} (h : u.SSplit v w)
 theorem Var?.SSplit.erase_eq_both {u v w : Var? α} (h : u.SSplit v w)
   : v.erase = w.erase := by cases h <;> simp [*]
 
+theorem Var?.SSplit.in_del {u v w : Var? α} (σ : u.SSplit v w) [hv : v.del] [hw : w.del] : u.del
+  := by cases σ <;> assumption
+
+theorem Var?.SSplit.in_copy {u v w : Var? α} (σ : u.SSplit v w) [hv : v.copy] [hw : w.copy] : u.copy
+  := by cases σ <;> assumption
+
 def Var?.SSplit.both (v : Var? α) [h : IsRel v] : SSplit v v v := if hv : v.used then
     SSplit.sboth hv.scopy
   else by
@@ -160,6 +166,28 @@ inductive Ctx?.SSplit : Ctx? α → Ctx? α → Ctx? α → Type _ where
   | nil : Ctx?.SSplit .nil .nil .nil
   | cons {Γ Δ Ξ v l r} (h : SSplit Γ Δ Ξ) (hvw : v.SSplit l r)
     : SSplit (Ctx?.cons Γ v) (Ctx?.cons Δ l) (Ctx?.cons Ξ r)
+
+theorem Ctx?.SSplit.in_del {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) [hΔ : Δ.del] [hΞ : Ξ.del] : Γ.del
+  := by
+  generalize hΔ = hΔ
+  generalize hΞ = hΞ
+  induction σ with
+  | nil => simp
+  | cons _ hvw =>
+    have _ := hΔ.head; have _ := hΔ.tail
+    have _ := hΞ.head; have _ := hΞ.tail
+    simp [hvw.in_del, *]
+
+theorem Ctx?.SSplit.in_copy {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) [hΔ : Δ.copy] [hΞ : Ξ.copy] : Γ.copy
+  := by
+  generalize hΔ = hΔ
+  generalize hΞ = hΞ
+  induction σ with
+  | nil => simp
+  | cons _ hvw =>
+    have _ := hΔ.head; have _ := hΔ.tail
+    have _ := hΞ.head; have _ := hΞ.tail
+    simp [hvw.in_copy, *]
 
 def Ctx?.SSplit.choose {Γ Δ Ξ : Ctx? α} (h : Nonempty (Ctx?.SSplit Γ Δ Ξ)) : Ctx?.SSplit Γ Δ Ξ
   := match Γ, Δ, Ξ, h with
@@ -428,12 +456,12 @@ abbrev Ctx?.SSplit.c12_34_13 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx
   (h12_34 : Γ₁₂₃₄.SSplit Γ₁₂ Γ₃₄) (h12 : Γ₁₂.SSplit Γ₁ Γ₂) (h34 : Γ₃₄.SSplit Γ₃ Γ₄)
   : Ctx? α := (h12_34.s12_34_12_3 h34).c12_3_13 h12
 
-theorem Ctx.SSplit.c12_34_13_del {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+theorem Ctx?.SSplit.c12_34_13_del {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
   (h12_34 : Γ₁₂₃₄.SSplit Γ₁₂ Γ₃₄) (h12 : Γ₁₂.SSplit Γ₁ Γ₂) (h34 : Γ₃₄.SSplit Γ₃ Γ₄)
   [h1 : Γ₁.del] [h3 : Γ₃.del]
   : (h12_34.c12_34_13 h12 h34).del := inferInstance
 
-theorem Ctx.SSplit.c12_34_13_copy {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+theorem Ctx?.SSplit.c12_34_13_copy {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
   (h12_34 : Γ₁₂₃₄.SSplit Γ₁₂ Γ₃₄) (h12 : Γ₁₂.SSplit Γ₁ Γ₂) (h34 : Γ₃₄.SSplit Γ₃ Γ₄)
   [h1 : Γ₁.copy] [h3 : Γ₃.copy]
   : (h12_34.c12_34_13 h12 h34).copy := inferInstance

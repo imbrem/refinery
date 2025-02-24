@@ -167,6 +167,11 @@ def Var?.Split.comm {u v w : Var? α} : u.Split v w → u.Split w v
   | .both h => .both h
 
 @[simp]
+def Ctx?.Split.comm {Γ Δ Ξ : Ctx? α} : Γ.Split Δ Ξ → Γ.Split Ξ Δ
+  | .nil => .nil
+  | .cons h hvw => h.comm.cons hvw.comm
+
+@[simp]
 def Ctx?.Split.wkLeft {Γ' Γ Δ Ξ : Ctx? α} : Γ'.Wk Γ → Γ.Split Δ Ξ → Ctx? α
   | .nil, _ => .nil
   | .skip (v := v) ρ _, σ => (wkLeft ρ σ).cons v.erase
@@ -214,7 +219,278 @@ instance Ctx?.Split.wkRight_copy {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ :
     simp [wkRight, cons_copy_iff, Var?.Split.wkRight_copy, *]
   | _ => simp [*]
 
-def Var?.Split.v12_3_23 {u₁₂₃ u₁₂ u₁ u₂ u₃ : Var? α}
-  : u₁₂₃.Split u₁₂ u₃ → u₁₂.Split u₁ u₂ → Var? α
-  | .left A q, .left _ _ => ⟨A, 0⟩
+def Var?.Split.v12_3_23 {u₁₂₃ u₁₂ u₁ u₂ u₃ : Var? α} : u₁₂₃.Split u₁₂ u₃ → u₁₂.Split u₁ u₂ → Var? α
+  | .neither _, _ | .left _ _, .neither _ | .left _ _, .left _ _ => u₁₂₃.erase
   | _, _ => u₁₂₃
+
+@[simp]
+instance Var?.Split.v12_3_23_del {u₁₂₃ u₁₂ u₁ u₂ u₃ : Var? α}
+  (h12_3 : u₁₂₃.Split u₁₂ u₃) (h12 : u₁₂.Split u₁ u₂) [h2 : u₂.del] [h3 : u₃.del]
+  : (h12_3.v12_3_23 h12).del
+  := by cases h12_3 <;> cases h12 <;> assumption
+
+@[simp]
+instance Var?.Split.v12_3_23_copy {u₁₂₃ u₁₂ u₁ u₂ u₃ : Var? α}
+  (h12_3 : u₁₂₃.Split u₁₂ u₃) (h12 : u₁₂.Split u₁ u₂) [h2 : u₂.copy] [h3 : u₃.copy]
+  : (h12_3.v12_3_23 h12).copy
+  := by cases h12_3 <;> cases h12 <;> simp [v12_3_23, *]
+
+def Var?.Split.s12_3_1_23 {u₁₂₃ u₁₂ u₁ u₂ u₃ : Var? α}
+  : (h12_3 : u₁₂₃.Split u₁₂ u₃) → (h12 : u₁₂.Split u₁ u₂) → u₁₂₃.Split u₁ (h12_3.v12_3_23 h12)
+  | .neither h, .neither _
+  | .neither h, .left _ _
+  | .neither h, .right _ _
+  | .neither h, .both _
+  | .left _ _, .neither h => .neither h
+  | .left _ _, .left _ _ => .left _ _
+  | .left _ _, .right _ _ => .right _ _
+  | .left _ _, .both h => .both h
+  | .right _ _, .neither _
+  | .right _ _, .left _ _
+  | .right _ _, .right _ _
+  | .right _ _, .both h => .right _ _
+  | .both h, .neither _ => .right _ _
+  | .both h, .left _ _ => .both h
+  | .both _, .right _ _ => .right _ _
+  | .both h, .both _ => .both h
+
+def Var?.Split.s12_3_23 {u₁₂₃ u₁₂ u₁ u₂ u₃ : Var? α}
+  : (h12_3 : u₁₂₃.Split u₁₂ u₃) → (h12 : u₁₂.Split u₁ u₂) → (h12_3.v12_3_23 h12).Split u₂ u₃
+  | .neither _, .neither _
+  | .neither _, .left _ _
+  | .neither _, .right _ _
+  | .neither _, .both _
+  | .left _ _, .neither h => .neither inferInstance
+  | .left _ _, .left _ _ => .left _ _
+  | .left _ _, .right _ _ => .left _ _
+  | .left _ _, .both h => .left _ _
+  | .right _ _, .neither _
+  | .right _ _, .left _ _
+  | .right _ _, .right _ _
+  | .right _ _, .both h => .right _ _
+  | .both _, .neither _ => .right _ _
+  | .both _, .left _ _ => .right _ _
+  | .both h, .right _ _ => .both h
+  | .both h, .both _ => .both h
+
+def Var?.Split.v1_23_12 {u₁₂₃ u₂₃ u₁ u₂ u₃ : Var? α}
+  : u₁₂₃.Split u₁ u₂₃ → u₂₃.Split u₂ u₃ → Var? α
+  | .neither _, _ | .right _ _, .neither _ | .right _ _, .right _ _ => u₁₂₃.erase
+  | _, _ => u₁₂₃
+
+@[simp]
+instance Var?.Split.v1_23_12_del {u₁₂₃ u₂₃ u₁ u₂ u₃ : Var? α}
+  (h1_23 : u₁₂₃.Split u₁ u₂₃) (h23 : u₂₃.Split u₂ u₃) [h1 : u₁.del] [h2 : u₂.del]
+  : (h1_23.v1_23_12 h23).del
+  := by cases h1_23 <;> cases h23 <;> assumption
+
+@[simp]
+instance Var?.Split.v1_23_12_copy {u₁₂₃ u₂₃ u₁ u₂ u₃ : Var? α}
+  (h1_23 : u₁₂₃.Split u₁ u₂₃) (h23 : u₂₃.Split u₂ u₃) [h1 : u₁.copy] [h2 : u₂.copy]
+  : (h1_23.v1_23_12 h23).copy
+  := by cases h1_23 <;> cases h23 <;> simp [v1_23_12, *]
+
+def Var?.Split.s1_23_12_3 {u₁₂₃ u₂₃ u₁ u₂ u₃ : Var? α}
+  : (h1 : u₁₂₃.Split u₁ u₂₃) → (h23 : u₂₃.Split u₂ u₃) → u₁₂₃.Split (h1.v1_23_12 h23) u₃
+  | .neither h, .neither _
+  | .neither h, .left _ _
+  | .neither h, .right _ _
+  | .neither h, .both _
+  | .right _ _, .neither h => .neither h
+  | .left _ _ , .neither _
+  | .left _ _, .left _ _
+  | .left _ _, .right _ _
+  | .left _ _, .both _ => .left _ _
+  | .right _ _, .left _ _ => .left _ _
+  | .right _ _, .right _ _ => .right _ _
+  | .right _ _, .both h => .both h
+  | .both _, .neither h => .left _ _
+  | .both h, .left _ _ => .left _ _
+  | .both h, .right _ _ => .both h
+  | .both h, .both _ => .both h
+
+def Var?.Split.s1_23_12 {u₁₂₃ u₂₃ u₁ u₂ u₃ : Var? α}
+  : (h1 : u₁₂₃.Split u₁ u₂₃) → (h23 : u₂₃.Split u₂ u₃) → (h1.v1_23_12 h23).Split u₁ u₂
+  | .neither _, .neither _
+  | .neither _, .left _ _
+  | .neither _, .right _ _
+  | .neither _, .both _
+  | .right _ _, .neither _ => .neither inferInstance
+  | .left _ _, .neither _ => .left _ _
+  | .left _ _, .left _ _ => .left _ _
+  | .left _ _, .right _ _ => .left _ _
+  | .left _ _, .both _ => .left _ _
+  | .right _ _, .left _ _ => .right _ _
+  | .right _ _, .right _ _ => .right _ _
+  | .right _ _, .both _ => .right _ _
+  | .both _, .neither _ => .left _ _
+  | .both h, .left _ _ => .both h
+  | .both _, .right _ _ => .left _ _
+  | .both h, .both _ => .both h
+
+def Ctx?.Split.c1_23_12 {Γ₁₂₃ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  : Γ₁₂₃.Split Γ₁ Γ₂₃ → Γ₂₃.Split Γ₂ Γ₃ → Ctx? α
+  | .nil, .nil => .nil
+  | .cons h hvw, .cons h' hvw' => .cons (h.c1_23_12 h') (hvw.v1_23_12 hvw')
+
+@[simp]
+instance Ctx?.Split.c1_23_12_del {Γ₁₂₃ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h12_3 : Γ₁₂₃.Split Γ₁ Γ₂₃) (h23 : Γ₂₃.Split Γ₂ Γ₃) [h1 : Γ₁.del] [h2 : Γ₂.del]
+  : (h12_3.c1_23_12 h23).del
+  := by
+  generalize h1 = h1
+  induction h12_3 generalizing Γ₂ Γ₃ <;> cases h23
+  simp [c1_23_12]
+  simp [c1_23_12, h2.head, h2.tail, h1.head, h1.tail, *]
+
+@[simp]
+instance Ctx?.Split.c1_23_12_copy {Γ₁₂₃ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h12_3 : Γ₁₂₃.Split Γ₁ Γ₂₃) (h23 : Γ₂₃.Split Γ₂ Γ₃) [h1 : Γ₁.copy] [h2 : Γ₂.copy]
+  : (h12_3.c1_23_12 h23).copy
+  := by
+  generalize h1 = h1
+  induction h12_3 generalizing Γ₂ Γ₃ <;> cases h23
+  simp [c1_23_12]
+  simp [c1_23_12, h2.head, h2.tail, h1.head, h1.tail, *]
+
+def Ctx?.Split.s1_23_12_3 {Γ₁₂₃ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  : (h12_3 : Γ₁₂₃.Split Γ₁ Γ₂₃) → (h23 : Γ₂₃.Split Γ₂ Γ₃)
+    → Γ₁₂₃.Split (h12_3.c1_23_12 h23) Γ₃
+  | .nil, .nil => .nil
+  | .cons h hvw, .cons h' hvw' => .cons (s1_23_12_3 h h') (Var?.Split.s1_23_12_3 hvw hvw')
+
+def Ctx?.Split.s1_23_12 {Γ₁₂₃ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  : (h12_3 : Γ₁₂₃.Split Γ₁ Γ₂₃) → (h23 : Γ₂₃.Split Γ₂ Γ₃) → (h12_3.c1_23_12 h23).Split Γ₁ Γ₂
+  | .nil, .nil => .nil
+  | .cons h hvw, .cons h' hvw' => .cons (s1_23_12 h h') (Var?.Split.s1_23_12 hvw hvw')
+
+def Ctx?.Split.c12_3_23 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  : Γ₁₂₃.Split Γ₁₂ Γ₃ → Γ₁₂.Split Γ₁ Γ₂ → Ctx? α
+  | .nil, .nil => .nil
+  | .cons h hvw, .cons h' hvw' => .cons (c12_3_23 h h') (Var?.Split.v12_3_23 hvw hvw')
+
+@[simp]
+instance Ctx?.Split.c12_3_23_del {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h12_3 : Γ₁₂₃.Split Γ₁₂ Γ₃) (h12 : Γ₁₂.Split Γ₁ Γ₂) [h2 : Γ₂.del] [h3 : Γ₃.del]
+  : (h12_3.c12_3_23 h12).del
+  := by
+  generalize h3 = h3
+  induction h12_3 generalizing Γ₁ Γ₂ <;> cases h12
+  simp [c12_3_23]
+  simp [c12_3_23, h2.head, h2.tail, h3.head, h3.tail, *]
+
+@[simp]
+instance Ctx?.Split.c12_3_23_copy {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h12_3 : Γ₁₂₃.Split Γ₁₂ Γ₃) (h12 : Γ₁₂.Split Γ₁ Γ₂) [h2 : Γ₂.copy] [h3 : Γ₃.copy]
+  : (h12_3.c12_3_23 h12).copy
+  := by
+  generalize h3 = h3
+  induction h12_3 generalizing Γ₁ Γ₂ <;> cases h12
+  simp [c12_3_23]
+  simp [c12_3_23, h2.head, h2.tail, h3.head, h3.tail, *]
+
+def Ctx?.Split.s12_3_1_23 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  : (h12_3 : Γ₁₂₃.Split Γ₁₂ Γ₃) → (h12 : Γ₁₂.Split Γ₁ Γ₂)
+    → Γ₁₂₃.Split Γ₁ (h12_3.c12_3_23 h12)
+  | .nil, .nil => .nil
+  | .cons h hvw, .cons h' hvw' => .cons (s12_3_1_23 h h') (Var?.Split.s12_3_1_23 hvw hvw')
+
+def Ctx?.Split.s12_3_23 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  : (h12_3 : Γ₁₂₃.Split Γ₁₂ Γ₃) → (h12 : Γ₁₂.Split Γ₁ Γ₂) → (h12_3.c12_3_23 h12).Split Γ₂ Γ₃
+  | .nil, .nil => .nil
+  | .cons h hvw, .cons h' hvw' => .cons (s12_3_23 h h') (Var?.Split.s12_3_23 hvw hvw')
+
+abbrev Ctx?.Split.c12_3_13 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h12_3 : Γ₁₂₃.Split Γ₁₂ Γ₃) (h12 : Γ₁₂.Split Γ₁ Γ₂)
+  : Ctx? α := h12_3.comm.c1_23_12 h12
+
+theorem Ctx?.Split.c12_3_13_del {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h12_3 : Γ₁₂₃.Split Γ₁₂ Γ₃) (h12 : Γ₁₂.Split Γ₁ Γ₂) [h1 : Γ₁.del] [h3 : Γ₃.del]
+  : (h12_3.c12_3_13 h12).del := inferInstance
+
+theorem Ctx?.Split.c12_3_13_copy {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h12_3 : Γ₁₂₃.Split Γ₁₂ Γ₃) (h12 : Γ₁₂.Split Γ₁ Γ₂) [h1 : Γ₁.copy] [h3 : Γ₃.copy]
+  : (h12_3.c12_3_13 h12).copy := inferInstance
+
+abbrev Ctx?.Split.s12_3_13_2 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h12_3 : Γ₁₂₃.Split Γ₁₂ Γ₃) (h12 : Γ₁₂.Split Γ₁ Γ₂)
+  : Γ₁₂₃.Split (h12_3.c12_3_13 h12) Γ₂
+  := h12_3.comm.s1_23_12_3 h12
+
+abbrev Ctx?.Split.s12_3_31 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h12_3 : Γ₁₂₃.Split Γ₁₂ Γ₃) (h12 : Γ₁₂.Split Γ₁ Γ₂)
+  : (h12_3.c12_3_13 h12).Split Γ₃ Γ₁
+  := h12_3.comm.s1_23_12 h12
+
+abbrev Ctx?.Split.s12_3_13 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h12_3 : Γ₁₂₃.Split Γ₁₂ Γ₃) (h12 : Γ₁₂.Split Γ₁ Γ₂)
+  : (h12_3.c12_3_13 h12).Split Γ₁ Γ₃
+  := (h12_3.s12_3_31 h12).comm
+
+abbrev Ctx?.Split.c12_34_123 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.Split Γ₁₂ Γ₃₄) (h34 : Γ₃₄.Split Γ₃ Γ₄)
+  : Ctx? α := h12_34.c1_23_12 h34
+
+theorem Ctx?.Split.c12_34_123_del {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.Split Γ₁₂ Γ₃₄) (h34 : Γ₃₄.Split Γ₃ Γ₄) [h12 : Γ₁₂.del] [h3 : Γ₃.del]
+  : (h12_34.c12_34_123 h34).del := inferInstance
+
+theorem Ctx?.Split.c12_34_123_copy {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.Split Γ₁₂ Γ₃₄) (h34 : Γ₃₄.Split Γ₃ Γ₄) [h12 : Γ₁₂.copy] [h3 : Γ₃.copy]
+  : (h12_34.c12_34_123 h34).copy := inferInstance
+
+abbrev Ctx?.Split.s12_34_123_4 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.Split Γ₁₂ Γ₃₄) (h34 : Γ₃₄.Split Γ₃ Γ₄)
+  : Γ₁₂₃₄.Split (h12_34.c12_34_123 h34) Γ₄ := h12_34.s1_23_12_3 h34
+
+abbrev Ctx?.Split.s12_34_12_3 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.Split Γ₁₂ Γ₃₄) (h34 : Γ₃₄.Split Γ₃ Γ₄)
+  : (h12_34.c12_34_123 h34).Split Γ₁₂ Γ₃ := h12_34.s1_23_12 h34
+
+abbrev Ctx?.Split.c12_34_13 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.Split Γ₁₂ Γ₃₄) (h12 : Γ₁₂.Split Γ₁ Γ₂) (h34 : Γ₃₄.Split Γ₃ Γ₄)
+  : Ctx? α := (h12_34.s12_34_12_3 h34).c12_3_13 h12
+
+theorem Ctx?.Split.c12_34_13_del {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.Split Γ₁₂ Γ₃₄) (h12 : Γ₁₂.Split Γ₁ Γ₂) (h34 : Γ₃₄.Split Γ₃ Γ₄)
+  [h1 : Γ₁.del] [h3 : Γ₃.del]
+  : (h12_34.c12_34_13 h12 h34).del := inferInstance
+
+theorem Ctx?.Split.c12_34_13_copy {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.Split Γ₁₂ Γ₃₄) (h12 : Γ₁₂.Split Γ₁ Γ₂) (h34 : Γ₃₄.Split Γ₃ Γ₄)
+  [h1 : Γ₁.copy] [h3 : Γ₃.copy]
+  : (h12_34.c12_34_13 h12 h34).copy := inferInstance
+
+abbrev Ctx?.Split.s12_34_13 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.Split Γ₁₂ Γ₃₄) (h12 : Γ₁₂.Split Γ₁ Γ₂) (h34 : Γ₃₄.Split Γ₃ Γ₄)
+  : (h12_34.c12_34_13 h12 h34).Split Γ₁ Γ₃ := (h12_34.s12_34_12_3 h34).s12_3_13 h12
+
+abbrev Ctx?.Split.s12_34_13_2 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.Split Γ₁₂ Γ₃₄) (h12 : Γ₁₂.Split Γ₁ Γ₂) (h34 : Γ₃₄.Split Γ₃ Γ₄)
+  : (h12_34.c12_34_123 h34).Split (h12_34.c12_34_13 h12 h34) Γ₂
+  := (h12_34.s12_34_12_3 h34).s12_3_13_2 h12
+
+abbrev Ctx?.Split.c12_34_24 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.Split Γ₁₂ Γ₃₄) (h12 : Γ₁₂.Split Γ₁ Γ₂) (h34 : Γ₃₄.Split Γ₃ Γ₄)
+  : Ctx? α
+  := (h12_34.s12_34_123_4 h34).c12_3_23 (h12_34.s12_34_13_2 h12 h34)
+
+theorem Ctx?.Split.c12_34_24_del {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.Split Γ₁₂ Γ₃₄) (h12 : Γ₁₂.Split Γ₁ Γ₂) (h34 : Γ₃₄.Split Γ₃ Γ₄)
+  [h2 : Γ₂.del] [h4 : Γ₄.del]
+  : (h12_34.c12_34_24 h12 h34).del := inferInstance
+
+theorem Ctx?.Split.c12_34_24_copy {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.Split Γ₁₂ Γ₃₄) (h12 : Γ₁₂.Split Γ₁ Γ₂) (h34 : Γ₃₄.Split Γ₃ Γ₄)
+  [h2 : Γ₂.copy] [h4 : Γ₄.copy]
+  : (h12_34.c12_34_24 h12 h34).copy := inferInstance
+
+abbrev Ctx?.Split.s12_34_13_24 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.Split Γ₁₂ Γ₃₄) (h12 : Γ₁₂.Split Γ₁ Γ₂) (h34 : Γ₃₄.Split Γ₃ Γ₄)
+  : Γ₁₂₃₄.Split (h12_34.c12_34_13 h12 h34) (h12_34.c12_34_24 h12 h34)
+  := (h12_34.s12_34_123_4 h34).s12_3_1_23 (h12_34.s12_34_13_2 h12 h34)
+
+abbrev Ctx?.Split.s12_34_24 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
+  (h12_34 : Γ₁₂₃₄.Split Γ₁₂ Γ₃₄) (h12 : Γ₁₂.Split Γ₁ Γ₂) (h34 : Γ₃₄.Split Γ₃ Γ₄)
+  : (h12_34.c12_34_24 h12 h34).Split Γ₂ Γ₄
+  := (h12_34.s12_34_123_4 h34).s12_3_23 (h12_34.s12_34_13_2 h12 h34)
