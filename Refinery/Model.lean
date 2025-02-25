@@ -115,18 +115,22 @@ attribute [simp] Model.drop_unit Model.copy_unit
 
 variable [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
 
+@[reassoc]
 theorem Model.drop_aff {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
     [hA : IsAff A] [hB : IsAff B] [hf : IsAff e] : f ≫ !_ _ = !_ _
     := refines_antisymm (drop_rem e f) (drop_add e f)
 
+@[reassoc]
 theorem Model.copy_drop_left {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
     [hA : IsRel A] [hB : IsAff B] [hf : IsAff e] : Δ_ _ ≫ (f ≫ !_ _) ▷ t⟦ A ⟧ = (λ_ _).inv
     := refines_antisymm (copy_drop_left_rem e f) (copy_drop_left_add e f)
 
+@[reassoc]
 theorem Model.copy_rel_ltimes {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
     [hA : IsRel A] [hB : IsRel B] [hf : IsRel e] : f ≫ Δ_ _ = Δ_ _ ≫ (f ⋉ f)
     := refines_antisymm (copy_dup_ltimes e f) (copy_fuse_ltimes e f)
 
+@[reassoc]
 theorem Model.copy_rel_rtimes {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
     [hA : IsRel A] [hB : IsRel B] [hf : IsRel e] : f ≫ Δ_ _ = Δ_ _ ≫ (f ⋊ f)
     := refines_antisymm (copy_dup_rtimes e f) (copy_fuse_rtimes e f)
