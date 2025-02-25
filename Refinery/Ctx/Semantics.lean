@@ -373,6 +373,11 @@ theorem Ctx?.At.den_wkIn {Γ Δ : Ctx? α} (w : Γ.Wk Δ) {v n} (hΔv : Δ.At v 
     <-tensor_comp_of_left_assoc, Ctx?.At.wkIn, *]
   | cons ρ _ => cases hΔv <;> simp [<-tensor_comp_of_left_assoc, Wk.den_comp, Ctx?.At.wkIn, *]
 
+@[simp]
+theorem Ctx?.At.den_pwk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {v n} (hΔv : Δ.At v n)
+  : ρ.den (C := C) ≫ hΔv.den = (hΔv.pwk ρ).den
+  := by rw [<-ρ.den_toWk, hΔv.den_wkIn, hΔv.wkIn_toWk]; simp
+
 theorem Var?.Split.coherence {u v w : Var? α} (σ σ' : u.Split v w)
   : σ.den (C := C) = σ'.den := match σ, σ' with
   | .neither _, .neither _ => rfl

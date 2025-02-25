@@ -678,6 +678,9 @@ inductive Ctx?.At (v : Var? α) : Ctx? α → ℕ → Type _ where
   | here {Γ} (d : Γ.del) {w} : w ≤ v → Ctx?.At v (Ctx?.cons Γ w) 0
   | there {Γ w n} (x : Ctx?.At v Γ n) (hw : w.del) : Ctx?.At v (Ctx?.cons Γ w) (n + 1)
 
+instance Ctx?.At.instSubsingleton {v : Var? α} {Γ : Ctx? α} {n} : Subsingleton (Ctx?.At v Γ n) where
+  allEq x y := by induction x <;> cases y <;> simp; apply_assumption
+
 def Ctx?.At.cast {v v' : Var? α} {Γ Γ' : Ctx? α} {n n'}
   (x : Γ.At v n) (hΓ : Γ = Γ') (hv : v = v') (hn : n = n') : Γ'.At v' n'
   := hΓ ▸ hv ▸ hn ▸ x
