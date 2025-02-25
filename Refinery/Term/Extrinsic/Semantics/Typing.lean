@@ -36,3 +36,14 @@ def Deriv.den {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
         ≫ _ ◁ db.den
         ≫ (∂L g⟦Γl⟧ t⟦B⟧ t⟦A⟧).inv
         ≫ ((!_ Γl.ety ▷ _ ≫ (λ_ _).hom) ⊕ₕ 𝟙 _))
+
+theorem Deriv.den_cast {Γ Γ' : Ctx? α} {A A' : Ty α} {a a' : Term φ (Ty α)}
+  (hΓ : Γ = Γ') (hA : A = A') (ha : a = a') (D : Γ ⊢ a : A)
+  : (D.cast hΓ hA ha).den (C := C) = eqToHom (by rw [hΓ]) ≫ D.den ≫ eqToHom (by rw [hA])
+  := by cases hΓ; cases hA; cases ha; simp
+
+@[simp]
+theorem Deriv.den_cast_term {Γ : Ctx? α} {A : Ty α} {a a' : Term φ (Ty α)}
+  (ha : a = a') (D : Γ ⊢ a : A)
+  : (D.cast_term ha).den (C := C) = D.den
+  := by cases ha; rfl

@@ -45,6 +45,17 @@ def Deriv.cast {Γ Γ' : Ctx? α} {A A' : Ty α} {a a' : Term φ (Ty α)}
   (hΓ : Γ = Γ') (hA : A = A') (ha : a = a')
   (D : Γ ⊢ a : A) : (Γ' ⊢ a' : A') := hΓ ▸ hA ▸ ha ▸ D
 
+@[simp]
+theorem Deriv.cast_rfl {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ a : A)
+  : D.cast rfl rfl rfl = D := rfl
+
+@[simp]
+theorem Deriv.cast_cast {Γ Γ' Γ'' : Ctx? α} {A A' A'' : Ty α} {a a' a'' : Term φ (Ty α)}
+  (hΓ : Γ = Γ') (hΓ' : Γ' = Γ'') (hA : A = A') (hA' : A' = A'') (ha : a = a') (ha' : a' = a'')
+  (D : Γ ⊢ a : A) :
+  (D.cast hΓ hA ha).cast hΓ' hA' ha' = D.cast (hΓ.trans hΓ') (hA.trans hA') (ha.trans ha')
+  := by cases hΓ; cases hΓ'; cases hA; cases hA'; cases ha; cases ha'; rfl
+
 abbrev Deriv.cast_ctx {Γ Γ' : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
   (hΓ : Γ = Γ') (D : Γ ⊢ a : A) : Γ' ⊢ a : A := D.cast hΓ rfl rfl
 

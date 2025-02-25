@@ -19,7 +19,7 @@ variable {φ : Type _} {α : outParam (Type _)} {ε : outParam (Type _)} [S : Si
 
 namespace Term
 
-theorem Deriv.wkD_den {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)} (D : Δ ⊢ a : A)
+theorem Deriv.den_wkD {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)} (D : Δ ⊢ a : A)
   : (D.wkD ρ).den (C := C) = ρ.den ≫ D.den
   := by induction D generalizing Γ with
   | let₁ hΓ da db Ia Ib =>
@@ -76,3 +76,14 @@ theorem Deriv.wkD_den {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ
       <-PremonoidalCategory.comp_whiskerRight_assoc, Model.drop_aff ⊥
     ]
   | _ => simp [wkD, den, *]
+
+
+theorem Deriv.den_wk {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)} (D : Δ ⊢ a : A)
+  : (D.wk ρ).den (C := C) = ρ.den ≫ D.den
+  := by rw [wk, den_cast_term, den_wkD]
+
+theorem Deriv.wk_den {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)} (D : Δ ⊢ a : A)
+  : ρ.den ≫ D.den = (D.wk ρ).den (C := C) := by rw [den_wk]
+
+theorem Deriv.pwk_den {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} {a : Term φ (Ty α)} (D : Δ ⊢ a : A)
+  : ρ.den ≫ D.den = (D.pwk ρ).den (C := C) := by rw [<-ρ.den_toWk, wk_den, pwk, den_cast_term]
