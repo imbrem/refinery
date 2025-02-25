@@ -18,7 +18,100 @@ theorem Ctx?.IsZero.eq_erase {Γ : Ctx? α} (h : Γ.IsZero) : Γ.erase = Γ := b
   | nil => rfl
   | cons => simp only [Ctx?.erase_cons, Var?.unused.eq_erase]; congr
 
+
+inductive Var?.ZQEq : Var? α → Var? α → Prop
+  | refl {u} : ZQEq u u
+  | erase_left {v} : ZQEq v.erase v
+  | erase_right {v} : ZQEq v v.erase
+
+attribute [simp] Var?.ZQEq.refl Var?.ZQEq.erase_left Var?.ZQEq.erase_right
+
+theorem Var?.ZQEq.ty {u v : Var? α} (h : Var?.ZQEq u v) : u.ty = v.ty := by
+  cases h <;> rfl
+
+@[simp]
+theorem Var?.ZQEq.symm {u v : Var? α} (h : Var?.ZQEq u v) : Var?.ZQEq v u
+  := by cases h <;> constructor
+
+inductive Ctx?.ZQEq : Ctx? α → Ctx? α → Prop
+  | nil : Ctx?.ZQEq .nil .nil
+  | cons {Γ Δ} {v w} : ZQEq Γ Δ → v.ZQEq w → Ctx?.ZQEq (Ctx?.cons Γ v) (Ctx?.cons Δ w)
+
+attribute [simp] Ctx?.ZQEq.nil
+
+@[simp]
+theorem Ctx?.ZQEq.cons_iff {Γ Δ : Ctx? α} {v w} : (Γ.cons v).ZQEq (Δ.cons w) ↔ Γ.ZQEq Δ ∧ v.ZQEq w
+  := ⟨λh => by cases h; simp [*], λ⟨_, _⟩ => by constructor <;> assumption⟩
+
+@[simp]
+theorem Ctx?.ZQEq.refl (Γ : Ctx? α) : Ctx?.ZQEq Γ Γ := by induction Γ <;> simp [*]
+
+@[simp]
+theorem Ctx?.ZQEq.erase_left {Γ : Ctx? α} : Ctx?.ZQEq Γ.erase Γ := by induction Γ <;> simp [*]
+
+@[simp]
+theorem Ctx?.ZQEq.erase_right {Γ : Ctx? α} : Ctx?.ZQEq Γ Γ.erase := by induction Γ <;> simp [*]
+
+structure Var?.UEq (u v : Var? α) : Prop where
+  ty : u.ty = v.ty
+  unused : u.unused = v.unused
+
+@[simp]
+theorem Var?.UEq.refl (u : Var? α) : Var?.UEq u u := ⟨rfl, rfl⟩
+
+@[simp]
+theorem Var?.UEq.symm {u v : Var? α} (h : Var?.UEq u v) : Var?.UEq v u := ⟨h.ty.symm, h.unused.symm⟩
+
+theorem Var?.UEq.trans {u v w : Var? α} (huv : Var?.UEq u v) (hvw : Var?.UEq v w) : Var?.UEq u w
+  := ⟨huv.ty.trans hvw.ty, huv.unused.trans hvw.unused⟩
+
+theorem Var?.UEq.ety_eq {u v : Var? α} (h : Var?.UEq u v) : u.ety = v.ety := by
+  cases u with | mk A q => cases v with | mk B q' =>
+  cases h.ty
+  have h := h.unused
+  cases q using EQuant.casesZero with
+  | zero => simp at h; cases h; rfl
+  | rest => cases q' using EQuant.casesZero with
+    | zero => simp at h
+    | rest => rfl
+
+inductive Ctx?.UEq : Ctx? α → Ctx? α → Prop
+  | nil : Ctx?.UEq .nil .nil
+  | cons {Γ Δ} {v w} : UEq Γ Δ → v.UEq w → Ctx?.UEq (Ctx?.cons Γ v) (Ctx?.cons Δ w)
+
+attribute [simp] Ctx?.UEq.nil
+
+@[simp]
+theorem Ctx?.UEq.cons_iff {Γ Δ : Ctx? α} {v w} : (Γ.cons v).UEq (Δ.cons w) ↔ Γ.UEq Δ ∧ v.UEq w
+  := ⟨λh => by cases h; simp [*], λ⟨_, _⟩ => by constructor <;> assumption⟩
+
+@[simp]
+theorem Ctx?.UEq.refl (Γ : Ctx? α) : Ctx?.UEq Γ Γ := by induction Γ <;> simp [*]
+
+@[simp]
+theorem Ctx?.UEq.symm {Γ Δ : Ctx? α} (h : Ctx?.UEq Γ Δ) : Ctx?.UEq Δ Γ := by
+  induction h <;> simp [*]
+
+theorem Ctx?.UEq.trans {Γ Δ Ξ : Ctx? α} (hΓΔ : Ctx?.UEq Γ Δ) (hΔΞ : Ctx?.UEq Δ Ξ) : Ctx?.UEq Γ Ξ
+  := by induction hΓΔ generalizing Ξ with
+  | nil => assumption
+  | cons hΓΔ huv =>
+    cases hΔΞ; constructor; apply_assumption; assumption
+    apply Var?.UEq.trans <;> assumption
+
+theorem Ctx?.UEq.ety_eq {Γ Δ : Ctx? α} (h : Ctx?.UEq Γ Δ) : Γ.ety = Δ.ety := by
+  induction h <;> simp [*]; apply Var?.UEq.ety_eq; assumption
+
 variable [HasQuant α]
+
+theorem Var?.SSplit.zqeq_left {u v w : Var? α} (σ : u.SSplit v w) : u.ZQEq w := by
+  cases σ <;> constructor
+
+theorem Var?.SSplit.zqeq_right {u v w : Var? α} (σ : u.SSplit v w) : u.ZQEq v := by
+  cases σ <;> constructor
+
+theorem Var?.SSplit.zqeq_out {u v w : Var? α} (σ : u.SSplit v w) : v.ZQEq w := by
+  cases σ <;> constructor
 
 @[simp]
 theorem Ctx?.IsZero.del {Γ : Ctx? α} (h : Γ.IsZero) : Γ.del := by induction h <;> simp [*]

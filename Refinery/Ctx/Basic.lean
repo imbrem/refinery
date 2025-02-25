@@ -748,6 +748,11 @@ def Ctx?.At.wkIn {Γ Δ : Ctx? α} : (ρ : Γ.Wk Δ) → ∀{v : Var? α} {n}, �
   | .cons ρ hvw, _, _, .there a hw => .there (a.wkIn ρ) (hw.anti hvw)
   | .skip ρ hv, _, _, a => .there (a.wkIn ρ) hv
 
+theorem Ctx?.At.ty_eq {Γ : Ctx? α} {v v'} {n} (x : Γ.At v n) (y : Γ.At v' n) : v.ty = v'.ty := by
+  induction x with
+  | here _ h => cases y with | here _ h' => rw [<-h.ty, <-h'.ty]
+  | there => cases y; apply_assumption; assumption
+
 theorem Ctx?.At.wkIn_toWk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {v : Var? α} {n} (x : Δ.At v n)
   : x.wkIn ρ.toWk = (x.pwk ρ).cast_idx (by simp) := by
   induction x generalizing Γ <;> cases ρ <;> simp [wkIn, pwk, *]

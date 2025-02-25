@@ -45,3 +45,7 @@ theorem Ctx?.At.factor_den {v : Var? α} {Γ : Ctx? α} {n} (x : Γ.At v n)
 
 theorem Ctx?.At.factor_wk_den {v : Var? α} {Γ : Ctx? α} {n} (x : Γ.At v n)
   : x.toUsed.toWk.den ≫ x.strict.den = x.den (C := C) := by rw [Ctx?.PWk.den_toWk, factor_den]
+
+theorem Ctx?.SAt.den_strict_unstrict {v : Var? α} {Γ : Ctx? α} {n} (x : Γ.SAt v n)
+  : x.unstrict.strict.den (C := C) = eqToHom (by rw [x.unstrict_used_eq]) ≫ x.den
+  := by rw [x.strict_unstrict, den_cast_src]

@@ -15,7 +15,7 @@ inductive SDeriv : Ctx? α → Ty α → Term φ (Ty α) → Type _
   | let₁ {Γ Γl Γr A B a b} :
     Γ.SSplit Γl Γr →
     SDeriv Γr A a → SDeriv (Γl.cons ⟨A, ⊤⟩) B b → SDeriv Γ B (.let₁ a A b)
-  | unit {Γ} : Γ.del → SDeriv Γ .unit .unit
+  | unit {Γ} : Γ.IsZero → SDeriv Γ .unit .unit
   | pair {Γ Γl Γr A B a b} :
     Γ.SSplit Γl Γr →
     SDeriv Γl A a → SDeriv Γr B b → SDeriv Γ (.tensor A B) (.pair a b)
@@ -41,7 +41,7 @@ def SDeriv.unstrict {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} : (Γ ⊢�
   | .bv hv => .bv hv.unstrict
   | .op hf da => .op hf da.unstrict
   | .let₁ hΓ da db => .let₁ hΓ da.unstrict db.unstrict
-  | .unit hv => .unit hv
+  | .unit hv => .unit hv.del
   | .pair hΓ da db => .pair hΓ da.unstrict db.unstrict
   | .let₂ hΓ da db => .let₂ hΓ da.unstrict db.unstrict
   | .inl da => .inl da.unstrict
@@ -62,6 +62,10 @@ abbrev SDeriv.cast_ty {Γ : Ctx? α} {A A' : Ty α} {a : Term φ (Ty α)}
 
 abbrev SDeriv.cast_term {Γ : Ctx? α} {A : Ty α} {a a' : Term φ (Ty α)}
   (ha : a = a') (D : Γ ⊢ₛ a : A) : Γ ⊢ₛ a' : A := D.cast rfl rfl ha
+
+@[simp]
+theorem SDeriv.cast_rfl {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ₛ a : A)
+  : D.cast rfl rfl rfl = D := rfl
 
 def IsSWt (Γ : Ctx? α) (A : Ty α) (a : Term φ (Ty α)) : Prop := Nonempty (Γ ⊢ₛ a : A)
 
