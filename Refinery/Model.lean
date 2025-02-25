@@ -113,6 +113,8 @@ class Model
 
 attribute [simp] Model.drop_unit Model.copy_unit
 
+attribute [reassoc] Model.copy_swap Model.copy_assoc Model.drop_tensor Model.copy_tensor
+
 variable [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
 
 @[reassoc]
@@ -121,9 +123,32 @@ theorem Model.drop_aff {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h
     := refines_antisymm (drop_rem e f) (drop_add e f)
 
 @[reassoc]
-theorem Model.copy_drop_left {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
+theorem Model.copy_drop_left_aff {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
     [hA : IsRel A] [hB : IsAff B] [hf : IsAff e] : Δ_ _ ≫ (f ≫ !_ _) ▷ t⟦ A ⟧ = (λ_ _).inv
     := refines_antisymm (copy_drop_left_rem e f) (copy_drop_left_add e f)
+
+@[reassoc]
+theorem Model.copy_drop_left_aff' {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
+    [hA : IsRel A] [hB : IsAff B] [hf : IsAff e] : Δ_ _ ≫ f ▷ t⟦ A ⟧ ≫ !_ B ▷ t⟦ A ⟧ = (λ_ _).inv
+    := by rw [<-MonoidalCategory'.comp_whiskerRight, M.copy_drop_left_aff e f]
+
+@[reassoc]
+theorem Model.copy_drop_right_aff {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
+    [hA : IsRel A] [hB : IsAff B] [hf : IsAff e] : Δ_ _ ≫ t⟦ A ⟧ ◁ (f ≫ !_ _) = (ρ_ _).inv
+    := by
+    rw [<-cancel_mono (f := (β'_ _ _).hom)]
+    simp only [
+      PremonoidalCategory.whiskerLeft_comp, Category.assoc,
+      BraidedCategory'.braiding_naturality_right, BraidedCategory'.braiding_naturality_right_assoc
+    ]
+    rw [M.copy_swap_assoc, M.copy_drop_left_aff' e f]
+    simp
+
+@[reassoc]
+theorem Model.copy_drop_right_aff' {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
+    [hA : IsRel A] [hB : IsAff B] [hf : IsAff e]
+    : Δ_ _ ≫ t⟦ A ⟧ ◁ f ≫ t⟦ A ⟧ ◁ !_ B = (ρ_ _).inv
+    := by rw [<-MonoidalCategory'.whiskerLeft_comp, M.copy_drop_right_aff e f]
 
 @[reassoc]
 theorem Model.copy_rel_ltimes {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
@@ -134,6 +159,11 @@ theorem Model.copy_rel_ltimes {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B 
 theorem Model.copy_rel_rtimes {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
     [hA : IsRel A] [hB : IsRel B] [hf : IsRel e] : f ≫ Δ_ _ = Δ_ _ ≫ (f ⋊ f)
     := refines_antisymm (copy_dup_rtimes e f) (copy_fuse_rtimes e f)
+
+@[reassoc]
+theorem Model.copy_rel_tensor {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
+    [hA : IsRel A] [hB : IsRel B] [hf : IsRel e] : f ≫ Δ_ _ = Δ_ _ ≫ (f ⊗ f)
+    := by rw [copy_rel_ltimes e, tensorHom_def]
 
 instance Model.dropCentral {A : Ty α} [IsAff A] : Central (C := C) (!_ A)
   := E.pure_hom_central drop_pure
@@ -146,3 +176,43 @@ instance Model.drop_eff {e : ε} {A : Ty α} [IsAff A] : E.HasEff e (!_ A) where
 
 instance Model.copy_eff {e : ε} {A : Ty α} [IsRel A] : E.HasEff e (Δ_ A) where
   has_eff := E.eff.monotone' bot_le _ M.copy_pure
+
+@[reassoc]
+theorem Model.copy_drop_both {A : Ty α}
+    [hA : IsRel A] [hA' : IsAff A] : Δ_ A ≫ (M.drop A ⊗ M.drop A) = M.drop A ≫ (λ_ _).inv
+    := by rw [<-copy_rel_tensor (A := A) (B := Ty.unit) ⊥ (f := M.drop A), copy_unit]; rfl
+
+@[reassoc]
+theorem Model.copy_drop_both_leftUnitor
+    [hA : IsRel A] [hA' : IsAff A] : Δ_ A ≫ (M.drop A ⊗ M.drop A) ≫ (λ_ _).hom = M.drop A
+    := by rw [copy_drop_both_assoc]; simp
+
+@[reassoc]
+theorem Model.copy_drop_both_rightUnitor
+    [hA : IsRel A] [hA' : IsAff A] : Δ_ A ≫ (M.drop A ⊗ M.drop A) ≫ (ρ_ _).hom = M.drop A
+    := by rw [copy_drop_both_assoc]; simp [MonoidalCategory'.unitors_inv_equal]
+
+@[reassoc]
+theorem Model.drop_copy {A : Ty α}
+    [hA : IsRel A] [hA' : IsAff A] : !_ A ≫ M.copy Ty.unit = Δ_ A ≫ (M.drop A ⊗ M.drop A)
+    := by rw [copy_unit, copy_drop_both]; rfl
+
+@[reassoc]
+theorem Model.copy_drop_left {A : Ty α}
+    [hA : IsRel A] [hA' : IsAff A] : Δ_ A ≫ (M.drop A ▷ t⟦ A ⟧) = (λ_ _).inv
+    := by convert copy_drop_left_aff (hA := hA) (hB := hA') ⊥ (𝟙 _) using 1; simp
+
+@[reassoc]
+theorem Model.copy_drop_right {A : Ty α}
+    [hA : IsRel A] [hA' : IsAff A] : Δ_ A ≫ (t⟦ A ⟧ ◁ M.drop A) = (ρ_ _).inv
+    := by convert copy_drop_right_aff (hA := hA) (hB := hA') ⊥ (𝟙 _) using 1; simp
+
+@[reassoc]
+theorem Model.copy_drop_tensor_left {A : Ty α} {X : C} (f : t⟦A⟧ ⟶ X)
+    [hA : IsRel A] [hA' : IsAff A] : Δ_ A ≫ (!_ A ⊗ f) = f ≫ (λ_ _).inv
+    := by rw [tensorHom_def, copy_drop_left_assoc, leftUnitor_inv_naturality]
+
+@[reassoc]
+theorem Model.copy_drop_tensor_right {A : Ty α} {X : C} (f : t⟦A⟧ ⟶ X)
+    [hA : IsRel A] [hA' : IsAff A] : Δ_ A ≫ (f ⊗ !_ A) = f ≫ (ρ_ _).inv
+    := by rw [tensorHom_def_of_right, copy_drop_right_assoc, rightUnitor_inv_naturality]

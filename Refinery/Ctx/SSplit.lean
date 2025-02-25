@@ -12,6 +12,23 @@ inductive Var?.SSplit : Var? α → Var? α → Var? α → Type _
   | right (v) : SSplit v v.erase v
   | sboth {v} : v.scopy → SSplit v v v
 
+def Var?.SSplit.unstrict {u v w : Var? α} : u.SSplit v w → u.Split v w
+  | .left _ => .left (le_refl _)
+  | .right _ => .right (le_refl _)
+  | .sboth h => .sboth h (le_refl _) (le_refl _)
+
+@[simp]
+theorem Var?.SSplit.unstrict_left {u : Var? α}
+  : (SSplit.left u).unstrict = .left (le_refl _) := rfl
+
+@[simp]
+theorem Var?.SSplit.unstrict_right {u : Var? α}
+  : (SSplit.right u).unstrict = .right (le_refl _) := rfl
+
+@[simp]
+theorem Var?.SSplit.unstrict_sboth {u : Var? α} (h : u.scopy)
+  : (SSplit.sboth h).unstrict = .sboth h (le_refl _) (le_refl _) := rfl
+
 theorem Var?.SSplit.left_unused {u v w : Var? α} (σ : u.SSplit v w) (h : u.unused) : v.unused
   := by cases σ <;> first | assumption | rfl
 
@@ -164,8 +181,13 @@ def Var?.SSplit.choose {u v w : Var? α} (h : Nonempty (u.SSplit v w)) : u.SSpli
 
 inductive Ctx?.SSplit : Ctx? α → Ctx? α → Ctx? α → Type _ where
   | nil : Ctx?.SSplit .nil .nil .nil
-  | cons {Γ Δ Ξ v l r} (h : SSplit Γ Δ Ξ) (hvw : v.SSplit l r)
+  | cons {Γ Δ Ξ v l r} (σ : SSplit Γ Δ Ξ) (hvw : v.SSplit l r)
     : SSplit (Ctx?.cons Γ v) (Ctx?.cons Δ l) (Ctx?.cons Ξ r)
+
+@[simp]
+def Ctx?.SSplit.unstrict {Γ Δ Ξ : Ctx? α} : Γ.SSplit Δ Ξ → Γ.Split Δ Ξ
+  | .nil => .nil
+  | .cons σ hvw => .cons σ.unstrict hvw.unstrict
 
 theorem Ctx?.SSplit.in_del {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) [hΔ : Δ.del] [hΞ : Ξ.del] : Γ.del
   := by

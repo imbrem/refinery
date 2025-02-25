@@ -373,6 +373,55 @@ theorem Ctx?.At.den_wkIn {Γ Δ : Ctx? α} (w : Γ.Wk Δ) {v n} (hΔv : Δ.At v 
     <-tensor_comp_of_left_assoc, Ctx?.At.wkIn, *]
   | cons ρ _ => cases hΔv <;> simp [<-tensor_comp_of_left_assoc, Wk.den_comp, Ctx?.At.wkIn, *]
 
+theorem Var?.Split.coherence {u v w : Var? α} (σ σ' : u.Split v w)
+  : σ.den (C := C) = σ'.den := match σ, σ' with
+  | .neither _, .neither _ => rfl
+  | .neither _, .left _ => by simp
+  | .neither _, .right _ => by simp [MonoidalCategory'.unitors_inv_equal]
+  | .neither _, .sboth _ _ _ => by
+    simp only [Ty.den, den_neither, den_sboth, Wk.den_unused, eqToHom_refl, Category.comp_id]
+    rw [M.copy_drop_both (hA := _), MonoidalCategory'.unitors_inv_equal]
+  | .left _, .neither _ => by simp
+  | .left _, .left _ => rfl
+  | .left _, .right _ => by simp [MonoidalCategory'.unitors_inv_equal]
+  | .left _, .sboth _ _ _ => by
+    simp only [Ty.den, den_left, den_sboth, Wk.den_unused, eqToHom_refl, Category.comp_id]
+    rw [M.copy_drop_tensor_right]
+  | .right _, .neither _ => by simp [MonoidalCategory'.unitors_inv_equal]
+  | .right _, .left _ => by simp [MonoidalCategory'.unitors_inv_equal]
+  | .right _, .right _ => rfl
+  | .right _, .sboth _ _ _ => by
+    simp only [Ty.den, den_right, den_sboth, Wk.den_unused, eqToHom_refl, Category.comp_id]
+    rw [M.copy_drop_tensor_left]
+  | .sboth _ _ _, .neither _ => by
+    simp only [Ty.den, den_neither, den_sboth, Wk.den_unused, eqToHom_refl, Category.comp_id]
+    rw [M.copy_drop_both (hA := _), MonoidalCategory'.unitors_inv_equal]
+  | .sboth _ _ _, .left _ => by
+    simp only [Ty.den, den_left, den_sboth, Wk.den_unused, eqToHom_refl, Category.comp_id]
+    rw [M.copy_drop_tensor_right]
+  | .sboth _ _ _, .right _ => by
+    simp only [Ty.den, den_right, den_sboth, Wk.den_unused, eqToHom_refl, Category.comp_id]
+    rw [M.copy_drop_tensor_left]
+  | .sboth _ _ _, .sboth _ _ _ => rfl
+
+theorem Ctx?.Split.coherence {Γ Δ Ξ : Ctx? α} (σ σ' : Γ.Split Δ Ξ)
+  : σ.den (C := C) = σ'.den := by
+  induction σ <;> cases σ' <;> simp only [den, Iso.cancel_iso_hom_right]; congr 1
+  apply_assumption
+  apply Var?.Split.coherence
+
+theorem Var?.SSplit.den_unstrict {u v w : Var? α} (σ : u.SSplit v w)
+  : σ.unstrict.den = σ.den (C := C) := by cases σ <;> simp
+
+theorem Ctx?.SSplit.den_unstrict {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ)
+  : σ.unstrict.den = σ.den (C := C) := by induction σ <;> simp [Var?.SSplit.den_unstrict, *]
+
+theorem Var?.SSplit.coherence {u v w : Var? α} (σ σ' : u.SSplit v w)
+  : σ.den (C := C) = σ'.den := by rw [<-σ.den_unstrict, <-σ'.den_unstrict, σ.unstrict.coherence]
+
+theorem Ctx?.SSplit.coherence {Γ Δ Ξ : Ctx? α} (σ σ' : Γ.SSplit Δ Ξ)
+  : σ.den (C := C) = σ'.den := by rw [<-σ.den_unstrict, <-σ'.den_unstrict, σ.unstrict.coherence]
+
 -- theorem Var?.Split.wk_den {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.Split v w)
 --   : Var?.Wk.den ρ ≫ σ.den (C := C)
 --   = (σ.wk ρ).den ≫ (Var?.Wk.den (C := C) (σ.leftWk ρ) ⊗ Var?.Wk.den (σ.rightWk ρ))
