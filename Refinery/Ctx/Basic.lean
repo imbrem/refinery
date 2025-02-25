@@ -304,6 +304,8 @@ theorem Var?.del.anti {v w : Var? α} (h : v ≤ w) [hw : w.del] : v.del := open
   else
     h.unused_del (unused_iff.mpr hw')
 
+theorem Var?.del.wk {v w : Var? α} (ρ : v ≤ w) (hw : w.del) : v.del := hw.anti ρ
+
 theorem Var?.scopy.anti {v w : Var? α} (h : v ≤ w) (hw : w.scopy) : v.scopy where
   q := hw.q.trans h.q
   ty := h.ty ▸ hw.ty
@@ -534,6 +536,7 @@ theorem Ctx?.Wk.ix_length_eq {Γ Δ : Ctx? α} (h : Γ.Wk Δ) (hl : Γ.length = 
 
 theorem Ctx?.Wk.ix_refl {Γ : Ctx? α} (h : Γ.Wk Γ) : h.ix = id := ix_length_eq _ rfl
 
+@[simp]
 theorem Ctx?.Wk.ix_pwk {Γ Δ : Ctx? α} (h : Γ.PWk Δ) : h.toWk.ix = id := ix_length_eq _ h.length
 
 -- TODO: ix is an injection...
@@ -675,6 +678,47 @@ inductive Ctx?.At (v : Var? α) : Ctx? α → ℕ → Type _ where
   | here {Γ} (d : Γ.del) {w} : w ≤ v → Ctx?.At v (Ctx?.cons Γ w) 0
   | there {Γ w n} (x : Ctx?.At v Γ n) (hw : w.del) : Ctx?.At v (Ctx?.cons Γ w) (n + 1)
 
+def Ctx?.At.cast {v v' : Var? α} {Γ Γ' : Ctx? α} {n n'}
+  (x : Γ.At v n) (hΓ : Γ = Γ') (hv : v = v') (hn : n = n') : Γ'.At v' n'
+  := hΓ ▸ hv ▸ hn ▸ x
+
+@[simp]
+theorem Ctx?.At.cast_rfl {v : Var? α} {Γ : Ctx? α} {n} (x : Γ.At v n) : x.cast rfl rfl rfl = x
+  := rfl
+
+@[simp]
+theorem Ctx?.At.cast_cast {v v' v'' : Var? α} {Γ Γ' Γ'' : Ctx? α} {n n' n''}
+  (x : Γ.At v n) (hΓ : Γ = Γ') (hv : v = v') (hn : n = n')
+  (hΓ' : Γ' = Γ'') (hv' : v' = v'') (hn' : n' = n'')
+  : (x.cast hΓ hv hn).cast hΓ' hv' hn' = x.cast (hΓ.trans hΓ') (hv.trans hv') (hn.trans hn')
+  := by cases hΓ; cases hv; cases hn; cases hΓ'; cases hv'; cases hn'; rfl
+
+@[simp]
+theorem Ctx?.At.cast_here {v v' w : Var? α} {Γ Γ' : Ctx? α}
+  (hΓ : Γ.cons w = Γ'.cons w) (hv : v = v')
+  {d : Γ.del} (hw : w ≤ v)
+  : (At.here d hw).cast hΓ hv rfl = .here (by cases hΓ; exact d) (hv ▸ hw)
+  := by cases hΓ; cases hv; rfl
+
+@[simp]
+theorem Ctx?.At.cast_there {v v' w : Var? α} {Γ Γ' : Ctx? α} {n n'}
+  (x : Γ.At v n) (hΓ : Γ.cons w = Γ'.cons w) (hv : v = v') (hn : n + 1 = n' + 1)
+  {hw : w.del}
+  : (x.there hw).cast hΓ hv hn = (x.cast (by cases hΓ; rfl) hv (by cases hn; rfl)).there hw
+  := by cases hΓ; cases hv; cases hn; rfl
+
+abbrev Ctx?.At.cast_src {v : Var? α} {Γ Γ' : Ctx? α} {n}
+  (x : Γ.At v n) (hΓ : Γ = Γ') : Γ'.At v n
+  := x.cast hΓ rfl rfl
+
+abbrev Ctx?.At.cast_trg {v v' : Var? α} {Γ : Ctx? α} {n}
+  (x : Γ.At v n) (hv : v = v') : Γ.At v' n
+  := x.cast rfl hv rfl
+
+abbrev Ctx?.At.cast_idx {v : Var? α} {Γ : Ctx? α} {n n'}
+  (x : Γ.At v n) (hn : n = n') : Γ.At v n'
+  := x.cast rfl rfl hn
+
 theorem Ctx?.At.zero_cons_head {Γ : Ctx? α} {v} (h : (Γ.cons w).At v 0) : w ≤ v
   := by cases h; assumption
 
@@ -687,16 +731,23 @@ theorem Ctx?.At.succ_cons_head {Γ : Ctx? α} {v w} (h : (Γ.cons w).At v (n + 1
 def Ctx?.At.succ_cons_tail {Γ : Ctx? α} {v w} (h : (Γ.cons w).At v (n + 1)) : Γ.At v n
   := by cases h; assumption
 
-def Ctx?.At.wkOut {v : Var? α} {Γ : Ctx? α} {n} (h : Γ.At v n) (hvw : v ≤ w)
-  : Γ.At w n := match h with
+def Ctx?.At.pwk {v : Var? α} {Γ Δ : Ctx? α} : (ρ : Γ.PWk Δ) → ∀{n}, Δ.At v n → Γ.At v n
+  | .cons ρ hvw, _, .here d hvw' => .here (d.wk ρ.toWk) (le_trans hvw hvw')
+  | .cons ρ hvw, _, .there x hw => .there (x.pwk ρ) (hw.wk hvw)
+
+def Ctx?.At.wkOut {v : Var? α} {Γ : Ctx? α} {n} (x : Γ.At v n) (hvw : v ≤ w)
+  : Γ.At w n := match x with
   | .here d hw => .here d (le_trans hw hvw)
   | .there x hw => .there (x.wkOut hvw) hw
 
-def Ctx?.At.wkIn {Γ Δ : Ctx? α}
-  : (ρ : Γ.Wk Δ) → ∀{v : Var? α} {n}, Δ.At v n → Γ.At v (ρ n)
+def Ctx?.At.wkIn {Γ Δ : Ctx? α} : (ρ : Γ.Wk Δ) → ∀{v : Var? α} {n}, Δ.At v n → Γ.At v (ρ n)
   | .cons ρ hvw, _, _, .here d hw => .here (d.wk ρ) (le_trans hvw hw)
   | .cons ρ hvw, _, _, .there a hw => .there (a.wkIn ρ) (hw.anti hvw)
   | .skip ρ hv, _, _, a => .there (a.wkIn ρ) hv
+
+theorem Ctx?.At.wkIn_toWk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {v : Var? α} {n} (x : Δ.At v n)
+  : x.wkIn ρ.toWk = (x.pwk ρ).cast_idx (by simp) := by
+  induction x generalizing Γ <;> cases ρ <;> simp [wkIn, pwk, *]
 
 def Ctx?.At.ix {Γ : Ctx? α} {v n} : Γ.At v n → v.Ix Γ
   | .here _ hw => Var?.zero_le (Ctx?.drop _) hw

@@ -45,6 +45,8 @@ def Var?.Wk.den {v w : Var? α} (h : v.Wk w) : (v⟦ v ⟧ : C) ⟶ v⟦ w ⟧
   | v, ⟨B, 0⟩, h => haveI _ := (h.unused_del rfl); !_ _
   | ⟨A, (_ : Quant)⟩, ⟨B, (_ : Quant)⟩, h => eqToHom (by cases h.ty; rfl)
 
+abbrev Var?.del.den {v : Var? α} (h : v.del) : (v⟦ v ⟧ : C) ⟶ 𝟙_ _ := !_ _
+
 theorem Var?.Wk.den_zero {v : Var? α} {A : Ty α} (h : v.Wk ⟨A, 0⟩)
   : Var?.Wk.den (C := C) h = (haveI _ := (h.unused_del rfl); !_ _)
   := by cases v with | mk _ q => cases q <;> rfl
@@ -94,7 +96,24 @@ def Var.Ix.den {Γ : Ctx? α} {v : Var? α} (h : v.Ix Γ) : (g⟦ Γ ⟧ : C) �
 @[simp]
 def Ctx?.At.den {v : Var? α} {Γ : Ctx? α} {n} : Γ.At v n → ((g⟦ Γ ⟧ : C) ⟶ v⟦ v ⟧)
   | .here _ h => (!_ _ ⊗ (Var?.Wk.den h)) ≫ (λ_ _).hom
-  | .there p hw => (p.den ⊗ !_ _) ≫ (ρ_ _).hom
+  | .there x hw => (x.den ⊗ !_ _) ≫ (ρ_ _).hom
+
+@[simp]
+theorem Ctx?.At.den_cast {v v' : Var? α} {Γ Γ' : Ctx? α} {n n'} (x : Γ.At v n)
+  (hΓ : Γ = Γ') (hv : v = v') (hn : n = n')
+  : (x.cast hΓ hv hn).den (C := C) = eqToHom (by rw [hΓ]) ≫ x.den ≫ eqToHom (by rw [hv])
+  := by cases hΓ; cases hv; cases hn; simp
+
+theorem Ctx?.At.den_cast_src {v : Var? α} {Γ Γ' : Ctx? α} {n} (x : Γ.At v n)
+  (hΓ : Γ = Γ') : (x.cast_src hΓ).den (C := C) = eqToHom (by rw [hΓ]) ≫ x.den
+  := by simp
+
+theorem Ctx?.At.den_cast_trg {v v' : Var? α} {Γ : Ctx? α} {n} (x : Γ.At v n) (hv : v = v')
+  : (x.cast_trg hv).den (C := C) = x.den ≫ eqToHom (by rw [hv])
+  := by simp
+
+theorem Ctx?.At.den_cast_idx {v : Var? α} {Γ : Ctx? α} {n n'} (x : Γ.At v n) (hn : n = n')
+  : (x.cast_idx hn).den (C := C) = x.den := by simp
 
 -- @[simp]
 -- theorem Ctx?.At.den_zero {v w : Var? α} {Γ : Ctx? α} (h : (Γ.cons w).At v 0)
@@ -422,84 +441,89 @@ local notation "WR" => Ctx?.SSplit.wkRight
 
 local notation "WL" => Ctx?.SSplit.wkLeft
 
--- theorem Ctx.SSplit.wk_den {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ : Γ.SSplit Δ Ξ)
---   : ρ.den ≫ σ.den (C := C) = (σ.wk ρ).den ≫ ((σ.leftWk ρ).den (C := C) ⊗ (σ.rightWk ρ).den)
---   := by induction ρ generalizing Δ Ξ with
---   | nil =>
---     stop
---     cases σ
---     calc
---     _ = 𝟙 (𝟙_ C) ≫ (λ_ (𝟙_ C)).inv := rfl
---     _ = (λ_ (𝟙_ C)).inv ≫ (𝟙 (𝟙_ C) ⊗ 𝟙 (𝟙_ C)) := by simp
---     _ = _ := rfl
---   | skip ρ hv I =>
---     stop
---     rename_i v
---     calc
---     _ = (ρ.den (C := C) ⊗ hv.den) ≫ (ρ_ _).hom ≫ σ.den := by simp
---     _ = _ ◁ hv.den ≫ (ρ_ _).hom ≫ ρ.den (C := C) ≫ σ.den
---       := by simp only [tensorHom_def_of_left, Category.assoc, rightUnitor_naturality_assoc]
---     _ = _ ◁ hv.den ≫ (ρ_ _).hom ≫ (σ.wk ρ).den ≫ ((LW ρ σ).den (C := C) ⊗ (RW ρ σ).den)
---       := by simp [I]
---     _ = ((σ.wk ρ).den (C := C) ⊗ hv.den) ≫ (ρ_ _).hom ≫ ((LW ρ σ).den (C := C) ⊗ (RW ρ σ).den)
---       := by simp only [tensorHom_def_of_left, Category.assoc, rightUnitor_naturality_assoc]
---     _ = ((σ.wk ρ).den (C := C) ⊗ hv.den)
---       ≫ (((LW ρ σ).den (C := C) ⊗ (RW ρ σ).den) ▷ _)
---       ≫ (ρ_ _).hom
---       := by simp only [rightUnitor_naturality]
---     _ = _
---       := by
---       simp only [<-tensorHom_def_assoc]
---       simp only [<-tensorHom_id, <-tensor_comp_of_left_assoc, Category.comp_id]
---     ((PW ρ σ).den (C := C) ≫ ((LW ρ σ).den (C := C) ⊗ w⟦RW ρ σ⟧)) ▷ _
---       ≫ (_ ◁ hv.den)
---       ≫ (ρ_ _).hom
---       = _ := by simp only [
---         tensorHom_def, Category.assoc, comp_whiskerRight, comp_whiskerRight_assoc]
---     (PW ρ σ).den (C := C) ▷ _
---       ≫ (((LW ρ σ).den (C := C) ⊗ w⟦RW ρ σ⟧) ⊗ hv.den)
---       ≫ (ρ_ _).hom
---       = _ := by simp only [<-associator_naturality_assoc]; congr; premonoidal_coherence
---     (PW ρ σ).den (C := C) ▷ _ ≫ (α_ _ _ _).hom
---       ≫ (w⟦LW ρ σ⟧ ⊗ (w⟦RW ρ σ⟧ ⊗ hv.den))
---       ≫ (_ ◁ (ρ_ g⟦Ξ⟧).hom)
---       = _ := by simp only [
---         tensorHom_def, PremonoidalCategory.whiskerLeft_comp,
---         PremonoidalCategory.whiskerLeft_comp_assoc, Category.assoc]
---     (PW ρ σ).den (C := C) ▷ _ ≫ (α_ _ _ _).hom
---       ≫ (w⟦LW ρ σ⟧ ⊗ ((w⟦RW ρ σ⟧ ⊗ hv.den)
---       ≫ (ρ_ g⟦Ξ⟧).hom))
---       = _ := by simp only [
---         <-comp_whiskerRight_assoc, Category.assoc, Iso.inv_hom_id_assoc, tensorHom_def]
---     (PW ρ σ).den (C := C) ▷ _ ≫ (α_ _ _ _).hom ≫ (ρ_ _).inv ▷ _
---       ≫ (((ρ_ _).hom ≫ w⟦LW ρ σ⟧) ▷ _)
---       ≫ (_ ◁ ((w⟦RW ρ σ⟧ ⊗ hv.den) ≫ (ρ_ g⟦Ξ⟧).hom))
---       = _
---       := by simp only [tensorHom_def]
---     (PW ρ σ).den (C := C) ▷ _ ≫ (α_ _ _ _).hom ≫ (ρ_ _).inv ▷ _
---       ≫ ((ρ_ _).hom ≫ w⟦LW ρ σ⟧ ⊗ (w⟦RW ρ σ⟧ ⊗ hv.den)
---       ≫ (ρ_ g⟦Ξ⟧).hom)
---       = _ := by rw [swap_inner_tensor_leftUnitor_assoc]
---     ((PW ρ σ).den (C := C) ⊗ (λ_ _).inv)
---       ≫ (βi_ g⟦WL ρ σ⟧ g⟦WR ρ σ⟧ (𝟙_ C) _).hom
---       ≫ ((ρ_ _).hom ≫ w⟦LW ρ σ⟧ ⊗ (w⟦RW ρ σ⟧ ⊗ hv.den)
---       ≫ (ρ_ g⟦Ξ⟧).hom)
---       = _ := by simp
---   | cons ρ hvw I => cases σ with
---   | cons σ hlr =>
---     calc
---     _ = (ρ.den (C := C) ⊗ vw⟦hvw⟧) ≫ (css⟦σ⟧ ⊗ vss⟦hlr⟧) ≫ (βi_ _ _ _ _).hom := by simp
---     _ = ((ρ.den (C := C) ≫ css⟦σ⟧) ⊗ (vw⟦hvw⟧ ≫ vss⟦hlr⟧)) ≫ (βi_ _ _ _ _).hom
---       := by rw [<-tensor_comp_of_left_assoc]
---     _ = (((PW ρ σ).den (C := C) ≫ (w⟦LW ρ σ⟧ ⊗ w⟦RW ρ σ⟧)) ⊗ (vw⟦hvw⟧ ≫ vss⟦hlr⟧))
---       ≫ (βi_ _ _ _ _).hom := by rw [I]
---     _ = _ := by sorry
---     ((PW ρ σ).den (C := C) ⊗ vss⟦hlr.wk hvw⟧)
---       ≫ (βi_ _ _ _ _).hom
---       ≫ ((w⟦LW ρ σ⟧ ⊗ vw⟦hlr.leftWk hvw⟧) ⊗ (w⟦RW ρ σ⟧ ⊗ vw⟦hlr.rightWk hvw⟧))
---       = _ := by simp only [Ctx?.SSplit.wkLeft.eq_3,
---         Ctx?.SSplit.wkRight.eq_3, Ctx?.SSplit.wk, Ctx?.SSplit.den, Ctx?.SSplit.leftWk,
---         Ctx?.Wk.den, Ctx?.SSplit.rightWk, Category.assoc]
+set_option maxHeartbeats 10000000 in
+theorem Ctx.SSplit.wk_den {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ : Γ.SSplit Δ Ξ)
+  : ρ.den ≫ σ.den (C := C) = (σ.wk ρ).den ≫ ((σ.leftWk ρ).den (C := C) ⊗ (σ.rightWk ρ).den)
+  := by induction ρ generalizing Δ Ξ with
+  | nil =>
+    cases σ
+    calc
+    _ = 𝟙 (𝟙_ C) ≫ (λ_ (𝟙_ C)).inv := rfl
+    _ = (λ_ (𝟙_ C)).inv ≫ (𝟙 (𝟙_ C) ⊗ 𝟙 (𝟙_ C)) := by simp
+    _ = _ := rfl
+  | skip ρ hv I =>
+    rename_i v
+    calc
+    _ = (ρ.den (C := C) ⊗ hv.den) ≫ (ρ_ _).hom ≫ σ.den := by simp
+    _ = _ ◁ hv.den ≫ (ρ_ _).hom ≫ ρ.den (C := C) ≫ σ.den
+      := by simp only [tensorHom_def_of_left, Category.assoc, rightUnitor_naturality_assoc]
+    _ = _ ◁ hv.den ≫ (ρ_ _).hom ≫ (σ.wk ρ).den ≫ ((LW ρ σ).den (C := C) ⊗ (RW ρ σ).den)
+      := by simp [I]
+    _ = ((σ.wk ρ).den (C := C) ⊗ hv.den) ≫ (ρ_ _).hom ≫ ((LW ρ σ).den (C := C) ⊗ (RW ρ σ).den)
+      := by simp only [tensorHom_def_of_left, Category.assoc, rightUnitor_naturality_assoc]
+    _ = ((σ.wk ρ).den (C := C) ⊗ hv.den)
+      ≫ (((LW ρ σ).den (C := C) ⊗ (RW ρ σ).den) ▷ _)
+      ≫ (ρ_ _).hom
+      := by simp only [rightUnitor_naturality]
+    _ = _
+      := by
+      simp only [<-tensorHom_def_assoc]
+      simp only [<-tensorHom_id, <-tensor_comp_of_left_assoc, Category.comp_id]
+    ((PW ρ σ).den (C := C) ≫ ((LW ρ σ).den (C := C) ⊗ w⟦RW ρ σ⟧)) ▷ _
+      ≫ (_ ◁ hv.den)
+      ≫ (ρ_ _).hom
+      = _ := by simp only [
+        tensorHom_def, Category.assoc, comp_whiskerRight, comp_whiskerRight_assoc]
+    (PW ρ σ).den (C := C) ▷ _
+      ≫ (((LW ρ σ).den (C := C) ⊗ w⟦RW ρ σ⟧) ⊗ hv.den)
+      ≫ (ρ_ _).hom
+      = _ := by simp only [<-associator_naturality_assoc]; congr; premonoidal_coherence
+    (PW ρ σ).den (C := C) ▷ _ ≫ (α_ _ _ _).hom
+      ≫ (w⟦LW ρ σ⟧ ⊗ (w⟦RW ρ σ⟧ ⊗ hv.den))
+      ≫ (_ ◁ (ρ_ g⟦Ξ⟧).hom)
+      = _ := by simp only [
+        tensorHom_def, PremonoidalCategory.whiskerLeft_comp,
+        PremonoidalCategory.whiskerLeft_comp_assoc, Category.assoc]
+    (PW ρ σ).den (C := C) ▷ _ ≫ (α_ _ _ _).hom
+      ≫ (w⟦LW ρ σ⟧ ⊗ ((w⟦RW ρ σ⟧ ⊗ hv.den)
+      ≫ (ρ_ g⟦Ξ⟧).hom))
+      = _ := by simp only [
+        <-comp_whiskerRight_assoc, Category.assoc, Iso.inv_hom_id_assoc, tensorHom_def]
+    (PW ρ σ).den (C := C) ▷ _ ≫ (α_ _ _ _).hom ≫ (ρ_ _).inv ▷ _
+      ≫ (((ρ_ _).hom ≫ w⟦LW ρ σ⟧) ▷ _)
+      ≫ (_ ◁ ((w⟦RW ρ σ⟧ ⊗ hv.den) ≫ (ρ_ g⟦Ξ⟧).hom))
+      = _
+      := by simp only [tensorHom_def]
+    (PW ρ σ).den (C := C) ▷ _ ≫ (α_ _ _ _).hom ≫ (ρ_ _).inv ▷ _
+      ≫ ((ρ_ _).hom ≫ w⟦LW ρ σ⟧ ⊗ (w⟦RW ρ σ⟧ ⊗ hv.den)
+      ≫ (ρ_ g⟦Ξ⟧).hom)
+      = _ := by rw [swap_inner_tensor_leftUnitor_assoc]
+    ((PW ρ σ).den (C := C) ⊗ (λ_ _).inv)
+      ≫ (βi_ g⟦WL ρ σ⟧ g⟦WR ρ σ⟧ (𝟙_ C) _).hom
+      ≫ ((ρ_ _).hom ≫ w⟦LW ρ σ⟧ ⊗ (w⟦RW ρ σ⟧ ⊗ hv.den)
+      ≫ (ρ_ g⟦Ξ⟧).hom)
+      = _ := by simp
+  | cons ρ hvw I => cases σ with
+  | cons σ hlr =>
+    calc
+    _ = (ρ.den (C := C) ⊗ vw⟦hvw⟧) ≫ (css⟦σ⟧ ⊗ vss⟦hlr⟧) ≫ (βi_ _ _ _ _).hom := by simp
+    _ = ((ρ.den (C := C) ≫ css⟦σ⟧) ⊗ (vw⟦hvw⟧ ≫ vss⟦hlr⟧)) ≫ (βi_ _ _ _ _).hom
+      := by rw [<-tensor_comp_of_left_assoc]
+    _ = (((PW ρ σ).den (C := C) ≫ (w⟦LW ρ σ⟧ ⊗ w⟦RW ρ σ⟧)) ⊗ (vw⟦hvw⟧ ≫ vss⟦hlr⟧))
+      ≫ (βi_ _ _ _ _).hom := by rw [I]
+    _ = _ := by rw [Var?.SSplit.wk_den, tensor_comp_of_left_assoc]
+    ((PW ρ σ).den (C := C) ⊗ vss⟦hlr.wk hvw⟧)
+      ≫ ((w⟦LW ρ σ⟧ ⊗ w⟦RW ρ σ⟧) ⊗ (vw⟦hlr.leftWk hvw⟧ ⊗ vw⟦hlr.rightWk hvw⟧))
+      ≫ (βi_ _ _ _ _).hom
+      = _ := by rw [swap_inner_naturality_tensor_middle]
+    ((PW ρ σ).den (C := C) ⊗ vss⟦hlr.wk hvw⟧)
+      ≫ (βi_ _ _ _ _).hom
+      ≫ ((w⟦LW ρ σ⟧ ⊗ vw⟦hlr.leftWk hvw⟧) ⊗ (w⟦RW ρ σ⟧ ⊗ vw⟦hlr.rightWk hvw⟧))
+      = _ := by simp only [Ctx?.SSplit.wkLeft.eq_3,
+        Ctx?.SSplit.wkRight.eq_3, Ctx?.SSplit.wk, Ctx?.SSplit.den, Ctx?.SSplit.leftWk,
+        Ctx?.Wk.den, Ctx?.SSplit.rightWk, Category.assoc]
+
+
 -- TODO: Ctx?.At.ix.den = Ctx?.At.den
 
 -- TODO: Var?.Ix.at.den = Var?.Ix.den

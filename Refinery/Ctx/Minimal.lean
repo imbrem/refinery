@@ -49,7 +49,7 @@ instance Ctx?.At.used_del {v : Var? α} {Γ : Ctx? α} {n} (x : Γ.At v n) [hv :
 @[simp]
 def Ctx?.At.toUsed {v : Var? α} {Γ : Ctx? α} {n} : (x : Γ.At v n) → Γ.PWk x.used
   | .here (Γ := Γ) _ hvw => Γ.erasePWk.cons (le_refl _)
-  | .there (w := w) x hw => x.toUsed.cons (w.del_iff_erase_le.mp hw)
+  | .there (w := w) x hw => x.toUsed.cons (Var?.del_iff_erase_le.mp hw)
 
 @[simp]
 def Ctx?.At.strict {v : Var? α} {Γ : Ctx? α} {n} : (x : Γ.At v n) → x.used.SAt v n
