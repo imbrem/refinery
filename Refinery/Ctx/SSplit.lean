@@ -666,15 +666,15 @@ instance Ctx?.SSplit.wkLeft_copy
     cases σ; have _ := hΔ.head; have _ := hΔ.tail;
     simp [wkLeft, cons_copy_iff, Var?.SSplit.wkLeft_copy, *]
 
-theorem Ctx?.SSplit.pwk_left_del {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) [hΔ : Δ.del]
-  : Γ.PWk Ξ := by generalize hΔ = hΔ; induction σ with
-  | nil => simp
-  | cons _ hvw I => constructor; apply I hΔ.tail; apply hvw.wk_left_del (hv := hΔ.head)
+def Ctx?.SSplit.pwk_left_del {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) [hΔ : Δ.del]
+  : Γ.PWk Ξ := match σ, hΔ with
+  | .nil, _ => .nil
+  | .cons σ hvw, hΔ => (σ.pwk_left_del (hΔ := hΔ.tail)).cons (hvw.wk_left_del (hv := hΔ.head))
 
-theorem Ctx?.SSplit.pwk_right_del {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) [hΞ : Ξ.del]
-  : Γ.PWk Δ := by generalize hΞ = hΞ; induction σ with
-  | nil => simp
-  | cons _ hvw I => constructor; apply I hΞ.tail; apply hvw.wk_right_del (hw := hΞ.head)
+def Ctx?.SSplit.pwk_right_del {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) [hΞ : Ξ.del]
+  : Γ.PWk Δ := match σ, hΞ with
+  | .nil, _ => .nil
+  | .cons σ hvw, hΞ => (σ.pwk_right_del (hΞ := hΞ.tail)).cons (hvw.wk_right_del (hw := hΞ.head))
 
 @[simp]
 def Ctx?.SSplit.wkLeft' {Γ' Γ Δ Ξ : Ctx? α}

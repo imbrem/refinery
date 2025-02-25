@@ -126,9 +126,11 @@ abbrev Var?.del (v : Var? α) : Prop := IsAff v
 
 abbrev Var?.copy (v : Var? α) : Prop := IsRel v
 
+@[simp]
 instance Var?.del.instZeroQuant (A : Ty α) : (⟨A, 0⟩ : Var? α).del
   := ⟨by simp [quant]⟩
 
+@[simp]
 instance Var?.copy.instZeroQuant (A : Ty α) : (⟨A, 0⟩ : Var? α).copy
   := ⟨by simp [quant]⟩
 
@@ -351,40 +353,63 @@ theorem Var?.del.of_erase_le {v : Var? α} (h : v ≤ v.erase) : v.del := by
   | zero => infer_instance
   | rest q => exact h.unused_del (by simp)
 
-theorem Var?.del_iff_erase_le (v : Var? α) : v.del ↔ v ≤ v.erase
+theorem Var?.del_iff_erase_le {v : Var? α} : v.del ↔ v ≤ v.erase
   := ⟨λ_ => del.erase_le v, del.of_erase_le⟩
 
-inductive Ctx?.PWk : Ctx? α → Ctx? α → Prop where
+theorem Var?.Wk.quant_le_quant_iff  {A B : Ty α} {q q' : Quant}
+  : Var?.mk A q ≤ Var?.mk B q' ↔ A = B ∧ q' ≤ q :=
+  ⟨λh => ⟨h.ty, h.q⟩, λ⟨ht, hq⟩ => ⟨ht, hq, (by simp)⟩⟩
+
+theorem Var?.Wk.not_zero_le {A B : Ty α} {q : Quant}  (h : Var?.mk A 0 ≤ ⟨B, q⟩) : False
+  := by cases h.q using EQuant.le.casesLE
+
+@[simp]
+theorem Var?.Wk.zero_le_quant_iff {A B : Ty α} {q : Quant} : (Var?.mk A 0 ≤ ⟨B, q⟩) ↔ False
+  := by rw [iff_false]; apply not_zero_le
+
+@[simp]
+theorem Var?.Wk.le_quant_iff  {A B : Ty α} {q : EQuant} {q' : Quant}
+  : Var?.mk A q ≤ Var?.mk B q' ↔ A = B ∧ q' ≤ q := by cases q using EQuant.casesZero with
+  | zero => simp only [zero_le_quant_iff, false_iff, not_and]; intro h; cases q' <;> decide
+  | rest => simp [quant_le_quant_iff]
+
+@[simp]
+theorem Var?.Wk.zero_le_zero_iff {A B : Ty α} : Var?.mk A 0 ≤ Var?.mk B 0 ↔ A = B
+  := ⟨λh => h.ty, λh => ⟨h, le_refl _, by simp⟩⟩
+
+theorem Var?.Wk.zero_le_iff {A} {v : Var? α} : ⟨A, 0⟩ ≤ v ↔ A = v.ty ∧ v.unused
+  := by cases v with | mk B q => cases q using EQuant.casesZero <;> simp
+
+theorem Var?.Wk.zero_le_unused {A} {v : Var? α} (h : ⟨A, 0⟩ ≤ v) : v.unused
+  := by cases v with | mk B q => cases q using EQuant.casesZero with
+  | zero => rfl
+  | rest q => exact h.not_zero_le.elim
+
+theorem Var?.Wk.erase_eq {v w : Var? α} (h : v.Wk w) : v.erase = w.erase
+  := by cases v; cases w; cases h.ty; rfl
+
+inductive Ctx?.PWk : Ctx? α → Ctx? α → Type _ where
   | nil : Ctx?.PWk .nil .nil
   | cons {Γ Δ v w} (h : Ctx?.PWk Γ Δ) (hvw : v ≤ w) : Ctx?.PWk (Ctx?.cons Γ v) (Ctx?.cons Δ w)
 
 theorem Ctx?.PWk.head {Γ Δ v w} (h : PWk (α := α) (.cons Γ v) (.cons Δ w)) : v ≤ w
   := match h with | Ctx?.PWk.cons _ hvw => hvw
 
-theorem Ctx?.PWk.tail {Γ Δ v w} (h : PWk (α := α) (.cons Γ v) (.cons Δ w)) : PWk Γ Δ
+def Ctx?.PWk.tail {Γ Δ v w} (h : PWk (α := α) (.cons Γ v) (.cons Δ w)) : PWk Γ Δ
   := match h with | Ctx?.PWk.cons h _ => h
 
 @[simp]
-theorem Ctx?.PWk.cons_iff {Γ Δ v w} : PWk (α := α) (.cons Γ v) (.cons Δ w) ↔ PWk Γ Δ ∧ v ≤ w
-  := ⟨λ h => ⟨Ctx?.PWk.tail h, Ctx?.PWk.head h⟩, λ ⟨h, h'⟩ => Ctx?.PWk.cons h h'⟩
-
-def Ctx?.PWk.inductionOn {Γ Δ} (h : PWk Γ Δ) {motive : (Γ Δ : Ctx? α) → PWk Γ Δ → Sort _}
-  (nil : motive .nil .nil .nil)
-  (cons : ∀ {Γ Δ v w} (h : PWk Γ Δ) (hvw : v ≤ w),
-    motive Γ Δ h →
-    motive (Ctx?.cons Γ v) (Ctx?.cons Δ w) (Ctx?.PWk.cons h hvw))
-  : motive Γ Δ h := match Γ, Δ, h with
-  | .nil, .nil, _ => nil
-  | .cons _ _, .cons _ _, h => cons h.tail h.head (inductionOn h.tail nil cons)
+def Ctx?.PWk.refl : (Γ : Ctx? α) → PWk Γ Γ
+  | .nil => .nil
+  | .cons Γ v => .cons (refl Γ) (le_refl v)
 
 @[simp]
-theorem Ctx?.PWk.refl (Γ : Ctx? α) : PWk Γ Γ := by induction Γ <;> simp [Ctx?.PWk.nil, *]
+def Ctx?.PWk.comp {Γ Δ Ξ : Ctx? α} : (ρ : PWk Γ Δ) → (ρ' : PWk Δ Ξ) → PWk Γ Ξ
+  | .nil, .nil => .nil
+  | .cons h hvw, .cons h' hvw' => .cons (h.comp h') (le_trans hvw hvw')
 
-theorem Ctx?.PWk.trans {Γ Δ Ξ : Ctx? α} (h : PWk Γ Δ) (h' : PWk Δ Ξ) : PWk Γ Ξ := by
-  induction h generalizing Ξ <;> cases h'
-  simp only [refl]
-  simp only [cons_iff, true_and, *]
-  apply le_trans <;> assumption
+instance Ctx?.PWk.instSubsingleton {Γ Δ : Ctx? α} : Subsingleton (PWk Γ Δ) where
+  allEq ρ ρ' := by induction ρ <;> cases ρ' <;> simp; apply_assumption
 
 theorem Ctx?.PWk.antisymm {Γ Δ : Ctx? α} (h : PWk Γ Δ) (h' : PWk Δ Γ) : Γ = Δ := by
   induction h with
@@ -407,53 +432,70 @@ abbrev Ctx?.Wk.scons {Γ Δ : Ctx? α} (v : Var? α) (ρ : Γ.Wk Δ)
 theorem Ctx?.Wk.length {Γ Δ : Ctx? α} (h : Wk Γ Δ) : Ctx?.length Δ ≤ Ctx?.length Γ
   := by induction h <;> simp <;> omega
 
-def Ctx?.PWk.toWk {Γ Δ : Ctx? α} (h : PWk Γ Δ) : Wk Γ Δ
-  := h.inductionOn (motive := λΓ Δ _ => Wk Γ Δ) .nil (λ_ h m => .cons m h)
+@[simp]
+def Ctx?.PWk.toWk {Γ Δ : Ctx? α} : PWk Γ Δ → Wk Γ Δ
+  | .nil => .nil
+  | .cons h hvw => .cons (toWk h) hvw
 
-theorem Ctx?.Wk.toPWk {Γ Δ : Ctx? α} (h : Wk Γ Δ) (h' : Γ.length = Δ.length) : Γ.PWk Δ
-  := by induction h with
-  | nil => exact .nil
-  | cons h v I => exact .cons (I (by convert h' using 0; simp)) v
-  | skip h =>
-    have hl := h.length
-    rw [<-h', length_cons] at hl
-    omega
+@[simp]
+def Ctx?.Wk.toPWk {Γ Δ : Ctx? α} (h : Γ.length = Δ.length) : (ρ : Wk Γ Δ) → Γ.PWk Δ
+  | .nil => .nil
+  | .skip ρ hw => by have _ := ρ.length; simp at h; omega
+  | .cons ρ hw => .cons (ρ.toPWk (by convert h using 0; simp)) hw
 
 theorem Ctx?.Wk.antisymm {Γ Δ : Ctx? α} (h : Wk Γ Δ) (h' : Wk Δ Γ) : Γ = Δ :=
   have hl := le_antisymm h'.length h.length
   PWk.antisymm (h.toPWk hl) (h'.toPWk (hl.symm))
 
 -- toPWk is a faithful functor
-theorem Ctx?.Wk.eq_pwk {Γ Δ : Ctx? α} (h : Wk Γ Δ) (h' : Γ.length = Δ.length)
-  : h = (h.toPWk h').toWk := by induction h with
+theorem Ctx?.Wk.eq_pwk {Γ Δ : Ctx? α} (ρ : Wk Γ Δ) (h : Γ.length = Δ.length)
+  : (ρ.toPWk h).toWk = ρ := by induction ρ with
   | nil => rfl
-  | cons h v I =>
-    rw [I]
-    rfl
-    convert h' using 0
-    simp
-  | skip h =>
-    have hl := h.length
-    rw [<-h', length_cons] at hl
+  | cons ρ v I => simp [I (by convert h using 0; simp)]
+  | skip ρ =>
+    have hl := ρ.length
+    rw [<-h, length_cons] at hl
     omega
 
-def Ctx?.Wk.refl (Γ : Ctx? α) : Wk Γ Γ := (Ctx?.PWk.refl Γ).toWk
+theorem Ctx?.Wk.eq_of_length_eq {Γ Δ : Ctx? α} (ρ ρ' : Wk Γ Δ) (h : Γ.length = Δ.length)
+  : ρ = ρ' := by rw [<-eq_pwk ρ h, <-eq_pwk ρ' h]; congr 1; apply Subsingleton.elim
 
-theorem Ctx?.Wk.eq_refl {Γ : Ctx? α} (h : Wk Γ Γ) : h = Wk.refl Γ := eq_pwk h rfl
+theorem Ctx?.Wk.subsingleton_of_length_eq (Γ Δ : Ctx? α) (h : Γ.length = Δ.length)
+  : Subsingleton (Wk Γ Δ) := ⟨λ_ _ => eq_of_length_eq _ _ h⟩
+
+@[simp]
+def Ctx?.Wk.refl : (Γ : Ctx? α) → Wk Γ Γ
+  | .nil => .nil
+  | .cons Γ v => .cons (refl Γ) (le_refl v)
+
+theorem Ctx?.Wk.eq_refl {Γ : Ctx? α} (h : Wk Γ Γ) : h = Wk.refl Γ := eq_of_length_eq _ _ rfl
 
 def Ctx?.wk0 (Γ : Ctx? α) (v : Var? α) [hv : v.del] : Wk (Γ.cons v) Γ := (Wk.refl Γ).skip hv
 
+@[simp]
 def Ctx?.Wk.comp {Γ Δ Ξ : Ctx? α} : Wk Γ Δ → Wk Δ Ξ → Wk Γ Ξ
   | .nil, .nil => .nil
   | .cons h hv, .cons h' hv' => .cons (h.comp h') (hv.trans hv')
   | .cons h hv, .skip h' hv' => .skip (h.comp h') (Var?.del.anti hv)
   | .skip h hv, h' => .skip (h.comp h') hv
 
+@[simp]
+theorem Ctx?.Wk.refl_comp {Γ Δ : Ctx? α} (ρ : Wk Γ Δ) : (Wk.refl Γ).comp ρ = ρ
+  := by induction ρ <;> simp [*]
+
+@[simp]
+theorem Ctx?.Wk.comp_refl {Γ Δ : Ctx? α} (ρ : Wk Γ Δ) : ρ.comp (Wk.refl Δ) = ρ
+  := by induction ρ <;> simp [*]
+
 theorem Ctx?.Wk.comp_assoc {Γ Δ Ξ Θ : Ctx? α} (h : Wk Γ Δ) (h' : Wk Δ Ξ) (h'' : Wk Ξ Θ)
   : h.comp (h'.comp h'') = (h.comp h').comp h'' := by induction h generalizing Ξ Θ with
   | nil => cases h'; cases h''; rfl
   | cons _ _ I => cases h' <;> cases h'' <;> simp [comp, I]
   | skip _ _ I => simp [comp, I]
+
+theorem Ctx?.PWk.comp_toWk {Γ Δ Ξ : Ctx? α} (ρ : PWk Γ Δ) (ρ' : PWk Δ Ξ)
+  : (ρ.comp ρ').toWk = ρ.toWk.comp ρ'.toWk
+  := by induction ρ generalizing Ξ <;> cases ρ' <;> simp [*]
 
 @[simp]
 def Ctx?.Wk.ix {Γ Δ : Ctx? α} : Wk Γ Δ → ℕ → ℕ
@@ -542,6 +584,20 @@ theorem Ctx?.del.wk {Γ Δ : Ctx? α} (h : Γ.Wk Δ) [hΔ : Δ.del] : Γ.del := 
     have _ := I hΔ
     infer_instance
   ) hΔ
+
+@[simp]
+def Ctx?.erasePWk (Γ : Ctx? α) [h : Γ.del] : PWk Γ Γ.erase := match Γ, h with
+  | .nil, _ => .nil
+  | .cons Γ _, h => .cons (Γ.erasePWk (h := h.tail)) (Var?.del_iff_erase_le.mp h.head)
+
+@[simp]
+def Ctx?.eraseWk (Γ : Ctx? α) [h : Γ.del] : Wk Γ Γ.erase := match Γ, h with
+  | .nil, _ => .nil
+  | .cons Γ _, h => .cons (Γ.eraseWk (h := h.tail)) (Var?.del_iff_erase_le.mp h.head)
+
+theorem Ctx?.toWk_erasePWk {Γ : Ctx? α}
+  : [h : Γ.del] → (Γ.erasePWk (h := h)).toWk = Γ.eraseWk (h := h)
+  := by induction Γ <;> simp [*]
 
 def Ctx?.choose_drop (Γ : Ctx? α) (h : Nonempty (Γ.Wk .nil)) : Γ.Wk .nil :=
   have _ : Γ.del := let ⟨h⟩ := h; h.drop_del; Γ.drop

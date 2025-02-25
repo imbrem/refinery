@@ -40,18 +40,17 @@ section MonoidalCategoryStruct
 
 variable [MonoidalCategoryStruct C] [VM : VarModel α C]
 
-
-def Var?.Wk.den {v w : Var? α} (h : v ≤ w) : (v⟦ v ⟧ : C) ⟶ v⟦ w ⟧
+def Var?.Wk.den {v w : Var? α} (h : v.Wk w) : (v⟦ v ⟧ : C) ⟶ v⟦ w ⟧
   := match v, w, h with
   | v, ⟨B, 0⟩, h => haveI _ := (h.unused_del rfl); !_ _
   | ⟨A, (_ : Quant)⟩, ⟨B, (_ : Quant)⟩, h => eqToHom (by cases h.ty; rfl)
 
-theorem Var?.Wk.den_zero {v : Var? α} {A : Ty α} (h : v ≤ ⟨A, 0⟩)
+theorem Var?.Wk.den_zero {v : Var? α} {A : Ty α} (h : v.Wk ⟨A, 0⟩)
   : Var?.Wk.den (C := C) h = (haveI _ := (h.unused_del rfl); !_ _)
   := by cases v with | mk _ q => cases q <;> rfl
 
 @[simp]
-theorem Var?.Wk.den_unused {v w : Var? α} (h : v ≤ w) (hw : w.unused)
+theorem Var?.Wk.den_unused {v w : Var? α} (h : v.Wk w) (hw : w.unused)
   : Var?.Wk.den (C := C) h
   = (haveI _ := (Var?.unused.del hw).anti h; !_ _) ≫ eqToHom (by simp [ety, hw])
   := by cases w; cases hw; rw [den_zero]; simp
@@ -60,13 +59,13 @@ theorem Var?.Wk.den_erase {v  w: Var? α} (h : v ≤ w.erase)
   : Var?.Wk.den (C := C) h = (haveI _ := h.unused_del rfl; !_ _)
   := by simp
 
-theorem Var?.Wk.den_quant {v : Var? α} {A : Ty α} {q : Quant} (h : v ≤ ⟨A, q⟩)
+theorem Var?.Wk.den_quant {v : Var? α} {A : Ty α} {q : Quant} (h : v.Wk ⟨A, q⟩)
   : Var?.Wk.den (C := C) h = eqToHom (by rw [ety_eq_quant h])
   := by cases v with | mk _ q' =>
         cases q' with | zero => have h := h.q; cases h using EQuant.le.casesLE | _ => rfl
 
 @[simp]
-theorem Var?.Wk.den_used {v w : Var? α} (h : v ≤ w) (hw : w.used)
+theorem Var?.Wk.den_used {v w : Var? α} (h : v.Wk w) (hw : w.used)
   : Var?.Wk.den (C := C) h = eqToHom (by rw [ety_eq_used h hw])
   := by cases w with | mk A q => cases q using EQuant.casesZero with
     | zero => cases hw
@@ -74,10 +73,12 @@ theorem Var?.Wk.den_used {v w : Var? α} (h : v ≤ w) (hw : w.used)
 
 notation "vw⟦" ρ "⟧" => Var?.Wk.den ρ
 
-def Ctx?.PWk.den {Γ Δ : Ctx? α} (h : Γ.PWk Δ) : (g⟦ Γ ⟧ : C) ⟶ g⟦ Δ ⟧
-  := match Γ, Δ, h with
-  | .nil, .nil, _ => 𝟙 (𝟙_ C)
-  | .cons _ _, .cons _ _, h => h.tail.den ⊗ (Var?.Wk.den h.head)
+@[simp]
+def Ctx?.PWk.den {Γ Δ : Ctx? α} : Γ.PWk Δ → ((g⟦ Γ ⟧ : C) ⟶ g⟦ Δ ⟧)
+  | .nil => 𝟙 (𝟙_ C)
+  | .cons ρ w => ρ.den ⊗ (Var?.Wk.den w)
+
+notation "pw⟦" ρ "⟧" => Ctx?.PWk.den ρ
 
 @[simp]
 def Ctx?.Wk.den {Γ Δ : Ctx? α} : Γ.Wk Δ → ((g⟦ Γ ⟧ : C) ⟶ g⟦ Δ ⟧)
@@ -107,26 +108,28 @@ def Ctx?.At.den {v : Var? α} {Γ : Ctx? α} {n} : Γ.At v n → ((g⟦ Γ ⟧ :
 --   = (h.succ_cons_tail.den (C := C) ⊗ h.succ_cons_head.den) ≫ (ρ_ _).hom
 --   := by cases h; rfl
 
---NOTE: simp lemmas for this break; go fix later...
 def Var?.Split.den {u v w : Var? α} : u.Split v w → ((v⟦ u ⟧ : C) ⟶ v⟦ v ⟧ ⊗ v⟦ w ⟧)
   | .neither _ => !_ _ ≫ (ρ_ _).inv
-  | .left _ _ => (ρ_ _).inv
-  | .right _ _ => (λ_ _).inv
-  | .both _ => Δ_ _
+  | .left h => vw⟦h⟧ ≫ (ρ_ _).inv
+  | .right h => vw⟦h⟧ ≫ (λ_ _).inv
+  | .sboth hu hv hw => (haveI _ := hu.copy; Δ_ _) ≫ (vw⟦hv⟧ ⊗ vw⟦hw⟧)
 
 @[simp]
 theorem Var?.Split.den_neither {v : Var? α} [hv : v.del]
   : (Split.neither hv).den (C := C) = !_ _ ≫ (ρ_ _).inv := rfl
 
 @[simp]
-theorem Var?.Split.den_left {A : Ty α} {q} : (Split.left A q).den (C := C) = (ρ_ _).inv := rfl
+theorem Var?.Split.den_left {v w : Var? α} (h : v ≤ w)
+  : (Split.left h).den (C := C) = vw⟦h⟧ ≫ (ρ_ _).inv := rfl
 
 @[simp]
-theorem Var?.Split.den_right {A : Ty α} {q} : (Split.right A q).den (C := C) = (λ_ _).inv := rfl
+theorem Var?.Split.den_right {v w : Var? α} (h : v ≤ w)
+  : (Split.right h).den (C := C) = vw⟦h⟧ ≫ (λ_ _).inv := rfl
 
 @[simp]
-theorem Var?.Split.den_both {v : Var? α} (h : v.copy)
-  : (Split.both h).den (C := C) = Δ_ _ := rfl
+theorem Var?.Split.den_sboth {u v w : Var? α} (hu : u.scopy) (hv : u ≤ v) (hw : u ≤ w)
+  : (Split.sboth hu hv hw).den (C := C) = (have _ := hu.copy; Δ_ _) ≫ (hv.den (C := C) ⊗ vw⟦hw⟧)
+  := rfl
 
 notation "vs⟦" ρ "⟧" => Var?.Split.den ρ
 
@@ -180,6 +183,12 @@ variable {φ : Type _} {α : Type _} {ε : Type _} [Signature φ α ε]
          {C : Type _} [Category C] [PremonoidalCategory C] [ChosenFiniteCoproducts C]
          [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε]
          [M : Model φ α ε C]
+
+@[simp]
+theorem Var?.Wk.den_refl {v : Var? α} : Var?.Wk.den (C := C) (le_refl v) = 𝟙 _
+  := by cases v with | mk _ q => cases q using EQuant.casesZero with
+  | zero => apply M.drop_unit
+  | rest => rfl
 
 @[simp]
 theorem Var?.del.den_pure {v : Var? α} (h : v.del) : E.HasEff e (!_ v.ety) := inferInstance
@@ -237,7 +246,11 @@ theorem Var?.Wk.den_from_erase {v w : Var? α} (h : v.erase ≤ w)
 
 @[simp]
 instance Var?.Split.den_pure {u v w : Var? α} (h : u.Split v w) : E.HasEff e h.den
-  := by cases h <;> simp; infer_instance
+  := by cases h <;> simp <;> infer_instance
+
+@[simp]
+instance Var?.Split.den_central {u v w : Var? α} (h : u.Split v w) : Central (C := C) h.den
+  := (den_pure h).pure_central
 
 @[simp]
 instance Var?.SSplit.den_pure {u v w : Var? α} (h : u.SSplit v w) : E.HasEff e h.den
@@ -245,6 +258,14 @@ instance Var?.SSplit.den_pure {u v w : Var? α} (h : u.SSplit v w) : E.HasEff e 
 
 @[simp]
 instance Var?.SSplit.den_central {u v w : Var? α} (h : u.SSplit v w) : Central (C := C) h.den
+  := (den_pure h).pure_central
+
+instance Ctx?.PWk.den_pure {Γ Δ : Ctx? α} (h : Γ.PWk Δ) : E.HasEff e h.den
+  := by induction h with
+  | nil => simp only [den]; exact HasEff.id
+  | cons => simp only [den]; infer_instance
+
+instance Ctx?.PWk.den_central {Γ Δ : Ctx? α} (h : Γ.PWk Δ) : Central (C := C) h.den
   := (den_pure h).pure_central
 
 instance Ctx?.Wk.den_pure {Γ Δ : Ctx? α} (h : Γ.Wk Δ) : E.HasEff e h.den := by induction h with
@@ -255,6 +276,13 @@ instance Ctx?.Wk.den_pure {Γ Δ : Ctx? α} (h : Γ.Wk Δ) : E.HasEff e h.den :=
 
 instance Ctx?.Wk.den_central {Γ Δ : Ctx? α} (h : Γ.Wk Δ) : Central (C := C) h.den
   := (den_pure h).pure_central
+
+theorem Ctx?.PWk.den_toWk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ)
+  : ρ.toWk.den = ρ.den (C := C) := by induction ρ <;> simp [*]
+
+@[simp]
+theorem Ctx?.Wk.den_refl {Γ : Ctx? α} : (Ctx?.Wk.refl Γ).den (C := C) = 𝟙 (g⟦ Γ ⟧) := by
+  induction Γ <;> simp [*] <;> rfl
 
 @[reassoc]
 theorem Ctx?.Wk.den_comp {Γ Δ Ξ : Ctx? α} (h : Γ.Wk Δ) (h' : Δ.Wk Ξ)
@@ -273,6 +301,15 @@ theorem Ctx?.Wk.den_comp {Γ Δ Ξ : Ctx? α} (h : Γ.Wk Δ) (h' : Δ.Wk Ξ)
 theorem Ctx?.Wk.den_comp_drop {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) [hΔ : Δ.del]
   : ρ.den (C := C) ≫ !_ Δ.ety = (haveI _ := hΔ.wk ρ; !_ Γ.ety)
   := have _ := hΔ.wk ρ; M.drop_aff ⊥ _
+
+@[simp]
+theorem Ctx?.PWk.den_refl {Γ : Ctx? α} : (Ctx?.PWk.refl Γ).den (C := C) = 𝟙 (g⟦ Γ ⟧) := by
+  induction Γ <;> simp [*] <;> rfl
+
+@[simp]
+theorem Ctx?.PWk.den_comp {Γ Δ Ξ : Ctx? α} (ρ : Γ.PWk Δ) (ρ' : Δ.PWk Ξ)
+  : ρ.den ≫ ρ'.den = (ρ.comp ρ').den (C := C)
+  := by rw [<-ρ.den_toWk, <-ρ'.den_toWk, Wk.den_comp, <-PWk.comp_toWk, den_toWk]
 
 instance Ctx?.At.den_pure {v : Var? α} {Γ : Ctx? α} {n} (h : Γ.At v n)
   : E.HasEff e h.den
