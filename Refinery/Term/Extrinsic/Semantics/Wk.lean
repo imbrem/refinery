@@ -85,5 +85,8 @@ theorem Deriv.den_wk {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ 
 theorem Deriv.wk_den {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)} (D : Δ ⊢ a : A)
   : ρ.den ≫ D.den = (D.wk ρ).den (C := C) := by rw [den_wk]
 
+theorem Deriv.den_pwk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} {a : Term φ (Ty α)} (D : Δ ⊢ a : A)
+  : (D.pwk ρ).den (C := C) = ρ.den ≫ D.den := by rw [<-ρ.den_toWk, wk_den, pwk, den_cast_term]
+
 theorem Deriv.pwk_den {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} {a : Term φ (Ty α)} (D : Δ ⊢ a : A)
-  : ρ.den ≫ D.den = (D.pwk ρ).den (C := C) := by rw [<-ρ.den_toWk, wk_den, pwk, den_cast_term]
+  : ρ.den ≫ D.den = (D.pwk ρ).den (C := C) := by rw [den_pwk]

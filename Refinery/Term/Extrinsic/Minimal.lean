@@ -1,5 +1,6 @@
 import Refinery.Ctx.Minimal
 import Refinery.Term.Extrinsic.Typing
+import Refinery.Term.Extrinsic.Wk
 
 namespace Refinery
 
@@ -12,43 +13,53 @@ variable {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε]
 inductive SDeriv : Ctx? α → Ty α → Term φ (Ty α) → Type _
   | bv {Γ} : Γ.SAt ⟨A, 1⟩ n → SDeriv Γ A (.bv n)
   | op {Γ A B f a} : S.FnTy f A B → SDeriv Γ A a → SDeriv Γ B (.op f a)
-  | let₁ {Γ Γl Γr A B a b} :
+  | let₁ {Γ Γl Γr A B a b q} :
     Γ.SSplit Γl Γr →
-    SDeriv Γr A a → SDeriv (Γl.cons ⟨A, ⊤⟩) B b → SDeriv Γ B (.let₁ a A b)
+    (hq : Var?.mk A ⊤ ≤ ⟨A, q⟩) →
+    SDeriv Γr A a → SDeriv (Γl.cons ⟨A, q⟩) B b → SDeriv Γ B (.let₁ a A b)
   | unit {Γ} : Γ.IsZero → SDeriv Γ .unit .unit
   | pair {Γ Γl Γr A B a b} :
     Γ.SSplit Γl Γr →
     SDeriv Γl A a → SDeriv Γr B b → SDeriv Γ (.tensor A B) (.pair a b)
-  | let₂ {Γ Γl Γr A B C a b} :
+  | let₂ {Γ Γl Γr A B C a b qa qb} :
     Γ.SSplit Γl Γr →
-    SDeriv Γr (.tensor A B) a → SDeriv ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C b
+    (hqa : Var?.mk A ⊤ ≤ ⟨A, qa⟩) →
+    (hqb : Var?.mk B ⊤ ≤ ⟨B, qb⟩) →
+    SDeriv Γr (.tensor A B) a → SDeriv ((Γl.cons ⟨A, qa⟩).cons ⟨B, qb⟩) C b
       → SDeriv Γ C (.let₂ a A B b)
   | inl {Γ A B a} : SDeriv Γ A a → SDeriv Γ (.coprod A B) (.inl A B a)
   | inr {Γ A B b} : SDeriv Γ B b → SDeriv Γ (.coprod A B) (.inr A B b)
   | case {Γ Γl Γr A B C a b c} :
     Γ.SSplit Γl Γr →
-    SDeriv Γr (.coprod A B) a → SDeriv (Γl.cons ⟨A, ⊤⟩) C b → SDeriv (Γl.cons ⟨B, ⊤⟩) C c
+    (hqa : Var?.mk A ⊤ ≤ ⟨A, qa⟩) →
+    (hqb : Var?.mk B ⊤ ≤ ⟨B, qb⟩) →
+    SDeriv Γr (.coprod A B) a → SDeriv (Γl.cons ⟨A, qa⟩) C b → SDeriv (Γl.cons ⟨B, qb⟩) C c
       → SDeriv Γ C (.case a A B b c)
   | abort {Γ A a} : SDeriv Γ .empty a → SDeriv Γ A (.abort A a)
   | iter {Γ Γl Γr A B a b} :
     Γ.SSplit Γl Γr →
+    (hq : Var?.mk A ⊤ ≤ ⟨A, q⟩) →
     Γl.copy → Γl.del →
-    SDeriv Γr A a → SDeriv (Γl.cons ⟨A, ⊤⟩) (.coprod B A) b → SDeriv Γ B (.iter a A B b)
+    SDeriv Γr A a → SDeriv (Γl.cons ⟨A, q⟩) (.coprod B A) b → SDeriv Γ B (.iter a A B b)
 
 notation Γ "⊢ₛ" a ":" A => SDeriv Γ A a
 
 def SDeriv.unstrict {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} : (Γ ⊢ₛ a : A) → Γ ⊢ a : A
   | .bv hv => .bv hv.unstrict
   | .op hf da => .op hf da.unstrict
-  | .let₁ hΓ da db => .let₁ hΓ da.unstrict db.unstrict
+  | .let₁ hΓ hq da db => .let₁ hΓ da.unstrict (db.unstrict.pwk ((Ctx?.PWk.refl _).cons hq))
   | .unit hv => .unit hv.del
   | .pair hΓ da db => .pair hΓ da.unstrict db.unstrict
-  | .let₂ hΓ da db => .let₂ hΓ da.unstrict db.unstrict
+  | .let₂ hΓ hqa hqb da db =>
+    .let₂ hΓ da.unstrict (db.unstrict.pwk (((Ctx?.PWk.refl _).cons hqa).cons hqb))
   | .inl da => .inl da.unstrict
   | .inr db => .inr db.unstrict
-  | .case hΓ da db dc => .case hΓ da.unstrict db.unstrict dc.unstrict
+  | .case hΓ hqa hqb da db dc =>
+    .case hΓ da.unstrict  (db.unstrict.pwk ((Ctx?.PWk.refl _).cons hqa))
+                          (dc.unstrict.pwk ((Ctx?.PWk.refl _).cons hqb))
   | .abort da => .abort da.unstrict
-  | .iter hΓ hc hd da db => .iter hΓ hc hd da.unstrict db.unstrict
+  | .iter hΓ hq hc hd da db =>
+    .iter hΓ hc hd da.unstrict (db.unstrict.pwk ((Ctx?.PWk.refl _).cons hq))
 
 def SDeriv.cast {Γ Γ' : Ctx? α} {A A' : Ty α} {a a' : Term φ (Ty α)}
   (hΓ : Γ = Γ') (hA : A = A') (ha : a = a')

@@ -1,6 +1,6 @@
-import Refinery.Term.Extrinsic.Semantics.Typing
 import Refinery.Term.Extrinsic.Minimal
 import Refinery.Ctx.Semantics.Minimal
+import Refinery.Term.Extrinsic.Semantics.Wk
 
 namespace Refinery
 
@@ -22,18 +22,24 @@ def SDeriv.den {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
   : (Γ ⊢ₛ a : A) → ((g⟦ Γ ⟧ : C) ⟶ t⟦ A ⟧)
   | .bv hv => hv.den
   | .op hf da => da.den ≫ hf.den
-  | .let₁ dΓ da db => dΓ.den ≫ (_ ◁ da.den) ≫ db.den
+  | .let₁ dΓ dq da db => dΓ.den ≫ (_ ◁ da.den) ≫ (_ ◁ dq.den) ≫ db.den
   | .unit dΓ => haveI _ := dΓ.del; !_ _
   | .pair dΓ da db => dΓ.den ≫ (da.den ⋉ db.den)
-  | .let₂ dΓ da db => dΓ.den ≫ (_ ◁ da.den) ≫ (α_ _ _ _).inv ≫ db.den
+  | .let₂ dΓ dqa dqb da db => dΓ.den ≫ (_ ◁ da.den)
+    ≫ (α_ _ _ _).inv
+    ≫ (_ ◁ dqa.den) ▷ _
+    ≫ _ ◁ dqb.den ≫ db.den
   | .inl da => da.den ≫ CC.inl _ _
   | .inr db => db.den ≫ CC.inr _ _
-  | .case dΓ da db dc => dΓ.den ≫ (_ ◁ da.den) ≫ (∂L _ _ _).inv ≫ desc db.den dc.den
+  | .case dΓ dqa dqb da db dc =>
+    dΓ.den ≫ (_ ◁ da.den) ≫ (∂L _ _ _).inv
+           ≫ desc (_ ◁ dqa.den ≫ db.den) (_ ◁ dqb.den ≫ dc.den)
   | .abort da => da.den ≫ CC.fromZero _
-  | .iter (A := A) (B := B) (Γl := Γl) dΓ _ _ da db =>
+  | .iter (A := A) (B := B) (Γl := Γl) dΓ dq _ _ da db =>
     dΓ.den ≫ (_ ◁ da.den) ≫ iterate (
       Δ_ Γl.ety ▷ _
         ≫ (α_ _ _ _).hom
+        ≫ _ ◁ _ ◁ dq.den
         ≫ _ ◁ db.den
         ≫ (∂L g⟦Γl⟧ t⟦B⟧ t⟦A⟧).inv
         ≫ ((!_ Γl.ety ▷ _ ≫ (λ_ _).hom) ⊕ₕ 𝟙 _))
@@ -49,11 +55,19 @@ theorem SDeriv.den_cast_term {Γ : Ctx? α} {A : Ty α} {a a' : Term φ (Ty α)}
   := by cases ha; rfl
 
 theorem SDeriv.den_unstrict {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ₛ a : A)
-  : D.unstrict.den = D.den (C := C)
-  := by induction D <;> simp [den, unstrict, Deriv.den, Ctx?.SAt.den_unstrict, *]
+  : D.unstrict.den = D.den (C := C) := by
+  induction D
+  <;> simp [den, unstrict, Deriv.den, Deriv.den_pwk, tensorHom_def, Ctx?.SAt.den_unstrict, *]
 
 -- theorem SDeriv.coherence {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
 --   (D D' : Γ ⊢ₛ a : A) : D.den (C := C) = D'.den := by induction D with
 --   | bv x => cases D' with | bv x' => rw [Subsingleton.elim x x']
---   | op => sorry
+--   | op hf => cases D' with | op hf' =>
+--     cases hf.trg; cases hf'.trg; cases hf.src; cases hf'.src
+--     simp only [den]; congr 1; apply_assumption
+--   | let₁ =>
+--     cases D'
+--     simp only [den]
+--     rename Ctx?.SSplit _ _ _ => hΓ
+--     sorry
 --   | _ => sorry
