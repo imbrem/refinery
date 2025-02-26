@@ -76,18 +76,31 @@ theorem SDeriv.wt {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢�
 def SDeriv.bv_at {Γ : Ctx? α} {A : Ty α} {n : ℕ} (D : Γ ⊢ₛ (.bv (φ := φ) n) : A)
   : Γ.SAt ⟨A, 1⟩ n := match D with | .bv hv => hv
 
--- theorem SDeriv.ueq {Γ Γ' : Ctx? α} {A A' : Ty α} {a : Term φ (Ty α)}
---   (D : Γ ⊢ₛ a : A) (D' : Γ' ⊢ₛ a : A') (hΓ : Γ.TyEq Γ')
---   : Γ.UEq Γ' := by induction D generalizing Γ' A' with
---   | bv hv => cases D' with | bv hv' =>
---     apply hv.ueq_of_ty_eq; assumption; cases hv.ty_eq_out hΓ hv'; assumption; simp
---   | let₁ => sorry
---   | unit => sorry
---   | pair => sorry
---   | let₂ => sorry
---   | case => sorry
---   | iter => sorry
---   | _ => cases D'; apply_assumption <;> assumption
+theorem SDeriv.ueq {Γ Γ' : Ctx? α} {A A' : Ty α} {a : Term φ (Ty α)}
+  (D : Γ ⊢ₛ a : A) (D' : Γ' ⊢ₛ a : A') (hΓ : Γ.TyEq Γ')
+  : Γ.UEq Γ' := by induction D generalizing Γ' A' with
+  | bv hv => cases D' with | bv hv' =>
+    apply hv.ueq_of_ty_eq; assumption; cases hv.ty_eq_out hΓ hv'; assumption; simp
+  | unit => cases D'; apply Ctx?.TyEq.zero_ueq <;> assumption
+  | _ =>
+    cases D'
+    first | (apply_assumption <;> assumption)
+          | {
+      apply Ctx?.SSplit.in_ueq; assumption; assumption
+      (first | apply_assumption
+             | (apply Ctx?.UEq.tail; apply_assumption)
+             | (apply Ctx?.UEq.tail; apply Ctx?.UEq.tail; apply_assumption))
+      assumption
+      (try simp only [Ctx?.TyEq.cons_iff, and_true])
+      apply Ctx?.SSplit.shunt_left_ty_eq <;> assumption
+      apply_assumption
+      assumption
+      apply Ctx?.SSplit.shunt_right_ty_eq <;> assumption
+    }
+
+theorem SDeriv.eq_of_zqeq {Γ Γ' : Ctx? α} {A A' : Ty α} {a : Term φ (Ty α)}
+  (D : Γ ⊢ₛ a : A) (D' : Γ' ⊢ₛ a : A') (hΓ : Γ.ZQEq Γ')
+  : Γ = Γ' := hΓ.ueq (D.ueq D' hΓ.ty_eq)
 
 end Term
 

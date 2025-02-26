@@ -20,6 +20,17 @@ theorem Ctx?.TyEq.cons_iff {Γ Δ : Ctx? α} {v w}
   : (Γ.cons v).TyEq (Δ.cons w) ↔ Γ.TyEq Δ ∧ v.ty = w.ty
   := ⟨λh => by cases h; simp [*], λ⟨_, _⟩ => by constructor <;> assumption⟩
 
+theorem Ctx?.TyEq.tail {Γ Δ : Ctx? α} {v w}
+  (h : Ctx?.TyEq (Ctx?.cons Γ v) (Ctx?.cons Δ w)) : Γ.TyEq Δ
+  := by cases h; assumption
+
+theorem Ctx?.TyEq.head {Γ Δ : Ctx? α} {v w}
+  (h : Ctx?.TyEq (Ctx?.cons Γ v) (Ctx?.cons Δ w)) : v.ty = w.ty
+  := by cases h; assumption
+
+theorem Ctx?.TyEq.length_eq {Γ Δ : Ctx? α} (h : Γ.TyEq Δ) : Γ.length = Δ.length := by
+  induction h <;> simp [*]
+
 @[refl, simp]
 theorem Ctx?.TyEq.refl (Γ : Ctx? α) : Ctx?.TyEq Γ Γ := by induction Γ <;> simp [nil, *]
 
@@ -32,9 +43,6 @@ theorem Ctx?.TyEq.trans {Γ Δ Ξ : Ctx? α} (hΓΔ : Ctx?.TyEq Γ Δ) (hΔΞ : 
   | nil => assumption
   | cons hΓΔ hty =>
     cases hΔΞ; constructor; apply_assumption; assumption; apply Eq.trans <;> assumption
-
-theorem Ctx?.TyEq.length_eq {Γ Δ : Ctx? α} (h : Γ.TyEq Δ) : Γ.length = Δ.length := by
-  induction h <;> simp [*]
 
 @[simp]
 theorem Ctx?.erase_is_zero {Γ : Ctx? α} : Γ.erase.IsZero := by induction Γ <;> simp [*]
@@ -68,6 +76,17 @@ attribute [simp] Ctx?.ZQEq.nil
 theorem Ctx?.ZQEq.cons_iff {Γ Δ : Ctx? α} {v w} : (Γ.cons v).ZQEq (Δ.cons w) ↔ Γ.ZQEq Δ ∧ v.ZQEq w
   := ⟨λh => by cases h; simp [*], λ⟨_, _⟩ => by constructor <;> assumption⟩
 
+theorem Ctx?.ZQEq.tail {Γ Δ : Ctx? α} {v w}
+  (h : Ctx?.ZQEq (Ctx?.cons Γ v) (Ctx?.cons Δ w)) : Γ.ZQEq Δ
+  := by cases h; assumption
+
+theorem Ctx?.ZQEq.head {Γ Δ : Ctx? α} {v w}
+  (h : Ctx?.ZQEq (Ctx?.cons Γ v) (Ctx?.cons Δ w)) : v.ZQEq w
+  := by cases h; assumption
+
+theorem Ctx?.ZQEq.length_eq {Γ Δ : Ctx? α} (h : Γ.ZQEq Δ) : Γ.length = Δ.length := by
+  induction h <;> simp [*]
+
 @[simp]
 theorem Ctx?.ZQEq.refl (Γ : Ctx? α) : Ctx?.ZQEq Γ Γ := by induction Γ <;> simp [*]
 
@@ -76,6 +95,9 @@ theorem Ctx?.ZQEq.erase_left {Γ : Ctx? α} : Ctx?.ZQEq Γ.erase Γ := by induct
 
 @[simp]
 theorem Ctx?.ZQEq.erase_right {Γ : Ctx? α} : Ctx?.ZQEq Γ Γ.erase := by induction Γ <;> simp [*]
+
+theorem Ctx?.ZQEq.ty_eq {Γ Δ : Ctx? α} (h : Ctx?.ZQEq Γ Δ) : Γ.TyEq Δ := by
+  induction h <;> constructor; assumption; apply Var?.ZQEq.ty; assumption
 
 structure Var?.UEq (u v : Var? α) : Prop where
   ty : u.ty = v.ty
@@ -110,6 +132,17 @@ attribute [simp] Ctx?.UEq.nil
 theorem Ctx?.UEq.cons_iff {Γ Δ : Ctx? α} {v w} : (Γ.cons v).UEq (Δ.cons w) ↔ Γ.UEq Δ ∧ v.UEq w
   := ⟨λh => by cases h; simp [*], λ⟨_, _⟩ => by constructor <;> assumption⟩
 
+theorem Ctx?.UEq.tail {Γ Δ : Ctx? α} {v w}
+  (h : Ctx?.UEq (Ctx?.cons Γ v) (Ctx?.cons Δ w)) : Γ.UEq Δ
+  := by cases h; assumption
+
+theorem Ctx?.UEq.head {Γ Δ : Ctx? α} {v w}
+  (h : Ctx?.UEq (Ctx?.cons Γ v) (Ctx?.cons Δ w)) : v.UEq w
+  := by cases h; assumption
+
+theorem Ctx?.UEq.length_eq {Γ Δ : Ctx? α} (h : Γ.UEq Δ) : Γ.length = Δ.length := by
+  induction h <;> simp [*]
+
 @[refl, simp]
 theorem Ctx?.UEq.refl (Γ : Ctx? α) : Ctx?.UEq Γ Γ := by induction Γ <;> simp [*]
 
@@ -138,6 +171,22 @@ theorem Ctx?.TyEq.zero_ueq {Γ Δ : Ctx? α} (h : Ctx?.TyEq Γ Δ) (hΓ : Γ.IsZ
   apply_assumption <;> assumption
   constructor; assumption; rfl
 
+theorem Var?.ZQEq.ueq {u v : Var? α} (h : Var?.ZQEq u v) (h' : Var?.UEq u v) : u = v
+  := by cases u with | mk A qu => cases v with | mk B qv => cases h with
+  | refl => rfl
+  | _ => have h' := h'.unused; simp at h'; cases h'; rfl
+
+theorem Ctx?.ZQEq.ueq {Γ Δ : Ctx? α} (h : Ctx?.ZQEq Γ Δ) (h' : Ctx?.UEq Γ Δ) : Γ = Δ
+  := by induction h with
+  | nil => rfl
+  | cons h hv I => cases h' with | cons h' hv' => rw [I h', hv.ueq hv']
+
+theorem Var?.UEq.zqeq {u v : Var? α} (h : Var?.UEq u v) (h' : Var?.ZQEq u v) : u = v
+  := h'.ueq h
+
+theorem Ctx?.UEq.zqeq {Γ Δ : Ctx? α} (h : Ctx?.UEq Γ Δ) (h' : Ctx?.ZQEq Γ Δ) : Γ = Δ
+  := h'.ueq h
+
 variable [HasQuant α]
 
 theorem Ctx?.SSplit.left_ty_eq {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) : Γ.TyEq Δ := by
@@ -148,6 +197,34 @@ theorem Ctx?.SSplit.right_ty_eq {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) : Γ
 
 theorem Ctx?.SSplit.out_ty_eq {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) : Δ.TyEq Ξ := by
   induction σ <;> simp [*]; rename_i h _; cases h <;> rfl
+
+theorem Ctx?.SSplit.shunt_left_ty_eq  {Γ Δ Ξ Γ' Δ' Ξ' : Ctx? α}
+  (σ : Γ.SSplit Δ Ξ) (σ' : Γ'.SSplit Δ' Ξ') (hΓ : Γ.TyEq Γ')
+  : Δ.TyEq Δ' := σ.left_ty_eq.symm.trans <| hΓ.trans <| σ'.left_ty_eq
+
+theorem Ctx?.SSplit.shunt_right_ty_eq {Γ Δ Ξ Γ' Δ' Ξ' : Ctx? α}
+  (σ : Γ.SSplit Δ Ξ) (σ' : Γ'.SSplit Δ' Ξ') (hΓ : Γ.TyEq Γ')
+  : Ξ.TyEq Ξ' := σ.right_ty_eq.symm.trans <| hΓ.trans <| σ'.right_ty_eq
+
+theorem Ctx?.SSplit.pull_left_ty_eq {Γ Δ Ξ Γ' Δ' Ξ' : Ctx? α}
+  (σ : Γ.SSplit Δ Ξ) (σ' : Γ'.SSplit Δ' Ξ') (hΔ : Δ.TyEq Δ')
+  : Γ.TyEq Γ' := σ.left_ty_eq.trans <| hΔ.trans <| σ'.left_ty_eq.symm
+
+theorem Ctx?.SSplit.pull_right_ty_eq {Γ Δ Ξ Γ' Δ' Ξ' : Ctx? α}
+  (σ : Γ.SSplit Δ Ξ) (σ' : Γ'.SSplit Δ' Ξ') (hΞ : Ξ.TyEq Ξ')
+  : Γ.TyEq Γ' := σ.right_ty_eq.trans <| hΞ.trans <| σ'.right_ty_eq.symm
+
+theorem Ctx?.SSplit.ty_eq_iff_left {Γ Δ Ξ Γ' Δ' Ξ' : Ctx? α}
+  (σ : Γ.SSplit Δ Ξ) (σ' : Γ'.SSplit Δ' Ξ')
+  : Γ.TyEq Γ' ↔ Δ.TyEq Δ' := ⟨σ.shunt_left_ty_eq σ', σ.pull_left_ty_eq σ'⟩
+
+theorem Ctx?.SSplit.ty_eq_iff_right {Γ Δ Ξ Γ' Δ' Ξ' : Ctx? α}
+  (σ : Γ.SSplit Δ Ξ) (σ' : Γ'.SSplit Δ' Ξ')
+  : Γ.TyEq Γ' ↔ Ξ.TyEq Ξ' := ⟨σ.shunt_right_ty_eq σ', σ.pull_right_ty_eq σ'⟩
+
+theorem Ctx?.SSplit.ty_eq_out_iff {Γ Δ Ξ Γ' Δ' Ξ' : Ctx? α}
+  (σ : Γ.SSplit Δ Ξ) (σ' : Γ'.SSplit Δ' Ξ')
+  : Δ.TyEq Δ' ↔ Ξ.TyEq Ξ' := by rw [<-σ.ty_eq_iff_left σ', <-σ.ty_eq_iff_right σ']
 
 theorem Var?.SSplit.in_ueq {u v w u' v' w' : Var? α} (σ : u.SSplit v w) (σ' : u'.SSplit v' w')
   (hv : v.UEq v') (hw : w.UEq w') : u.UEq u' := by
@@ -174,6 +251,15 @@ theorem Var?.SSplit.zqeq_right {u v w : Var? α} (σ : u.SSplit v w) : u.ZQEq v 
 
 theorem Var?.SSplit.zqeq_out {u v w : Var? α} (σ : u.SSplit v w) : v.ZQEq w := by
   cases σ <;> constructor
+
+theorem Ctx?.SSplit.zqeq_left {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) : Γ.ZQEq Ξ := by
+  induction σ <;> simp [*]; apply Var?.SSplit.zqeq_left; assumption
+
+theorem Ctx?.SSplit.zqeq_right {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) : Γ.ZQEq Δ := by
+  induction σ <;> simp [*]; apply Var?.SSplit.zqeq_right; assumption
+
+theorem Ctx?.SSplit.zqeq_out {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) : Δ.ZQEq Ξ := by
+  induction σ <;> simp [*]; apply Var?.SSplit.zqeq_out; assumption
 
 @[simp]
 theorem Ctx?.IsZero.del {Γ : Ctx? α} (h : Γ.IsZero) : Γ.del := by induction h <;> simp [*]
