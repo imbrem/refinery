@@ -23,7 +23,7 @@ def SDeriv.den {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
   | .bv hv => hv.den
   | .op hf da => da.den ≫ hf.den
   | .let₁ dΓ da db => dΓ.den ≫ (_ ◁ da.den) ≫ db.den
-  | .unit dΓ => !_ _
+  | .unit dΓ => haveI _ := dΓ.del; !_ _
   | .pair dΓ da db => dΓ.den ≫ (da.den ⋉ db.den)
   | .let₂ dΓ da db => dΓ.den ≫ (_ ◁ da.den) ≫ (α_ _ _ _).inv ≫ db.den
   | .inl da => da.den ≫ CC.inl _ _
