@@ -11,6 +11,31 @@ inductive Ctx?.IsZero : Ctx? α → Prop where
 
 attribute [simp] Ctx?.IsZero.nil Ctx?.IsZero.cons
 
+inductive Ctx?.TyEq : Ctx? α → Ctx? α → Prop
+  | nil : Ctx?.TyEq .nil .nil
+  | cons {Γ Δ} {v w} : TyEq Γ Δ → v.ty = w.ty → Ctx?.TyEq (Ctx?.cons Γ v) (Ctx?.cons Δ w)
+
+@[simp]
+theorem Ctx?.TyEq.cons_iff {Γ Δ : Ctx? α} {v w}
+  : (Γ.cons v).TyEq (Δ.cons w) ↔ Γ.TyEq Δ ∧ v.ty = w.ty
+  := ⟨λh => by cases h; simp [*], λ⟨_, _⟩ => by constructor <;> assumption⟩
+
+@[refl, simp]
+theorem Ctx?.TyEq.refl (Γ : Ctx? α) : Ctx?.TyEq Γ Γ := by induction Γ <;> simp [nil, *]
+
+@[simp]
+theorem Ctx?.TyEq.symm {Γ Δ : Ctx? α} (h : Ctx?.TyEq Γ Δ) : Ctx?.TyEq Δ Γ := by
+  induction h <;> simp [*]
+
+theorem Ctx?.TyEq.trans {Γ Δ Ξ : Ctx? α} (hΓΔ : Ctx?.TyEq Γ Δ) (hΔΞ : Ctx?.TyEq Δ Ξ) : Ctx?.TyEq Γ Ξ
+  := by induction hΓΔ generalizing Ξ with
+  | nil => assumption
+  | cons hΓΔ hty =>
+    cases hΔΞ; constructor; apply_assumption; assumption; apply Eq.trans <;> assumption
+
+theorem Ctx?.TyEq.length_eq {Γ Δ : Ctx? α} (h : Γ.TyEq Δ) : Γ.length = Δ.length := by
+  induction h <;> simp [*]
+
 @[simp]
 theorem Ctx?.erase_is_zero {Γ : Ctx? α} : Γ.erase.IsZero := by induction Γ <;> simp [*]
 
@@ -18,12 +43,12 @@ theorem Ctx?.IsZero.eq_erase {Γ : Ctx? α} (h : Γ.IsZero) : Γ.erase = Γ := b
   | nil => rfl
   | cons => simp only [Ctx?.erase_cons, Var?.unused.eq_erase]; congr
 
-
 inductive Var?.ZQEq : Var? α → Var? α → Prop
   | refl {u} : ZQEq u u
   | erase_left {v} : ZQEq v.erase v
   | erase_right {v} : ZQEq v v.erase
 
+attribute [refl] Var?.ZQEq.refl
 attribute [simp] Var?.ZQEq.refl Var?.ZQEq.erase_left Var?.ZQEq.erase_right
 
 theorem Var?.ZQEq.ty {u v : Var? α} (h : Var?.ZQEq u v) : u.ty = v.ty := by
@@ -56,7 +81,7 @@ structure Var?.UEq (u v : Var? α) : Prop where
   ty : u.ty = v.ty
   unused : u.unused = v.unused
 
-@[simp]
+@[refl, simp]
 theorem Var?.UEq.refl (u : Var? α) : Var?.UEq u u := ⟨rfl, rfl⟩
 
 @[simp]
@@ -85,7 +110,7 @@ attribute [simp] Ctx?.UEq.nil
 theorem Ctx?.UEq.cons_iff {Γ Δ : Ctx? α} {v w} : (Γ.cons v).UEq (Δ.cons w) ↔ Γ.UEq Δ ∧ v.UEq w
   := ⟨λh => by cases h; simp [*], λ⟨_, _⟩ => by constructor <;> assumption⟩
 
-@[simp]
+@[refl, simp]
 theorem Ctx?.UEq.refl (Γ : Ctx? α) : Ctx?.UEq Γ Γ := by induction Γ <;> simp [*]
 
 @[simp]
@@ -99,10 +124,47 @@ theorem Ctx?.UEq.trans {Γ Δ Ξ : Ctx? α} (hΓΔ : Ctx?.UEq Γ Δ) (hΔΞ : Ct
     cases hΔΞ; constructor; apply_assumption; assumption
     apply Var?.UEq.trans <;> assumption
 
+theorem Ctx?.UEq.ty_eq {Γ Δ : Ctx? α} (h : Ctx?.UEq Γ Δ) : Γ.TyEq Δ := by
+  induction h <;> constructor; assumption; apply Var?.UEq.ty; assumption
+
 theorem Ctx?.UEq.ety_eq {Γ Δ : Ctx? α} (h : Ctx?.UEq Γ Δ) : Γ.ety = Δ.ety := by
   induction h <;> simp [*]; apply Var?.UEq.ety_eq; assumption
 
+theorem Ctx?.TyEq.zero_ueq {Γ Δ : Ctx? α} (h : Ctx?.TyEq Γ Δ) (hΓ : Γ.IsZero) (hΔ : Δ.IsZero)
+  : Γ.UEq Δ := by
+  induction h <;> cases hΓ <;> cases hΔ
+  rfl
+  constructor
+  apply_assumption <;> assumption
+  constructor; assumption; rfl
+
 variable [HasQuant α]
+
+theorem Ctx?.SSplit.left_ty_eq {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) : Γ.TyEq Δ := by
+  induction σ <;> simp [*]; apply Var?.SSplit.left_ty_eq; assumption
+
+theorem Ctx?.SSplit.right_ty_eq {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) : Γ.TyEq Ξ := by
+  induction σ <;> simp [*]; apply Var?.SSplit.right_ty_eq; assumption
+
+theorem Ctx?.SSplit.out_ty_eq {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) : Δ.TyEq Ξ := by
+  induction σ <;> simp [*]; rename_i h _; cases h <;> rfl
+
+theorem Var?.SSplit.in_ueq {u v w u' v' w' : Var? α} (σ : u.SSplit v w) (σ' : u'.SSplit v' w')
+  (hv : v.UEq v') (hw : w.UEq w') : u.UEq u' := by
+  cases u with | mk A q => cases u' with | mk A' q' =>
+  cases σ <;> cases σ' <;> (try simp [*]) <;> cases hv.ty
+  <;> { have hv := hv.unused; simp at *; cases hv; exact ⟨rfl, hw.unused⟩ }
+
+theorem Ctx?.SSplit.in_ueq {Γ Δ Ξ Γ' Δ' Ξ' : Ctx? α} (σ : Γ.SSplit Δ Ξ) (σ' : Γ'.SSplit Δ' Ξ')
+  (hΔ : Δ.UEq Δ') (hΞ : Ξ.UEq Ξ') : Γ.UEq Γ' := by
+  induction σ generalizing Γ' Δ' Ξ' with
+  | nil => cases σ'; constructor; cases hΔ
+  | cons σ h I => cases σ' with
+    | nil => cases hΔ
+    | cons σ' h' =>
+      simp at *; casesm* _ ∧ _
+      constructor; apply I <;> assumption
+      apply Var?.SSplit.in_ueq <;> assumption
 
 theorem Var?.SSplit.zqeq_left {u v w : Var? α} (σ : u.SSplit v w) : u.ZQEq w := by
   cases σ <;> constructor
@@ -119,6 +181,43 @@ theorem Ctx?.IsZero.del {Γ : Ctx? α} (h : Γ.IsZero) : Γ.del := by induction 
 inductive Ctx?.SAt : Var? α → Ctx? α → ℕ → Type _ where
   | here {Γ} (d : Γ.IsZero) {w} : w ≤ v → Ctx?.SAt v (Ctx?.cons Γ w) 0
   | there {Γ n} (x : Ctx?.SAt v Γ n) (A) : Ctx?.SAt v (Ctx?.cons Γ ⟨A, 0⟩) (n + 1)
+
+theorem Ctx?.SAt.ueq_of_ty_eq {v : Var? α} {Γ Γ' : Ctx? α} {n} (hΓ : Γ.TyEq Γ')
+  (x : Γ.SAt v n) (x' : Γ'.SAt v n) (hv : v.used) : Γ.UEq Γ'
+  := by
+  induction hΓ generalizing v n with
+  | nil => cases x
+  | cons h hA I =>
+    rename_i w w';
+    cases v with | mk Av qv =>
+    cases w with | mk Aw qw =>
+    cases w' with | mk Aw' qw' =>
+    cases hA
+    cases x <;> cases x'
+    constructor; apply TyEq.zero_ueq <;> assumption; constructor;
+    apply Eq.trans
+    apply Var?.Wk.ty; assumption
+    apply Eq.symm; apply Var?.Wk.ty; assumption
+    cases qw using EQuant.casesZero with
+    | zero => cases qw' using EQuant.casesZero with
+      | zero => rfl
+      | rest =>
+        rename_i he qq he'
+        cases Var?.Wk.zero_le_unused he
+        cases hv
+    | rest => cases qw' using EQuant.casesZero with
+      | zero =>
+        rename_i he qq he'
+        cases Var?.Wk.zero_le_unused he'
+        cases hv
+      | rest => simp
+    constructor; apply_assumption <;> assumption; rfl
+
+theorem Ctx?.SAt.ty_eq_out {v v' : Var? α} {Γ Γ' : Ctx? α} {n}  (hΓ : Γ.TyEq Γ')
+  (x : Γ.SAt v n) (x' : Γ'.SAt v' n) : v.ty = v'.ty := by
+  induction x generalizing Γ' <;> cases x'
+  · cases hΓ with | cons _ h => rename_i w2 _ _ _ w1 _; rw [<-w2.ty, <-w1.ty, h]
+  · apply_assumption; simp at hΓ; exact hΓ.left; assumption
 
 instance Ctx?.SAt.instSubsingleton {v : Var? α} {Γ : Ctx? α} {n} : Subsingleton (Ctx?.SAt v Γ n)
   where
