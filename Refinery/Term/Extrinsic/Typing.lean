@@ -65,6 +65,170 @@ abbrev Deriv.cast_ty {Γ : Ctx? α} {A A' : Ty α} {a : Term φ (Ty α)}
 abbrev Deriv.cast_term {Γ : Ctx? α} {A : Ty α} {a a' : Term φ (Ty α)}
   (ha : a = a') (D : Γ ⊢ a : A) : Γ ⊢ a' : A := D.cast rfl rfl ha
 
+@[simp]
+theorem Deriv.cast_bv {Γ Γ' : Ctx? α} {A : Ty α} {n n' : ℕ}
+  (hΓe : Γ = Γ') (hn : Term.bv (φ := φ) n = .bv n') (hA : A = A')  (x : Γ.At ⟨A, 1⟩ n)
+  : (Deriv.bv x).cast hΓe hA hn = Deriv.bv (x.cast hΓe (by cases hA; rfl) (by cases hn; rfl))
+  := by cases hΓe; cases hA; cases hn; rfl
+
+@[simp]
+theorem Deriv.cast_op {Γ Γ' : Ctx? α} {A B} {f f'} {a a' : Term φ (Ty α)}
+  (hf : S.FnTy f A B) (da : Γ ⊢ a : A)
+  (hΓe : Γ = Γ') (hB : B = B') (he : a.op f = a'.op f')
+  : (Deriv.op hf da).cast hΓe hB he
+  = Deriv.op (by cases he; cases hB; exact hf) (da.cast hΓe rfl (by cases he; rfl))
+  := by cases hΓe; cases hB; cases he; rfl
+
+@[simp]
+theorem Deriv.cast_let₁ {Γ Γ' : Ctx? α} {A B} {a a' b b' : Term φ (Ty α)}
+  (hΓ : Γ.SSplit Γl Γr) (da : Γr ⊢ a : A) (db : Γl.cons ⟨A, ⊤⟩ ⊢ b : B)
+  (hΓe : Γ = Γ') (hB : B = B') (he : a.let₁ A b = a'.let₁ A' b')
+  : (Deriv.let₁ hΓ da db).cast hΓe hB he
+  = Deriv.let₁ (hΓ.cast_src hΓe)
+    (da.cast rfl (by cases he; rfl) (by cases he; rfl))
+    (db.cast (by cases he; rfl) hB (by cases he; rfl))
+  := by cases hΓe; cases hB; cases he; rfl
+
+@[simp]
+theorem Deriv.cast_pair {Γ Γl Γr : Ctx? α} {A B A' B' : Ty α} {a a' b b' : Term φ (Ty α)}
+  (hΓ : Γ.SSplit Γl Γr) (da : Γl ⊢ a : A) (db : Γr ⊢ b : B)
+  (hΓe : Γ = Γ') (hAB : A.tensor B = A'.tensor B') (he : a.pair b = a'.pair b')
+  : (Deriv.pair hΓ da db).cast hΓe hAB he
+  = Deriv.pair (hΓ.cast_src hΓe)
+      (da.cast rfl (by cases hAB; rfl) (by cases he; rfl))
+      (db.cast rfl (by cases hAB; rfl) (by cases he; rfl))
+  := by cases hΓe; cases hAB; cases he; rfl
+
+@[simp]
+theorem Deriv.cast_let₂ {Γ Γl Γr : Ctx? α} {A B C A' B' C' : Ty α} {a a' b b' : Term φ (Ty α)}
+  (hΓ : Γ.SSplit Γl Γr) (da : Γr ⊢ a : .tensor A B) (db : (Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ b : C)
+  (hΓe : Γ = Γ') (hC : C = C') (he : a.let₂ A B b = a'.let₂ A' B' b')
+  : (Deriv.let₂ hΓ da db).cast hΓe hC he
+  = Deriv.let₂ (hΓ.cast_src hΓe)
+      (da.cast rfl (by cases he; rfl) (by cases he; rfl))
+      (db.cast (by cases he; rfl) (by cases he; cases hC; rfl) (by cases he; rfl))
+  := by cases hΓe; cases hC; cases he; rfl
+
+@[simp]
+theorem Deriv.cast_inl {Γ : Ctx? α} {A B A' B' : Ty α} {a a' : Term φ (Ty α)}
+  (da : Γ ⊢ a : A)
+  (hΓe : Γ = Γ') (hAB : .coprod A B = .coprod A' B') (he : a.inl A B = a'.inl A' B')
+  : (Deriv.inl da).cast hΓe hAB he
+  = Deriv.inl (da.cast hΓe (by cases hAB; rfl) (by cases he; rfl))
+  := by cases hΓe; cases hAB; cases he; rfl
+
+@[simp]
+theorem Deriv.cast_inr {Γ : Ctx? α} {A B A' B' : Ty α} {b b' : Term φ (Ty α)}
+  (db : Γ ⊢ b : B)
+  (hΓe : Γ = Γ') (hAB : .coprod A B = .coprod A' B') (he : b.inr A B = b'.inr A' B')
+  : (Deriv.inr db).cast hΓe hAB he
+  = Deriv.inr (db.cast hΓe (by cases hAB; rfl) (by cases he; rfl))
+  := by cases hΓe; cases hAB; cases he; rfl
+
+@[simp]
+theorem Deriv.cast_case {Γ Γ' : Ctx? α} {A B C A' B' C' : Ty α} {a a' b b' c c' : Term φ (Ty α)}
+  (hΓ : Γ.SSplit Γl Γr) (da : Γr ⊢ a : .coprod A B)
+  (db : Γl.cons ⟨A, ⊤⟩ ⊢ b : C) (dc : Γl.cons ⟨B, ⊤⟩ ⊢ c : C)
+  (hΓe : Γ = Γ') (hC : C = C') (he : a.case A B b c = a'.case A' B' b' c')
+  : (Deriv.case hΓ da db dc).cast hΓe hC he
+  = Deriv.case (hΓ.cast_src hΓe)
+      (da.cast rfl (by cases he; rfl) (by cases he; rfl))
+      (db.cast (by cases he; rfl) (by cases hC; rfl) (by cases he; rfl))
+      (dc.cast (by cases he; rfl) (by cases hC; rfl) (by cases he; rfl))
+  := by cases hΓe; cases hC; cases he; rfl
+
+@[simp]
+theorem Deriv.cast_abort {Γ Γ' : Ctx? α} {A A' : Ty α} {a a' : Term φ (Ty α)}
+  (da : Γ ⊢ a : .empty)
+  (hΓe : Γ = Γ') (hA : A = A') (he : a.abort A = a'.abort A')
+  : (Deriv.abort da).cast hΓe hA he
+  = Deriv.abort (da.cast hΓe rfl (by cases he; rfl))
+  := by cases hΓe; cases hA; cases he; rfl
+
+@[simp]
+theorem Deriv.cast_iter {Γ Γ' : Ctx? α} {A B A' B' : Ty α} {a a' b b' : Term φ (Ty α)}
+  (hΓ : Γ.SSplit Γl Γr) (hc : Γl.copy) (hd : Γl.del)
+  (da : Γr ⊢ a : A) (db : Γl.cons ⟨A, ⊤⟩ ⊢ b : .coprod B A)
+  (hΓe : Γ = Γ') (hB : B = B') (he : a.iter A B b = a'.iter A' B' b')
+  : (Deriv.iter hΓ hc hd da db).cast hΓe hB he
+  = Deriv.iter (hΓ.cast_src hΓe) hc hd
+      (da.cast rfl (by cases he; rfl) (by cases he; rfl))
+      (db.cast (by cases he; rfl) (by cases he; cases hB; rfl) (by cases he; rfl))
+  := by cases hΓe; cases hB; cases he; rfl
+
+theorem Deriv.cast_term_cast_term {Γ : Ctx? α} {A : Ty α} {a a' a'' : Term φ (Ty α)}
+  (ha : a = a') (ha' : a' = a'') (D : Γ ⊢ a : A)
+  : (D.cast_term ha).cast_term ha' = D.cast_term (ha.trans ha')
+  := by simp
+
+theorem Deriv.cast_term_bv {Γ : Ctx? α} {A : Ty α} {n n' : ℕ}
+  (hn : Term.bv n = .bv n') (x : Γ.At ⟨A, 1⟩ n)
+  : (Deriv.bv x).cast_term hn = Deriv.bv (x.cast_idx (by cases hn; rfl)) := by simp
+
+theorem Deriv.cast_term_op {Γ : Ctx? α} {A : Ty α} {f f'} {a a' : Term φ (Ty α)}
+  (hf : S.FnTy f A B) (da : Γ ⊢ a : A)
+  (he : a.op f = a'.op f')
+  : (Deriv.op hf da).cast_term he
+  = (Deriv.op (by cases he; exact hf) (da.cast_term (by cases he; rfl)))
+  := by simp
+
+theorem Deriv.cast_term_let₁ {Γ Γl Γr : Ctx? α} {A B} {a a' b b' : Term φ (Ty α)}
+  (hΓ : Γ.SSplit Γl Γr) (da : Γr ⊢ a : A) (db : Γl.cons ⟨A, ⊤⟩ ⊢ b : B)
+  (he : a.let₁ A b = a'.let₁ A b')
+  : (Deriv.let₁ hΓ da db).cast_term he
+  = Deriv.let₁ hΓ (da.cast_term (by cases he; rfl)) (db.cast_term (by cases he; rfl))
+  := by simp
+
+theorem Deriv.cast_term_pair {Γ Γl Γr : Ctx? α} {A B} {a a' b b' : Term φ (Ty α)}
+  (hΓ : Γ.SSplit Γl Γr) (da : Γl ⊢ a : A) (db : Γr ⊢ b : B)
+  (he : a.pair b = a'.pair b')
+  : (Deriv.pair hΓ da db).cast_term he
+  = Deriv.pair hΓ (da.cast_term (by cases he; rfl)) (db.cast_term (by cases he; rfl))
+  := by simp
+
+theorem Deriv.cast_term_let₂ {Γ Γl Γr : Ctx? α} {A B C} {a a' b b' : Term φ (Ty α)}
+  (hΓ : Γ.SSplit Γl Γr) (da : Γr ⊢ a : .tensor A B) (db : (Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ b : C)
+  (he : a.let₂ A B b = a'.let₂ A B b')
+  : (Deriv.let₂ hΓ da db).cast_term he
+  = Deriv.let₂ hΓ (da.cast_term (by cases he; rfl)) (db.cast_term (by cases he; rfl))
+  := by simp
+
+theorem Deriv.cast_term_inl {Γ : Ctx? α} {A B} {a a' : Term φ (Ty α)}
+  (da : Γ ⊢ a : A) (he : a.inl A B = a'.inl A B)
+  : (Deriv.inl da).cast_term he
+  = Deriv.inl (da.cast_term (by cases he; rfl))
+  := by simp
+
+theorem Deriv.cast_term_inr {Γ : Ctx? α} {A B} {b b' : Term φ (Ty α)}
+  (db : Γ ⊢ b : B) (he : b.inr A B = b'.inr A B)
+  : (Deriv.inr db).cast_term he
+  = Deriv.inr (db.cast_term (by cases he; rfl))
+  := by simp
+
+theorem Deriv.cast_term_case {Γ Γl Γr : Ctx? α} {A B C} {a a' b b' c c' : Term φ (Ty α)}
+  (hΓ : Γ.SSplit Γl Γr) (da : Γr ⊢ a : .coprod A B)
+  (db : Γl.cons ⟨A, ⊤⟩ ⊢ b : C) (dc : Γl.cons ⟨B, ⊤⟩ ⊢ c : C)
+  (he : a.case A B b c = a'.case A B b' c')
+  : (Deriv.case hΓ da db dc).cast_term he
+  = Deriv.case hΓ (da.cast_term (by cases he; rfl))
+    (db.cast_term (by cases he; rfl)) (dc.cast_term (by cases he; rfl))
+  := by simp
+
+theorem Deriv.cast_term_abort {Γ : Ctx? α} {A} {a a' : Term φ (Ty α)}
+  (da : Γ ⊢ a : .empty) (he : a.abort A = a'.abort A)
+  : (Deriv.abort da).cast_term he
+  = Deriv.abort (da.cast_term (by cases he; rfl))
+  := by simp
+
+theorem Deriv.cast_term_iter {Γ Γl Γr : Ctx? α} {A B} {a a' b b' : Term φ (Ty α)}
+  (hΓ : Γ.SSplit Γl Γr) (hc : Γl.copy) (hd : Γl.del)
+  (da : Γr ⊢ a : A) (db : Γl.cons ⟨A, ⊤⟩ ⊢ b : .coprod B A)
+  (he : a.iter A B b = a'.iter A B b')
+  : (Deriv.iter hΓ hc hd da db).cast_term he
+  = Deriv.iter hΓ hc hd (da.cast_term (by cases he; rfl))
+    (db.cast_term (by cases he; rfl))
+  := by simp
+
 def IsWt (Γ : Ctx? α) (A : Ty α) (a : Term φ (Ty α)) : Prop := Nonempty (Γ ⊢ a : A)
 
 @[match_pattern]

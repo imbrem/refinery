@@ -44,6 +44,13 @@ inductive SDeriv : Ctx? α → Ty α → Term φ (Ty α) → Type _
 
 notation Γ "⊢ₛ" a ":" A => SDeriv Γ A a
 
+structure FDeriv (Γ : Ctx? α) (A : Ty α) (a : Term φ (Ty α)) where
+  used : Ctx? α
+  drop : Γ.PWk used
+  deriv : used ⊢ₛ a : A
+
+notation Γ "⊢ₛ' " a ":" A => FDeriv Γ A a
+
 def SDeriv.unstrict {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} : (Γ ⊢ₛ a : A) → Γ ⊢ a : A
   | .bv hv => .bv hv.unstrict
   | .op hf da => .op hf da.unstrict
@@ -61,6 +68,15 @@ def SDeriv.unstrict {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} : (Γ ⊢�
   | .iter hΓ hq hc hd da db =>
     .iter hΓ hc hd da.unstrict (db.unstrict.pwk ((Ctx?.PWk.refl _).cons hq))
 
+def FDeriv.toDeriv {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ₛ' a : A) : Γ ⊢ a : A
+  := D.deriv.unstrict.pwk D.drop
+
+def FDeriv.ofStrict {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ₛ a : A) : Γ ⊢ₛ' a : A
+  := ⟨Γ, Ctx?.PWk.refl _, D⟩
+
+-- theorem FDeriv.toDeriv_ofStrict {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ₛ a : A)
+--   : (FDeriv.ofStrict D).toDeriv = D.unstrict := by stop simp [toDeriv, ofStrict]; sorry
+
 def SDeriv.cast {Γ Γ' : Ctx? α} {A A' : Ty α} {a a' : Term φ (Ty α)}
   (hΓ : Γ = Γ') (hA : A = A') (ha : a = a')
   (D : Γ ⊢ₛ a : A) : (Γ' ⊢ₛ a' : A') := hΓ ▸ hA ▸ ha ▸ D
@@ -77,6 +93,37 @@ abbrev SDeriv.cast_term {Γ : Ctx? α} {A : Ty α} {a a' : Term φ (Ty α)}
 @[simp]
 theorem SDeriv.cast_rfl {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ₛ a : A)
   : D.cast rfl rfl rfl = D := rfl
+
+@[simp]
+theorem SDeriv.cast_cast {Γ Γ' Γ'' : Ctx? α} {A A' A'' : Ty α} {a a' a'' : Term φ (Ty α)}
+  (hΓ : Γ = Γ') (hΓ' : Γ' = Γ'') (hA : A = A') (hA' : A' = A'') (ha : a = a') (ha' : a' = a'')
+  (D : Γ ⊢ₛ a : A) :
+  (D.cast hΓ hA ha).cast hΓ' hA' ha' = D.cast (hΓ.trans hΓ') (hA.trans hA') (ha.trans ha')
+  := by cases hΓ; cases hΓ'; cases hA; cases hA'; cases ha; cases ha'; rfl
+
+def FDeriv.cast {Γ Γ' : Ctx? α} {A A' : Ty α} {a a' : Term φ (Ty α)}
+  (hΓ : Γ = Γ') (hA : A = A') (ha : a = a')
+  (D : Γ ⊢ₛ' a : A) : Γ' ⊢ₛ' a' : A' := ⟨D.used, hΓ ▸ D.drop, D.deriv.cast rfl hA ha⟩
+
+abbrev FDeriv.cast_ctx {Γ Γ' : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
+  (hΓ : Γ = Γ') (D : Γ ⊢ₛ' a : A) : Γ' ⊢ₛ' a : A := D.cast hΓ rfl rfl
+
+abbrev FDeriv.cast_ty {Γ : Ctx? α} {A A' : Ty α} {a : Term φ (Ty α)}
+  (hA : A = A') (D : Γ ⊢ₛ' a : A) : Γ ⊢ₛ' a : A' := D.cast rfl hA rfl
+
+abbrev FDeriv.cast_term {Γ : Ctx? α} {A : Ty α} {a a' : Term φ (Ty α)}
+  (ha : a = a') (D : Γ ⊢ₛ' a : A) : Γ ⊢ₛ' a' : A := D.cast rfl rfl ha
+
+@[simp]
+theorem FDeriv.cast_rfl {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ₛ' a : A)
+  : D.cast rfl rfl rfl = D := rfl
+
+@[simp]
+theorem FDeriv.cast_cast {Γ Γ' Γ'' : Ctx? α} {A A' A'' : Ty α} {a a' a'' : Term φ (Ty α)}
+  (hΓ : Γ = Γ') (hΓ' : Γ' = Γ'') (hA : A = A') (hA' : A' = A'') (ha : a = a') (ha' : a' = a'')
+  (D : Γ ⊢ₛ' a : A) :
+  (D.cast hΓ hA ha).cast hΓ' hA' ha' = D.cast (hΓ.trans hΓ') (hA.trans hA') (ha.trans ha')
+  := by cases hΓ; cases hΓ'; cases hA; cases hA'; cases ha; cases ha'; rfl
 
 def IsSWt (Γ : Ctx? α) (A : Ty α) (a : Term φ (Ty α)) : Prop := Nonempty (Γ ⊢ₛ a : A)
 
@@ -136,6 +183,13 @@ theorem SDeriv.ty_eq_of {Γ Γ' : Ctx? α} {a : Term φ (Ty α)} {A A' : Ty α}
 
 theorem SDeriv.ty_eq {Γ : Ctx? α} {a : Term φ (Ty α)} {A A' : Ty α}
   (D : Γ ⊢ₛ a : A) (D' : Γ ⊢ₛ a : A') : A = A' := D.ty_eq_of (Ctx?.TyEq.refl Γ) D'
+
+theorem FDeriv.ty_eq_of {Γ Γ' : Ctx? α} {a : Term φ (Ty α)} {A A' : Ty α}
+  (hΓ : Γ.TyEq Γ') (D : Γ ⊢ₛ' a : A) (D' : Γ' ⊢ₛ' a : A') : A = A'
+  := D.toDeriv.ty_eq_of hΓ D'.toDeriv
+
+theorem FDeriv.ty_eq {Γ : Ctx? α} {a : Term φ (Ty α)} {A A' : Ty α}
+  (D : Γ ⊢ₛ' a : A) (D' : Γ ⊢ₛ' a : A') : A = A' := D.ty_eq_of (Ctx?.TyEq.refl Γ) D'
 
 end Term
 

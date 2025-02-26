@@ -394,6 +394,9 @@ inductive Ctx?.PWk : Ctx? α → Ctx? α → Type _ where
   | nil : Ctx?.PWk .nil .nil
   | cons {Γ Δ v w} (h : Ctx?.PWk Γ Δ) (hvw : v ≤ w) : Ctx?.PWk (Ctx?.cons Γ v) (Ctx?.cons Δ w)
 
+abbrev Ctx?.PWk.scons {Γ Δ : Ctx? α} (v : Var? α) (ρ : Γ.PWk Δ)
+  := ρ.cons (le_refl v)
+
 theorem Ctx?.PWk.head {Γ Δ v w} (h : PWk (α := α) (.cons Γ v) (.cons Δ w)) : v ≤ w
   := match h with | Ctx?.PWk.cons _ hvw => hvw
 
@@ -439,11 +442,19 @@ def Ctx?.PWk.toWk {Γ Δ : Ctx? α} : PWk Γ Δ → Wk Γ Δ
   | .nil => .nil
   | .cons h hvw => .cons (toWk h) hvw
 
+instance Ctx?.PWk.coeWk {Γ Δ : Ctx? α} : Coe (PWk Γ Δ) (Wk Γ Δ) := ⟨toWk⟩
+
 @[simp]
 def Ctx?.Wk.toPWk {Γ Δ : Ctx? α} (h : Γ.length = Δ.length) : (ρ : Wk Γ Δ) → Γ.PWk Δ
   | .nil => .nil
   | .skip ρ hw => by have _ := ρ.length; simp at h; omega
   | .cons ρ hw => .cons (ρ.toPWk (by convert h using 0; simp)) hw
+
+@[simp]
+theorem Ctx?.Wk.toWk_toPWk {Γ Δ : Ctx? α} (h : Γ.length = Δ.length) (ρ : Wk Γ Δ)
+  : (ρ.toPWk h).toWk = ρ := by induction ρ with
+  | skip ρ => have _ := ρ.length; simp at h; omega
+  | _ => simp [*]
 
 theorem Ctx?.Wk.antisymm {Γ Δ : Ctx? α} (h : Wk Γ Δ) (h' : Wk Δ Γ) : Γ = Δ :=
   have hl := le_antisymm h'.length h.length
@@ -472,6 +483,30 @@ def Ctx?.Wk.refl : (Γ : Ctx? α) → Wk Γ Γ
 
 theorem Ctx?.Wk.eq_refl {Γ : Ctx? α} (h : Wk Γ Γ) : h = Wk.refl Γ := eq_of_length_eq _ _ rfl
 
+def Ctx?.Wk.ofEq {Γ Δ : Ctx? α} (h : Γ = Δ) : Wk Γ Δ := h ▸ (refl Γ)
+
+@[simp]
+theorem Ctx?.Wk.ofEq_refl {Γ : Ctx? α} : Ctx?.Wk.ofEq (Eq.refl Γ) = Wk.refl Γ := rfl
+
+def Ctx?.PWk.ofEq {Γ Δ : Ctx? α} (h : Γ = Δ) : PWk Γ Δ := h ▸ (refl Γ)
+
+@[simp]
+theorem Ctx?.PWk.ofEq_refl {Γ : Ctx? α} : Ctx?.PWk.ofEq (Eq.refl Γ) = PWk.refl Γ := rfl
+
+theorem Ctx?.Wk.ofEq_cons {Γ Δ : Ctx? α} (h : Γ.cons v = Δ.cons w)
+  : Wk.ofEq h = (Wk.ofEq (by cases h; rfl)).cons (le_of_eq (by cases h; rfl)) := by cases h; rfl
+
+theorem Ctx?.PWk.ofEq_cons {Γ Δ : Ctx? α} (h : Γ.cons v = Δ.cons w)
+  : PWk.ofEq h = (PWk.ofEq (by cases h; rfl)).cons (le_of_eq (by cases h; rfl)) := by cases h; rfl
+
+@[simp]
+theorem Ctx?.PWk.toWk_refl {Γ : Ctx? α} : (PWk.refl Γ).toWk = Wk.refl Γ := by
+  induction Γ <;> simp [*]
+
+@[simp]
+theorem Ctx?.PWk.toWk_ofEq {Γ Δ : Ctx? α} (h : Γ = Δ) : (PWk.ofEq h).toWk = Wk.ofEq h := by
+  cases h; simp
+
 def Ctx?.wk0 (Γ : Ctx? α) (v : Var? α) [hv : v.del] : Wk (Γ.cons v) Γ := (Wk.refl Γ).skip hv
 
 @[simp]
@@ -489,6 +524,11 @@ theorem Ctx?.Wk.refl_comp {Γ Δ : Ctx? α} (ρ : Wk Γ Δ) : (Wk.refl Γ).comp 
 theorem Ctx?.Wk.comp_refl {Γ Δ : Ctx? α} (ρ : Wk Γ Δ) : ρ.comp (Wk.refl Δ) = ρ
   := by induction ρ <;> simp [*]
 
+@[simp]
+theorem Ctx?.Wk.comp_ofEq {Γ Δ Ξ : Ctx? α} (h : Γ = Δ) (h' : Δ = Ξ)
+  : (Wk.ofEq h).comp (Wk.ofEq h') = Wk.ofEq (h.trans h')
+  := by cases h; cases h'; simp
+
 theorem Ctx?.Wk.comp_assoc {Γ Δ Ξ Θ : Ctx? α} (h : Wk Γ Δ) (h' : Wk Δ Ξ) (h'' : Wk Ξ Θ)
   : h.comp (h'.comp h'') = (h.comp h').comp h'' := by induction h generalizing Ξ Θ with
   | nil => cases h'; cases h''; rfl
@@ -498,6 +538,24 @@ theorem Ctx?.Wk.comp_assoc {Γ Δ Ξ Θ : Ctx? α} (h : Wk Γ Δ) (h' : Wk Δ Ξ
 theorem Ctx?.PWk.comp_toWk {Γ Δ Ξ : Ctx? α} (ρ : PWk Γ Δ) (ρ' : PWk Δ Ξ)
   : (ρ.comp ρ').toWk = ρ.toWk.comp ρ'.toWk
   := by induction ρ generalizing Ξ <;> cases ρ' <;> simp [*]
+
+@[simp]
+theorem Ctx?.PWk.refl_comp {Γ Δ : Ctx? α} (ρ : PWk Γ Δ) : (PWk.refl Γ).comp ρ = ρ
+  := by induction ρ <;> simp [*]
+
+@[simp]
+theorem Ctx?.PWk.comp_refl {Γ Δ : Ctx? α} (ρ : PWk Γ Δ) : ρ.comp (PWk.refl Δ) = ρ
+  := by induction ρ <;> simp [*]
+
+@[simp]
+theorem Ctx?.PWk.comp_ofEq {Γ Δ Ξ : Ctx? α} (h : Γ = Δ) (h' : Δ = Ξ)
+  : (PWk.ofEq h).comp (PWk.ofEq h') = PWk.ofEq (h.trans h')
+  := by cases h; cases h'; simp
+
+theorem Ctx?.PWk.comp_assoc {Γ Δ Ξ Θ : Ctx? α} (h : PWk Γ Δ) (h' : PWk Δ Ξ) (h'' : PWk Ξ Θ)
+  : h.comp (h'.comp h'') = (h.comp h').comp h'' := by induction h generalizing Ξ Θ with
+  | nil => cases h'; cases h''; rfl
+  | cons _ _ I => cases h'; cases h''; simp [comp, I]
 
 @[simp]
 def Ctx?.Wk.ix {Γ Δ : Ctx? α} : Wk Γ Δ → ℕ → ℕ
@@ -534,7 +592,12 @@ theorem Ctx?.Wk.ix_length_eq_applied {Γ Δ : Ctx? α}
 theorem Ctx?.Wk.ix_length_eq {Γ Δ : Ctx? α} (h : Γ.Wk Δ) (hl : Γ.length = Δ.length)
   : h.ix = id := funext (λi => ix_length_eq_applied h hl i)
 
+@[simp]
 theorem Ctx?.Wk.ix_refl {Γ : Ctx? α} (h : Γ.Wk Γ) : h.ix = id := ix_length_eq _ rfl
+
+@[simp]
+theorem Ctx?.Wk.ix_ofEq {Γ Δ : Ctx? α} (h : Γ = Δ) : (Wk.ofEq h).ix = id
+  := ix_length_eq _ (by cases h; rfl)
 
 @[simp]
 theorem Ctx?.Wk.ix_pwk {Γ Δ : Ctx? α} (h : Γ.PWk Δ) : h.toWk.ix = id := ix_length_eq _ h.length
@@ -756,6 +819,20 @@ theorem Ctx?.At.ty_eq {Γ : Ctx? α} {v v'} {n} (x : Γ.At v n) (y : Γ.At v' n)
 theorem Ctx?.At.wkIn_toWk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {v : Var? α} {n} (x : Δ.At v n)
   : x.wkIn ρ.toWk = (x.pwk ρ).cast_idx (by simp) := by
   induction x generalizing Γ <;> cases ρ <;> simp [wkIn, pwk, *]
+
+theorem Ctx?.At.wkIn_refl {Γ : Ctx? α} {v : Var? α} {n} (x : Γ.At v n)
+  : x.wkIn (Wk.refl Γ) = x.cast_idx (by simp) := by induction x <;> simp [wkIn, *]
+
+theorem Ctx?.At.wkIn_refl' {Γ : Ctx? α} (ρ : Γ.Wk Γ) {v : Var? α} {n} (x : Γ.At v n)
+  : x.wkIn ρ = x.cast_idx (by simp)
+  := by convert wkIn_refl x <;> apply Ctx?.Wk.eq_of_length_eq <;> rfl
+
+theorem Ctx?.At.pwk_refl {v : Var? α} {Γ : Ctx? α} {n} (x : Γ.At v n)
+  : x.pwk (PWk.refl Γ) = x := by induction x <;> simp [pwk, *]
+
+@[simp]
+theorem Ctx?.At.pwk_refl' {v : Var? α} {Γ : Ctx? α} {n} (x : Γ.At v n)
+  : x.pwk (PWk.refl Γ) = x := by convert pwk_refl x
 
 def Ctx?.At.ix {Γ : Ctx? α} {v n} : Γ.At v n → v.Ix Γ
   | .here _ hw => Var?.zero_le (Ctx?.drop _) hw

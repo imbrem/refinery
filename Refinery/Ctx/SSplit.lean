@@ -415,6 +415,10 @@ def Ctx?.SSplit.cast {Γ Δ Ξ Γ' Δ' Ξ' : Ctx? α}
   (h : Γ.SSplit Δ Ξ) (hΓ : Γ = Γ') (hΔ : Δ = Δ') (hΞ : Ξ = Ξ')
   : Γ'.SSplit Δ' Ξ' := hΓ ▸ hΔ ▸ hΞ ▸ h
 
+@[simp]
+theorem Ctx?.SSplit.cast_refl {Γ Δ Ξ : Ctx? α} (h : Γ.SSplit Δ Ξ)
+  : h.cast rfl rfl rfl = h := rfl
+
 abbrev Ctx?.SSplit.cast_src {Γ Δ Ξ Γ' : Ctx? α}
   (h : Γ.SSplit Δ Ξ) (hΓ : Γ = Γ')
   : Γ'.SSplit Δ Ξ := h.cast hΓ rfl rfl
@@ -619,6 +623,41 @@ def Ctx?.SSplit.wkRight {Γ' Γ Δ Ξ : Ctx? α}
   | .cons (v := v) ρ _, .cons σ hlr => (wkRight ρ σ).cons (hlr.wkRight v)
 
 @[simp]
+theorem Ctx?.SSplit.length_wkRight {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ : Γ.SSplit Δ Ξ)
+  : (σ.wkRight ρ).length = Γ'.length := by induction ρ generalizing Δ Ξ <;> cases σ <;> simp [*]
+
+@[simp]
+theorem Ctx?.SSplit.length_wkLeft {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ : Γ.SSplit Δ Ξ)
+  : (σ.wkLeft ρ).length = Γ'.length := by induction ρ generalizing Δ Ξ <;> cases σ <;> simp [*]
+
+@[simp]
+theorem Var?.SSplit.wkLeft_refl {u v w : Var? α} (σ : u.SSplit v w)
+  : σ.wkLeft u = v := by cases σ <;> simp only [wkLeft]
+  <;> split <;> first | rfl | rename_i h; rw [<-Var?.unused_iff] at h; cases u; cases h; rfl
+
+@[simp]
+theorem Var?.SSplit.wkRight_refl {u v w : Var? α} (σ : u.SSplit v w)
+  : σ.wkRight u = w := by
+  cases σ <;> simp only [wkRight]
+  split <;> first | rfl | rename_i h; rw [<-Var?.unused_iff] at h; cases u; cases h; rfl
+
+@[simp]
+theorem Ctx?.SSplit.wkLeft_refl {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ)
+  : σ.wkLeft (Wk.refl Γ) = Δ := by induction σ <;> simp [*]
+
+@[simp]
+theorem Ctx?.SSplit.wkRight_refl {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ)
+  : σ.wkRight (Wk.refl Γ) = Ξ := by induction σ <;> simp [*]
+
+@[simp]
+theorem Ctx?.SSplit.wkLeft_ofEq {Γ' Γ Δ Ξ : Ctx? α} (h : Γ' = Γ) (σ : Γ.SSplit Δ Ξ)
+  : σ.wkLeft (Wk.ofEq h) = Δ := by cases h; simp
+
+@[simp]
+theorem Ctx?.SSplit.wkRight_ofEq {Γ' Γ Δ Ξ : Ctx? α} (h : Γ' = Γ) (σ : Γ.SSplit Δ Ξ)
+  : σ.wkRight (Wk.ofEq h) = Ξ := by cases h; simp
+
+@[simp]
 def Ctx?.SSplit.leftWk {Γ' Γ Δ Ξ : Ctx? α}
   : (ρ : Γ'.Wk Γ) → (σ : Γ.SSplit Δ Ξ) → (σ.wkLeft ρ).Wk Δ
   | .nil, .nil => .nil
@@ -626,11 +665,27 @@ def Ctx?.SSplit.leftWk {Γ' Γ Δ Ξ : Ctx? α}
   | .cons ρ hvw, .cons σ hlr => .cons (σ.leftWk ρ) (hlr.leftWk hvw)
 
 @[simp]
+theorem Ctx?.SSplit.leftWk_refl {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ)
+  : σ.leftWk (Wk.refl Γ) = Wk.ofEq (by simp) := by induction σ <;> simp [Wk.ofEq_cons, *]
+
+@[simp]
+theorem Ctx?.SSplit.leftWk_ofEq {Γ' Γ Δ Ξ : Ctx? α} (h : Γ' = Γ) (σ : Γ.SSplit Δ Ξ)
+  : σ.leftWk (Wk.ofEq h) = Wk.ofEq (by simp) := by cases h; simp
+
+@[simp]
 def Ctx?.SSplit.rightWk {Γ' Γ Δ Ξ : Ctx? α}
   : (ρ : Γ'.Wk Γ) → (σ : Γ.SSplit Δ Ξ) → (σ.wkRight ρ).Wk Ξ
   | .nil, .nil => .nil
   | .skip ρ _, σ => .skip (σ.rightWk ρ) inferInstance
   | .cons ρ hvw, .cons σ hlr => .cons (σ.rightWk ρ) (hlr.rightWk hvw)
+
+@[simp]
+theorem Ctx?.SSplit.rightWk_refl {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ)
+  : σ.rightWk (Wk.refl Γ) = Wk.ofEq (by simp) := by induction σ <;> simp [Wk.ofEq_cons, *]
+
+@[simp]
+theorem Ctx?.SSplit.rightWk_ofEq {Γ' Γ Δ Ξ : Ctx? α} (h : Γ' = Γ) (σ : Γ.SSplit Δ Ξ)
+  : σ.rightWk (Wk.ofEq h) = Wk.ofEq (by simp) := by cases h; simp
 
 @[simp]
 theorem Ctx?.SSplit.ix_leftWk {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ : Γ.SSplit Δ Ξ)
@@ -654,6 +709,12 @@ def Ctx?.SSplit.wk {Γ' Γ Δ Ξ : Ctx? α}
   | .nil, .nil => .nil
   | .skip (v := ⟨A, q⟩) ρ _, σ => .cons (σ.wk ρ) (.right ..)
   | .cons ρ hvw, .cons σ hlr => .cons (σ.wk ρ) (hlr.wk hvw)
+
+def Ctx?.SSplit.rightPWk {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.PWk Γ) (σ : Γ.SSplit Δ Ξ)
+  : (σ.wkRight ρ.toWk).PWk Ξ := (σ.rightWk ρ.toWk).toPWk (by simp [ρ.length, σ.right_length])
+
+def Ctx?.SSplit.leftPWk {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.PWk Γ) (σ : Γ.SSplit Δ Ξ)
+  : (σ.wkLeft ρ.toWk).PWk Δ := (σ.leftWk ρ.toWk).toPWk (by simp [ρ.length, σ.left_length])
 
 theorem Var?.SSplit.wkLeft_copy
   {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.SSplit v w) [hv : v.copy]
