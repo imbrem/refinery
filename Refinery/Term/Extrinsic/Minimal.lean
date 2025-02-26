@@ -102,6 +102,30 @@ theorem SDeriv.eq_of_zqeq {Γ Γ' : Ctx? α} {A A' : Ty α} {a : Term φ (Ty α)
   (D : Γ ⊢ₛ a : A) (D' : Γ' ⊢ₛ a : A') (hΓ : Γ.ZQEq Γ')
   : Γ = Γ' := hΓ.ueq (D.ueq D' hΓ.ty_eq)
 
+theorem Deriv.ty_eq_of {Γ Γ' : Ctx? α} {a : Term φ (Ty α)} {A A' : Ty α}
+  (hΓ : Γ.TyEq Γ') (D : Γ ⊢ a : A) (D' : Γ' ⊢ a : A') : A = A'
+  := by induction D generalizing Γ' A' with
+  | bv x => cases D' with | bv x' => cases x.ty_eq_of hΓ x'; rfl
+  | op hf => cases D' with | op hf' => cases hf.trg; cases hf'.trg; rfl
+  | _ =>
+  cases D'; congr <;> {
+    apply_assumption <;> (try assumption)
+    ((repeat constructor) <;> first
+        | rfl | assumption
+        | (apply Ctx?.SSplit.shunt_left_ty_eq <;> assumption)
+        | (apply Ctx?.SSplit.shunt_right_ty_eq <;> assumption))
+  }
+
+theorem Deriv.ty_eq {Γ : Ctx? α} {a : Term φ (Ty α)} {A A' : Ty α}
+  (D : Γ ⊢ a : A) (D' : Γ ⊢ a : A') : A = A' := D.ty_eq_of (Ctx?.TyEq.refl Γ) D'
+
+theorem SDeriv.ty_eq_of {Γ Γ' : Ctx? α} {a : Term φ (Ty α)} {A A' : Ty α}
+  (hΓ : Γ.TyEq Γ') (D : Γ ⊢ₛ a : A) (D' : Γ' ⊢ₛ a : A') : A = A'
+  := D.unstrict.ty_eq_of hΓ D'.unstrict
+
+theorem SDeriv.ty_eq {Γ : Ctx? α} {a : Term φ (Ty α)} {A A' : Ty α}
+  (D : Γ ⊢ₛ a : A) (D' : Γ ⊢ₛ a : A') : A = A' := D.ty_eq_of (Ctx?.TyEq.refl Γ) D'
+
 end Term
 
 end Refinery

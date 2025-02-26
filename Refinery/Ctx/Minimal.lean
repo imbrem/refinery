@@ -189,6 +189,12 @@ theorem Ctx?.UEq.zqeq {Γ Δ : Ctx? α} (h : Ctx?.UEq Γ Δ) (h' : Ctx?.ZQEq Γ 
 
 variable [HasQuant α]
 
+theorem Ctx?.At.ty_eq_of {v v' : Var? α} {Γ Γ' : Ctx? α} {n}
+  (hΓ : Γ.TyEq Γ') (x : Γ.At v n) (x' : Γ'.At v' n) : v.ty = v'.ty := by
+  induction x generalizing Γ' v' with
+  | here _ hw => cases x' with | here _ hw' => rw [<-hw.ty, <-hw'.ty, hΓ.head]
+  | there => cases x'; apply_assumption; exact hΓ.tail; assumption
+
 theorem Ctx?.SSplit.left_ty_eq {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) : Γ.TyEq Δ := by
   induction σ <;> simp [*]; apply Var?.SSplit.left_ty_eq; assumption
 

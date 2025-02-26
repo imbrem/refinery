@@ -51,3 +51,9 @@ theorem SDeriv.den_cast_term {Γ : Ctx? α} {A : Ty α} {a a' : Term φ (Ty α)}
 theorem SDeriv.den_unstrict {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ₛ a : A)
   : D.unstrict.den = D.den (C := C)
   := by induction D <;> simp [den, unstrict, Deriv.den, Ctx?.SAt.den_unstrict, *]
+
+-- theorem SDeriv.coherence {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
+--   (D D' : Γ ⊢ₛ a : A) : D.den (C := C) = D'.den := by induction D with
+--   | bv x => cases D' with | bv x' => rw [Subsingleton.elim x x']
+--   | op => sorry
+--   | _ => sorry
