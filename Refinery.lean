@@ -6,3 +6,4 @@ import Refinery.Term.Extrinsic.Semantics.Wk
 import Refinery.Term.Extrinsic.Semantics.Minimal
 import Refinery.Term.Extrinsic.Refinement.Uniform
 import Refinery.Term.Extrinsic.Refinement.Semantics.Uniform
+import Refinery.Ctx.Semantics.Coherence

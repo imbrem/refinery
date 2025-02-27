@@ -76,15 +76,92 @@ theorem Var?.SSplit.coherence {u v w : Var? α} (σ σ' : u.SSplit v w)
 theorem Ctx?.SSplit.coherence {Γ Δ Ξ : Ctx? α} (σ σ' : Γ.SSplit Δ Ξ)
   : σ.den (C := C) = σ'.den := by rw [<-σ.den_unstrict, <-σ'.den_unstrict, σ.unstrict.coherence]
 
--- theorem Var?.Split.to_zero {u : Var? α} {A B} (σ : u.Split ⟨A, 0⟩ ⟨B, 0⟩)
---   : σ.den (C := C) = (haveI _ : u.del := σ.del_in; !_ u.ety) ≫ (λ_ _).inv
---   := sorry
+theorem Var?.Split.to_zero {u : Var? α} {A B} (σ : u.Split ⟨A, 0⟩ ⟨B, 0⟩)
+  : σ.den (C := C) = (haveI _ : u.del := σ.del_in; !_ u.ety) ≫ (λ_ _).inv
+  := by cases σ with
+  | sboth =>
+    simp only [Ty.den, den_sboth, Wk.den_unused, eqToHom_refl, Category.comp_id]
+    rw [M.copy_drop_both (hA := _) (hA' := _)]
+  | _ => simp only [
+    Ty.den, den_neither, den_left, den_right, den_sboth, Wk.den_unused, eqToHom_refl,
+    Category.comp_id, unitors_inv_equal
+  ]
 
--- theorem Var?.Split.assoc_coherence {u₁₂₃ u₁₂ u₂₃ u₁ u₂ u₃ : Var? α}
---   (σ123_12_3 : u₁₂₃.Split u₁₂ u₃) (σ12 : u₁₂.Split u₁ u₂)
---   (σ123_1_23 : u₁₂₃.Split u₁ u₂₃) (σ23 : u₂₃.Split u₂ u₃)
---   : σ123_12_3.den (C := C) ≫ σ12.den ▷ _ ≫ (α_ _ _ _).hom
---   = σ123_1_23.den ≫ _ ◁ σ23.den
---   := by cases σ123_12_3 with
---   | neither => sorry
---   | _ => sorry
+theorem Var?.Split.from_zero {X Y Z : Ty α} (σ : Split ⟨X, 0⟩ ⟨Y, 0⟩ ⟨Z, 0⟩)
+  : σ.den (C := C) = (λ_ _).inv
+  := by rw [to_zero, M.drop_unit]; simp only [Ty.den, Category.id_comp]
+
+theorem Var?.Split.den_left_zero {u w : Var? α} (σ : u.Split ⟨X, 0⟩ w)
+  : σ.den (C := C) = (Var?.Wk.den σ.wk_left_zero) ≫ (λ_ _).inv
+  := by cases σ <;> simp [MonoidalCategory'.unitors_inv_equal, M.copy_drop_tensor_left]
+
+theorem Var?.Split.den_right_zero {u w : Var? α} (σ : u.Split w ⟨X, 0⟩)
+  : σ.den (C := C) = (Var?.Wk.den σ.wk_right_zero) ≫ (ρ_ _).inv
+  := by cases σ <;> simp [MonoidalCategory'.unitors_inv_equal, M.copy_drop_tensor_right]
+
+theorem Var?.Split.den_both_quant {u : Var? α} {X Y : Ty α} {qX qY : Quant}
+  (σ : Split u ⟨X, qX⟩ ⟨Y, qY⟩)
+  : σ.den (C := C) =
+  (haveI _ := σ.scopy_both.copy; Δ_ _)
+    ≫ (σ.wk_left_both.den (C := C) ⊗ σ.wk_right_both.den)
+  := by cases σ; rfl
+
+theorem Var?.Split.assoc_coherence {u₁₂₃ u₁₂ u₂₃ u₁ u₂ u₃ : Var? α}
+  (σ123_12_3 : u₁₂₃.Split u₁₂ u₃) (σ12 : u₁₂.Split u₁ u₂)
+  (σ123_1_23 : u₁₂₃.Split u₁ u₂₃) (σ23 : u₂₃.Split u₂ u₃)
+  : σ123_12_3.den (C := C) ≫ σ12.den ▷ _ ≫ (α_ _ _ _).hom
+  = σ123_1_23.den ≫ _ ◁ σ23.den
+  := by cases u₁₂₃ with
+  | mk X q₁₂₃ => cases u₁₂ with
+  | mk X₁₂ q₁₂ => cases u₂₃ with
+  | mk X₂₃ q₂₃ => cases u₁ with
+  | mk X₁ q₁ => cases u₂ with
+  | mk X₂ q₂ => cases u₃ with
+  | mk X₃ q₃ =>
+    cases σ123_12_3.ty_eq_left
+    cases σ123_12_3.ty_eq_right
+    cases σ12.ty_eq_left
+    cases σ12.ty_eq_right
+    cases σ123_1_23.ty_eq_left
+    cases σ123_1_23.ty_eq_right
+    cases q₃ using EQuant.casesZero with
+    | zero =>
+      simp [den_right_zero]
+      simp [<-Category.assoc]
+      cases q₁ using EQuant.casesZero with
+      | zero => simp [den_left_zero]
+      | rest q₁ => cases q₁₂ using EQuant.casesZero with
+      | zero => cases σ12.zero_not_left_quant
+      | rest q₁₂ => cases q₂ using EQuant.casesZero with
+      | zero => cases q₂₃ using EQuant.casesZero with
+        | zero => simp [den_right_zero]
+        | rest q₂₃ => cases σ123_1_23 with
+        | sboth => cases q₁₂₃ using EQuant.casesZero with
+        | zero => cases σ123_12_3.zero_not_left_quant
+        | rest q₁₂₃ =>
+          simp [den_left_zero, den_right_zero]; rw [M.copy_drop_right (hA := _) (hA' := _)]
+      | rest q₂ => cases q₂₃ using EQuant.casesZero with
+      | zero => cases σ23.zero_not_left_quant
+      | rest q₂₃ =>
+        simp [den_both_quant, den_right_zero, den_left_zero]
+        rw [M.copy_rel_tensor ⊥ (h := _) (hA := _) (hB := _)]
+        infer_instance
+    | rest q₃ => cases q₂₃ using EQuant.casesZero with
+    | zero => cases σ23.zero_not_right_quant
+    | rest q₂₃ => cases q₁₂₃ using EQuant.casesZero with
+    | zero => cases σ123_12_3.zero_not_right_quant
+    | rest q₁₂₃ => cases q₂ using EQuant.casesZero with
+    | zero => cases q₁ using EQuant.casesZero with
+      | zero => cases q₁₂ using EQuant.casesZero with
+        | zero => simp [den_left_zero]
+        | rest q₁₂ =>
+          simp [den_left_zero, den_right_zero, den_both_quant]
+          rw [M.copy_drop_left_assoc (hA := _) (hA' := _)]
+      | rest q₁ => cases q₁₂ using EQuant.casesZero with
+      | zero => cases σ12.zero_not_left_quant
+      | rest q₁₂ => simp [den_left_zero, den_right_zero, den_both_quant]
+    | rest q₂ => cases q₁₂ using EQuant.casesZero with
+    | zero => cases σ12.zero_not_right_quant
+    | rest q₁₂ => cases q₁ using EQuant.casesZero with
+    | zero => simp [den_left_zero, den_both_quant]
+    | rest q₁ => simp [den_both_quant]; apply M.copy_assoc (hA := _)

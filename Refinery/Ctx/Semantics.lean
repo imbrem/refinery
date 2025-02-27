@@ -226,7 +226,7 @@ instance Var?.Wk.den_central {v w : Var? α} (h : v ≤ w)
   : Central (C := C) (Var?.Wk.den h)
   := (den_pure h).pure_central
 
-@[simp]
+@[simp, reassoc (attr := simp)]
 theorem Var?.Wk.den_comp {u v w : Var? α} (h : u ≤ v) (h' : v ≤ w)
   : den h ≫ den h' = den (C := C) (le_trans h h')
   := by cases u with | mk _ qu => cases v with | mk _ qv => cases w with | mk _ qw =>
@@ -238,10 +238,15 @@ theorem Var?.Wk.den_comp {u v w : Var? α} (h : u ≤ v) (h' : v ≤ w)
     | zero => cases h'.q using EQuant.le.casesLE
     | rest qv => simp
 
-@[simp]
-theorem Var?.Wk.den_comp_drop {v w : Var? α} (h : v ≤ w) [hw : w.del]
+@[reassoc]
+theorem Var?.Wk.den_comp_drop_del {v w : Var? α} (h : v ≤ w) [hw : w.del]
   : Var?.Wk.den (C := C) h ≫ !_ w.ety = (haveI _ := hw.anti h; !_ v.ety)
   := by rw [M.drop_aff ⊥ _ (hA := (hw.anti h).ety_aff)]
+
+@[simp, reassoc (attr := simp)]
+theorem Var?.Wk.den_comp_drop {v w : Var? α} (h : v ≤ w) (hA)
+  : Var?.Wk.den (C := C) h ≫ M.drop (hA := hA) w.ety = M.drop (hA := h.ety_aff' hA) v.ety
+  := by rw [M.drop_aff ⊥ _ (hA := h.ety_aff' hA)]
 
 @[simp]
 theorem Var?.del.den_unused {v : Var? α} (hv : v.unused)

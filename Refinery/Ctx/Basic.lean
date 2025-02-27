@@ -27,6 +27,12 @@ theorem Var?.ety_quant_ty {A : Ty α} {q : Quant} : Var?.ety ⟨A, q⟩ = A := r
 
 theorem Var?.ety_erase {v : Var? α} : v.erase.ety = Ty.unit := rfl
 
+def Var?.casesZero {motive : Var? α → Sort _} (v : Var? α)
+  (zero : ∀A, motive ⟨A, 0⟩)
+  (rest : ∀A, ∀q: Quant, motive ⟨A, q⟩) : motive v := match v with
+  | ⟨A, 0⟩ => zero A
+  | ⟨A, (q : Quant)⟩ => rest A q
+
 def Ctx? (α : Type u) := List (Var? α)
 
 variable {α : Type u} {ε : Type v}
@@ -327,6 +333,20 @@ instance Var?.instPartialOrder : PartialOrder (Var? α) where
   le_trans _ _ _ h h' :=
     ⟨h.ty.trans h'.ty, h'.q.trans h.q, λx => (x.del.anti h').anti h⟩
   le_antisymm _ _ h h' := ext h.ty (le_antisymm h'.q h.q)
+
+theorem Var?.Wk.ety_aff {v w : Var? α} (h : v.Wk w) (hv : IsAff v.ety) : IsAff w.ety
+  := by cases w using Var?.casesZero with
+  | zero A => infer_instance
+  | rest A q => cases v using Var?.casesZero with
+    | zero A => cases h.ty; cases h.q using EQuant.le.casesLE
+    | rest A q => cases h.ty; exact hv
+
+theorem Var?.Wk.ety_aff' {v w : Var? α} (h : v.Wk w) (hv : IsAff w.ety) : IsAff v.ety
+  := by cases v using Var?.casesZero with
+  | zero A => infer_instance
+  | rest A q => cases w using Var?.casesZero with
+    | zero A => exact ⟨le_trans (h.unused_del (by simp)).del_le_quant (by simp [quant, ety])⟩
+    | rest A q => cases h.ty; exact hv
 
 theorem Var?.Wk.ety_aff_zero {B : Ty α} (h : v ≤ Var?.mk B 0)
   : IsAff v.ety := del.ety_aff _ (h := del.anti h)

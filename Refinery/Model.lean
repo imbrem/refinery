@@ -84,8 +84,8 @@ class Model
   (C : Type _) [Category C] [PremonoidalCategory C] [ChosenFiniteCoproducts C]
                [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε]
   extends SigModel φ α ε C where
-  copy_swap {A : Ty α} [IsRel A] : Δ_ A ≫ (β'_ _ _).hom = copy A
-  copy_assoc {A : Ty α} [IsRel A] :
+  copy_swap {A : Ty α} [hA : IsRel A] : Δ_ A ≫ (β'_ _ _).hom = copy A
+  copy_assoc {A : Ty α} [hA : IsRel A] :
     Δ_ A ≫ Δ_ A ▷ (t⟦ A ⟧ : C) ≫ (α_ _ _ _).hom = Δ_ A ≫ t⟦ A ⟧ ◁ Δ_ A
   drop_pure {A} [IsAff A] : E.eff ⊥ (drop A)
   copy_pure {A} [IsRel A] : E.eff ⊥ (copy A)

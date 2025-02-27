@@ -41,6 +41,56 @@ theorem Var?.Split.erase_eq_right {u v w : Var? α} (σ : u.Split v w)
 theorem Var?.Split.erase_eq_both {u v w : Var? α} (σ : u.Split v w)
   : v.erase = w.erase := by rw [<-σ.erase_eq_left, <-σ.erase_eq_right]
 
+theorem Var?.Split.wk_left_zero {u w : Var? α} (σ : u.Split ⟨X, 0⟩ w) : u.Wk w
+  := by cases u; cases σ with
+  | neither h => exact ⟨rfl, h.q, λ_ => h⟩
+  | left h => cases h.ty; exact h
+  | _ => assumption
+
+theorem Var?.Split.wk_right_zero {u v : Var? α} (σ : u.Split v ⟨X, 0⟩) : u.Wk v
+  := by cases u; cases σ with
+  | neither h => exact ⟨rfl, h.q, λ_ => h⟩
+  | right h => cases h.ty; exact h
+  | _ => assumption
+
+theorem Var?.Split.wk_left_both {u : Var? α} {X Y} {qX qY : Quant} (σ : u.Split ⟨X, qX⟩ ⟨Y, qY⟩)
+  : u.Wk ⟨X, qX⟩ := by cases σ; assumption
+
+theorem Var?.Split.wk_right_both {u : Var? α} {X Y} {qX qY : Quant} (σ : u.Split ⟨X, qX⟩ ⟨Y, qY⟩)
+  : u.Wk ⟨Y, qY⟩ := by cases σ; assumption
+
+theorem Var?.Split.scopy_both {u : Var? α} {X Y} {qX qY : Quant} (σ : u.Split ⟨X, qX⟩ ⟨Y, qY⟩)
+  : u.scopy := by cases σ; assumption
+
+theorem Var?.Split.ty_eq_left {u v w : Var? α} (σ : u.Split v w)
+  : u.ty = v.ty := by cases σ <;> first | rfl | (apply Wk.ty; assumption)
+
+theorem Var?.Split.ty_eq_right {u v w : Var? α} (σ : u.Split v w)
+  : u.ty = w.ty := by cases σ <;> first | rfl | (apply Wk.ty; assumption)
+
+theorem Var?.Split.ty_eq_out {u v w : Var? α} (σ : u.Split v w)
+  : v.ty = w.ty := by rw [<-σ.ty_eq_left, <-σ.ty_eq_right]
+
+@[simp]
+theorem Var?.Split.zero_not_left_quant {X Y : Ty α} {q : Quant}
+  (σ : Split ⟨X, 0⟩ ⟨Y, q⟩ v) : False
+  := by cases σ with | left h | sboth _ h => exact Var?.Wk.not_zero_le h
+
+@[simp]
+theorem Var?.Split.zero_not_right_quant {X Y : Ty α} {q : Quant}
+  (σ : Split ⟨X, 0⟩ v ⟨Y, q⟩) : False
+  := by cases σ with | right h | sboth _ _ h => exact Var?.Wk.not_zero_le h
+
+theorem Var?.Split.zero_left_quant {X Y : Ty α} {q}
+  (σ : Split ⟨X, 0⟩ ⟨Y, q⟩ v) : q = 0
+  := by cases q using EQuant.casesZero with
+  | zero => rfl | rest => exact σ.zero_not_left_quant.elim
+
+theorem Var?.Split.zero_right_quant {X Y : Ty α} {q}
+  (σ : Split ⟨X, 0⟩ v ⟨Y, q⟩) : q = 0
+  := by cases q using EQuant.casesZero with
+  | zero => rfl | rest => exact σ.zero_not_right_quant.elim
+
 theorem Var?.Split.del_in {u v w : Var? α} (σ : u.Split v w) [hu : v.del] [w.del] : u.del
   := by cases σ with
   | neither => assumption
