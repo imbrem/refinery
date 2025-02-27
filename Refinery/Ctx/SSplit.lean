@@ -56,6 +56,18 @@ theorem Var?.SSplit.in_del {u v w : Var? α} (σ : u.SSplit v w) [hv : v.del] [h
 theorem Var?.SSplit.in_copy {u v w : Var? α} (σ : u.SSplit v w) [hv : v.copy] [hw : w.copy] : u.copy
   := by cases σ <;> assumption
 
+theorem Var?.SSplit.left_del {u v w : Var? α} (σ : u.SSplit v w) [hv : u.del] : v.del
+  := by cases σ <;> infer_instance
+
+theorem Var?.SSplit.right_del {u v w : Var? α} (σ : u.SSplit v w) [hw : u.del] : w.del
+  := by cases σ <;> infer_instance
+
+theorem Var?.SSplit.left_copy {u v w : Var? α} (σ : u.SSplit v w) [hv : u.copy] : v.copy
+  := by cases σ <;> infer_instance
+
+theorem Var?.SSplit.right_copy {u v w : Var? α} (σ : u.SSplit v w) [hw : u.copy] : w.copy
+  := by cases σ <;> infer_instance
+
 def Var?.SSplit.both (v : Var? α) [h : IsRel v] : SSplit v v v := if hv : v.used then
     SSplit.sboth hv.scopy
   else by
@@ -210,6 +222,42 @@ theorem Ctx?.SSplit.in_copy {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) [hΔ : �
     have _ := hΔ.head; have _ := hΔ.tail
     have _ := hΞ.head; have _ := hΞ.tail
     simp [hvw.in_copy, *]
+
+theorem Ctx?.SSplit.left_del {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) [hΔ : Γ.del] : Δ.del
+  := by
+  generalize hΔ = hΔ
+  induction σ with
+  | nil => simp
+  | cons _ hvw =>
+    have _ := hΔ.head; have _ := hΔ.tail
+    simp [hvw.left_del, *]
+
+theorem Ctx?.SSplit.right_del {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) [hΞ : Γ.del] : Ξ.del
+  := by
+  generalize hΞ = hΞ
+  induction σ with
+  | nil => simp
+  | cons _ hvw =>
+    have _ := hΞ.head; have _ := hΞ.tail
+    simp [hvw.right_del, *]
+
+theorem Ctx?.SSplit.left_copy {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) [hΓ : Γ.copy] : Δ.copy
+  := by
+  generalize hΓ = hΓ
+  induction σ with
+  | nil => simp
+  | cons _ hvw =>
+    have _ := hΓ.head; have _ := hΓ.tail
+    simp [hvw.left_copy, *]
+
+theorem Ctx?.SSplit.right_copy {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) [hΓ : Γ.copy] : Ξ.copy
+  := by
+  generalize hΓ = hΓ
+  induction σ with
+  | nil => simp
+  | cons _ hvw =>
+    have _ := hΓ.head; have _ := hΓ.tail
+    simp [hvw.right_copy, *]
 
 def Ctx?.SSplit.choose {Γ Δ Ξ : Ctx? α} (h : Nonempty (Ctx?.SSplit Γ Δ Ξ)) : Ctx?.SSplit Γ Δ Ξ
   := match Γ, Δ, Ξ, h with

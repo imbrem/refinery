@@ -58,6 +58,14 @@ def Deriv.wk {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)}
   (D : Δ ⊢ a : A) : (Γ ⊢ a.ren ρ : A)
   := (D.wkD ρ).cast_term (D.wkTerm_eq ρ)
 
+def Deriv.wk0 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {A : Ty α} {a : Term φ (Ty α)}
+  (D : Γ ⊢ a : A) : (Γ.cons x ⊢ ↑⁰ a : A)
+  := (D.wk ((Ctx?.Wk.refl Γ).skip hx)).cast_term (by simp [Nat.stepWk])
+
+def Deriv.wk1 {Γ : Ctx? α} {v} (x : Var? α) [hx : x.del] {A : Ty α} {a : Term φ (Ty α)}
+  (D : Γ.cons v ⊢ a : A) : ((Γ.cons x).cons v ⊢ ↑¹ a : A)
+  := (D.wk (((Ctx?.Wk.refl Γ).skip hx).scons v)).cast_term (by simp [Nat.stepWk])
+
 @[simp]
 theorem Deriv.wk_bv {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {n : ℕ} (x : Δ.At ⟨A, 1⟩ n)
   : (Deriv.bv x).wk ρ = (Deriv.bv (x.wkIn ρ)) := rfl
