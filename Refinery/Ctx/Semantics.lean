@@ -354,6 +354,10 @@ instance Ctx?.Split.den_pure {Γ Δ Ξ : Ctx? α} (h : Γ.Split Δ Ξ) : E.HasEf
   := by induction h <;> simp; infer_instance
 
 @[simp]
+instance Ctx?.Split.den_central {Γ Δ Ξ : Ctx? α} (h : Γ.Split Δ Ξ) : Central (C := C) h.den
+  := (den_pure h).pure_central
+
+@[simp]
 instance Ctx?.SSplit.den_pure {Γ Δ Ξ : Ctx? α} (h : Γ.SSplit Δ Ξ) : E.HasEff e h.den
   := by induction h <;> simp; infer_instance
 

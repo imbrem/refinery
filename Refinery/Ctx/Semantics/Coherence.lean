@@ -10,6 +10,8 @@ open scoped MonoidalCategory
 
 open EffectfulCategory
 
+section Braided
+
 variable {φ : Type _} {α : Type _} {ε : Type _} [Signature φ α ε]
          {C : Type _} [Category C] [PremonoidalCategory C] [ChosenFiniteCoproducts C]
          [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε]
@@ -165,3 +167,115 @@ theorem Var?.Split.assoc_coherence {u₁₂₃ u₁₂ u₂₃ u₁ u₂ u₃ : 
     | rest q₁₂ => cases q₁ using EQuant.casesZero with
     | zero => simp [den_left_zero, den_both_quant]
     | rest q₁ => simp [den_both_quant]; apply M.copy_assoc (hA := _)
+
+theorem Var?.Split.assoc_inv_coherence {u₁₂₃ u₁₂ u₂₃ u₁ u₂ u₃ : Var? α}
+  (σ123_12_3 : u₁₂₃.Split u₁₂ u₃) (σ12 : u₁₂.Split u₁ u₂)
+  (σ123_1_23 : u₁₂₃.Split u₁ u₂₃) (σ23 : u₂₃.Split u₂ u₃)
+  : σ123_1_23.den ≫ _ ◁ σ23.den ≫ (α_ _ _ _).inv
+  = σ123_12_3.den (C := C) ≫ σ12.den ▷ _ := by
+  rw [<-cancel_mono (f := (α_ _ _ _).hom)]
+  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  apply Eq.symm
+  apply assoc_coherence
+
+end Braided
+
+section Symmetric
+
+variable {φ : Type _} {α : Type _} {ε : Type _} [Signature φ α ε]
+         {C : Type _} [Category C] [PremonoidalCategory C] [ChosenFiniteCoproducts C]
+         [SymmetricCategory' C] [Iterate C] [E : Elgot2 C ε]
+         [M : Model φ α ε C]
+
+set_option maxHeartbeats 1000000000 in
+theorem Ctx?.Split.assoc_coherence {Γ₁₂₃ Γ₁₂ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (σ123_12_3 : Γ₁₂₃.Split Γ₁₂ Γ₃) (σ12 : Γ₁₂.Split Γ₁ Γ₂)
+  (σ123_1_23 : Γ₁₂₃.Split Γ₁ Γ₂₃) (σ23 : Γ₂₃.Split Γ₂ Γ₃)
+  : σ123_12_3.den (C := C) ≫ σ12.den ▷ _ ≫ (α_ _ _ _).hom
+  = σ123_1_23.den ≫ _ ◁ σ23.den
+  := by induction Γ₁₂₃ generalizing Γ₁₂ Γ₂₃ Γ₁ Γ₂ Γ₃ with
+  | nil => cases σ123_12_3; cases σ123_1_23; cases σ12; cases σ23; simp; premonoidal_coherence
+  | cons Γ₁₂₃ v₁₂₃ I => cases σ123_12_3 with
+  | cons σ123_12_3 v123_12_3 => cases σ123_1_23 with
+  | cons σ123_1_23 v123_1_23 => cases σ12 with
+  | cons σ12 v12 => cases σ23 with
+  | cons σ23 v23 =>
+    rename_i X0 X1 X2 X3 X4 X5 X6 X7 X8 X9
+    simp only [
+      den, comp_whiskerRight, Category.assoc, PremonoidalCategory.whiskerLeft_comp,
+      tensorHom_def, Ctx?.den, Ty.den, Ctx?.ety,
+      <-swap_inner_naturality_outer_left_assoc, <-swap_inner_naturality_left_assoc,
+      <-swap_inner_naturality_outer_right_assoc,
+    ]
+    apply Eq.symm
+    rw [
+      <-Central.left_exchange_assoc, <-PremonoidalCategory.comp_whiskerRight_assoc,
+      <-I σ123_12_3 σ12 σ123_1_23 σ23, <-PremonoidalCategory.whiskerLeft_comp_assoc,
+      <-Var?.Split.assoc_coherence v123_12_3 v12 v123_1_23 v23,
+      PremonoidalCategory.comp_whiskerRight_assoc
+    ]
+    congr 1
+    rw [PremonoidalCategory.whiskerLeft_comp_assoc, Central.left_exchange_assoc]
+    congr 1
+    rw [PremonoidalCategory.comp_whiskerRight_assoc]
+    congr 1
+    rw [
+      PremonoidalCategory.whiskerLeft_comp_assoc,
+      <-swap_inner_naturality_right_assoc,
+      Central.left_exchange_assoc
+    ]
+    congr 1
+    simp only [Ctx?.den, swap_inner, assoc_inner]
+    rw [
+      <-cancel_epi (f := (α_ _ _ _).hom),
+      <-cancel_epi (f := (α_ _ _ _).inv ▷ _),
+      <-cancel_epi (f := (α_ _ _ _).inv ▷ _),
+      <-cancel_epi (f := (_ ◁ (α_ _ _ _).hom) ▷ _),
+      <-cancel_epi (f := (_ ◁ (α_ _ _ _).hom) ▷ _),
+      <-cancel_epi (f := (α_ _ _ _).inv),
+      <-cancel_mono (f := (α_ _ _ _).hom),
+      <-cancel_mono (f := _ ◁ (α_ _ _ _).inv),
+      <-cancel_mono (f := _ ◁ (α_ _ _ _).inv),
+      <-cancel_mono (f := _ ◁ (α_ _ _ _).hom ▷ _),
+    ]
+    let L
+      : _
+      ⟶ (t⟦X6.ety⟧ ⊗ (t⟦X8.ety⟧ ⊗ t⟦X9.ety⟧) ⊗ t⟦X1.ety⟧ : C)
+      := (
+        (β'_ _ _).hom ▷ _
+        ≫ (α_ _ _ _).hom
+        ≫ _ ◁ (α_ _ _ _).hom
+        ≫ _ ◁ _ ◁ (β'_ _ _).hom
+        ≫ _ ◁ (α_ _ _ _).inv
+      )
+    let R
+      : _
+      ⟶ (t⟦X6.ety⟧ ⊗ (t⟦X8.ety⟧ ⊗ t⟦X9.ety⟧) ⊗ t⟦X1.ety⟧ : C)
+      := (
+        (α_ _ _ _).hom ≫
+        (α_ _ _ _).hom ≫
+        _ ◁ (β'_ _ _).hom ≫
+        (α_ _ _ _).inv ≫
+        (α_ _ _ _).inv ▷ _ ≫
+        ((β'_ _ _).hom ▷ _) ▷ _ ≫
+        (α_ _ _ _).hom ▷ _ ≫
+        (α_ _ _ _).hom
+      )
+    have hLR : L = R := by
+      simp only [L, R]
+      simp only [BraidedCategory'.braiding_tensor_left, comp_whiskerRight, whisker_assoc,
+        Category.assoc, pentagon_assoc, BraidedCategory'.braiding_tensor_right,
+        PremonoidalCategory.whiskerLeft_comp, pentagon_inv_assoc,
+        pentagon_hom_hom_inv_hom_hom_assoc, R, L]
+      congr 3
+      rw [
+        <-associator_naturality_right_assoc,
+        whiskerRight_tensor_symm_assoc,
+        Iso.inv_hom_id_assoc,
+        Central.left_exchange_assoc
+      ]
+      premonoidal
+    calc
+      _ = (_ ◁ L ▷ _) := by premonoidal
+      _ = (_ ◁ R ▷ _) := by rw [hLR]
+      _ = _ := by premonoidal
