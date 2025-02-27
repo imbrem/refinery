@@ -46,35 +46,17 @@ theorem Ctx?.Wk.ety_coherence {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) (h : Γ.ety = Δ
   rw [<-ρ.eq_pwk (ety_eq_length_eq h), PWk.den_toWk, PWk.ety_coherence _ h]
 
 theorem Var?.Split.coherence {u v w : Var? α} (σ σ' : u.Split v w)
-  : σ.den (C := C) = σ'.den := match σ, σ' with
-  | .neither _, .neither _ => rfl
-  | .neither _, .left _ => by simp
-  | .neither _, .right _ => by simp [MonoidalCategory'.unitors_inv_equal]
-  | .neither _, .sboth _ _ _ => by
-    simp only [Ty.den, den_neither, den_sboth, Wk.den_unused, eqToHom_refl, Category.comp_id]
-    rw [M.copy_drop_both (hA := _), MonoidalCategory'.unitors_inv_equal]
-  | .left _, .neither _ => by simp
-  | .left _, .left _ => rfl
-  | .left _, .right _ => by simp [MonoidalCategory'.unitors_inv_equal]
-  | .left _, .sboth _ _ _ => by
-    simp only [Ty.den, den_left, den_sboth, Wk.den_unused, eqToHom_refl, Category.comp_id]
-    rw [M.copy_drop_tensor_right]
-  | .right _, .neither _ => by simp [MonoidalCategory'.unitors_inv_equal]
-  | .right _, .left _ => by simp [MonoidalCategory'.unitors_inv_equal]
-  | .right _, .right _ => rfl
-  | .right _, .sboth _ _ _ => by
-    simp only [Ty.den, den_right, den_sboth, Wk.den_unused, eqToHom_refl, Category.comp_id]
-    rw [M.copy_drop_tensor_left]
-  | .sboth _ _ _, .neither _ => by
-    simp only [Ty.den, den_neither, den_sboth, Wk.den_unused, eqToHom_refl, Category.comp_id]
-    rw [M.copy_drop_both (hA := _), MonoidalCategory'.unitors_inv_equal]
-  | .sboth _ _ _, .left _ => by
-    simp only [Ty.den, den_left, den_sboth, Wk.den_unused, eqToHom_refl, Category.comp_id]
-    rw [M.copy_drop_tensor_right]
-  | .sboth _ _ _, .right _ => by
-    simp only [Ty.den, den_right, den_sboth, Wk.den_unused, eqToHom_refl, Category.comp_id]
-    rw [M.copy_drop_tensor_left]
-  | .sboth _ _ _, .sboth _ _ _ => rfl
+  : σ.den (C := C) = σ'.den := by
+  cases σ <;> cases σ' <;> (
+    simp only [
+      Ty.den, den_left, den_right, den_neither, den_sboth, Wk.den_unused, eqToHom_refl,
+      Category.comp_id
+    ]
+    first | rw [M.copy_drop_tensor_right]
+          | rw [M.copy_drop_tensor_left]
+          | rw [M.copy_drop_both (hA := _)]
+          | try simp only [MonoidalCategory'.unitors_inv_equal]
+  )
 
 theorem Ctx?.Split.coherence {Γ Δ Ξ : Ctx? α} (σ σ' : Γ.Split Δ Ξ)
   : σ.den (C := C) = σ'.den := by
@@ -93,3 +75,16 @@ theorem Var?.SSplit.coherence {u v w : Var? α} (σ σ' : u.SSplit v w)
 
 theorem Ctx?.SSplit.coherence {Γ Δ Ξ : Ctx? α} (σ σ' : Γ.SSplit Δ Ξ)
   : σ.den (C := C) = σ'.den := by rw [<-σ.den_unstrict, <-σ'.den_unstrict, σ.unstrict.coherence]
+
+-- theorem Var?.Split.to_zero {u : Var? α} {A B} (σ : u.Split ⟨A, 0⟩ ⟨B, 0⟩)
+--   : σ.den (C := C) = (haveI _ : u.del := σ.del_in; !_ u.ety) ≫ (λ_ _).inv
+--   := sorry
+
+-- theorem Var?.Split.assoc_coherence {u₁₂₃ u₁₂ u₂₃ u₁ u₂ u₃ : Var? α}
+--   (σ123_12_3 : u₁₂₃.Split u₁₂ u₃) (σ12 : u₁₂.Split u₁ u₂)
+--   (σ123_1_23 : u₁₂₃.Split u₁ u₂₃) (σ23 : u₂₃.Split u₂ u₃)
+--   : σ123_12_3.den (C := C) ≫ σ12.den ▷ _ ≫ (α_ _ _ _).hom
+--   = σ123_1_23.den ≫ _ ◁ σ23.den
+--   := by cases σ123_12_3 with
+--   | neither => sorry
+--   | _ => sorry

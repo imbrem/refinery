@@ -41,6 +41,11 @@ theorem Var?.Split.erase_eq_right {u v w : Var? α} (σ : u.Split v w)
 theorem Var?.Split.erase_eq_both {u v w : Var? α} (σ : u.Split v w)
   : v.erase = w.erase := by rw [<-σ.erase_eq_left, <-σ.erase_eq_right]
 
+theorem Var?.Split.del_in {u v w : Var? α} (σ : u.Split v w) [hu : v.del] [w.del] : u.del
+  := by cases σ with
+  | neither => assumption
+  | left h | right h | sboth _ h => apply Var?.del.anti h
+
 inductive Ctx?.Split : Ctx? α → Ctx? α → Ctx? α → Type _ where
   | nil : Ctx?.Split .nil .nil .nil
   | cons {Γ Δ Ξ v l r} (h : Split Γ Δ Ξ) (hvw : v.Split l r)
