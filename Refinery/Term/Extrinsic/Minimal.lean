@@ -13,34 +13,35 @@ variable {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε]
 inductive SDeriv : Ctx? α → Ty α → Term φ (Ty α) → Type _
   | bv {Γ} : Γ.SAt ⟨A, 1⟩ n → SDeriv Γ A (.bv n)
   | op {Γ A B f a} : S.FnTy f A B → SDeriv Γ A a → SDeriv Γ B (.op f a)
-  | let₁ {Γ Γl Γr A B a b q} :
+  | let₁ {Γ Γl Γr A B a b v} :
     Γ.SSplit Γl Γr →
-    (hq : Var?.mk A ⊤ ≤ ⟨A, q⟩) →
-    SDeriv Γr A a → SDeriv (Γl.cons ⟨A, q⟩) B b → SDeriv Γ B (.let₁ a A b)
+    (hq : (Var?.mk A ⊤).Wk v) →
+    SDeriv Γr A a → SDeriv (Γl.cons v) B b → SDeriv Γ B (.let₁ a A b)
   | unit {Γ} : Γ.IsZero → SDeriv Γ .unit .unit
   | pair {Γ Γl Γr A B a b} :
     Γ.SSplit Γl Γr →
     SDeriv Γl A a → SDeriv Γr B b → SDeriv Γ (.tensor A B) (.pair a b)
-  | let₂ {Γ Γl Γr A B C a b qa qb} :
+  | let₂ {Γ Γl Γr A B C a b v w} :
     Γ.SSplit Γl Γr →
-    (hqa : Var?.mk A ⊤ ≤ ⟨A, qa⟩) →
-    (hqb : Var?.mk B ⊤ ≤ ⟨B, qb⟩) →
-    SDeriv Γr (.tensor A B) a → SDeriv ((Γl.cons ⟨A, qa⟩).cons ⟨B, qb⟩) C b
+    (hqa : (Var?.mk A ⊤).Wk v) →
+    (hqb : (Var?.mk B ⊤).Wk w) →
+    SDeriv Γr (.tensor A B) a → SDeriv ((Γl.cons v).cons w) C b
       → SDeriv Γ C (.let₂ a A B b)
   | inl {Γ A B a} : SDeriv Γ A a → SDeriv Γ (.coprod A B) (.inl A B a)
   | inr {Γ A B b} : SDeriv Γ B b → SDeriv Γ (.coprod A B) (.inr A B b)
-  | case {Γ Γl Γr A B C a b c} :
+  | case {Γ Γl Γll Γlr Γr A B C a b c v w} :
     Γ.SSplit Γl Γr →
-    (hqa : Var?.mk A ⊤ ≤ ⟨A, qa⟩) →
-    (hqb : Var?.mk B ⊤ ≤ ⟨B, qb⟩) →
-    SDeriv Γr (.coprod A B) a → SDeriv (Γl.cons ⟨A, qa⟩) C b → SDeriv (Γl.cons ⟨B, qb⟩) C c
+    Γl.MSplit Γll Γlr →
+    (hqa : (Var?.mk A ⊤).Wk v) →
+    (hqb : (Var?.mk B ⊤).Wk w) →
+    SDeriv Γr (.coprod A B) a → SDeriv (Γll.cons v) C b → SDeriv (Γlr.cons w) C c
       → SDeriv Γ C (.case a A B b c)
   | abort {Γ A a} : SDeriv Γ .empty a → SDeriv Γ A (.abort A a)
-  | iter {Γ Γl Γr A B a b} :
+  | iter {Γ Γl Γr A B a b v} :
     Γ.SSplit Γl Γr →
-    (hq : Var?.mk A ⊤ ≤ ⟨A, q⟩) →
+    (hq : (Var?.mk A ⊤).Wk v) →
     Γl.copy → Γl.del →
-    SDeriv Γr A a → SDeriv (Γl.cons ⟨A, q⟩) (.coprod B A) b → SDeriv Γ B (.iter a A B b)
+    SDeriv Γr A a → SDeriv (Γl.cons v) (.coprod B A) b → SDeriv Γ B (.iter a A B b)
 
 notation Γ "⊢ₛ" a ":" A => SDeriv Γ A a
 
@@ -61,9 +62,9 @@ def SDeriv.unstrict {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} : (Γ ⊢�
     .let₂ hΓ da.unstrict (db.unstrict.pwk (((Ctx?.PWk.refl _).cons hqa).cons hqb))
   | .inl da => .inl da.unstrict
   | .inr db => .inr db.unstrict
-  | .case hΓ hqa hqb da db dc =>
-    .case hΓ da.unstrict  (db.unstrict.pwk ((Ctx?.PWk.refl _).cons hqa))
-                          (dc.unstrict.pwk ((Ctx?.PWk.refl _).cons hqb))
+  | .case hΓ hΓl hqa hqb da db dc =>
+    .case hΓ da.unstrict  (db.unstrict.pwk (hΓl.zwkLeft.toPWk.cons hqa))
+                          (dc.unstrict.pwk (hΓl.zwkRight.toPWk.cons hqb))
   | .abort da => .abort da.unstrict
   | .iter hΓ hq hc hd da db =>
     .iter hΓ hc hd da.unstrict (db.unstrict.pwk ((Ctx?.PWk.refl _).cons hq))
@@ -141,6 +142,26 @@ theorem SDeriv.ueq {Γ Γ' : Ctx? α} {A A' : Ty α} {a : Term φ (Ty α)}
   | bv hv => cases D' with | bv hv' =>
     apply hv.ueq_of_ty_eq; assumption; cases hv.ty_eq_out hΓ hv'; assumption; simp
   | unit => cases D'; apply Ctx?.TyEq.zero_ueq <;> assumption
+  | case σ hΓl =>
+    cases D' with
+    | case σ' hΓl' =>
+      (try cases_type* Var?)
+      (repeat rename (Var?.Wk _ _) => ρ; cases ρ.ty; clear ρ)
+      apply σ.in_ueq σ'
+      apply hΓl.in_ueq hΓl'
+      apply Ctx?.UEq.tail; apply_assumption
+      assumption
+      (try simp only [Ctx?.TyEq.cons_iff, and_true])
+      apply Ctx?.MSplit.shunt_left_ty_eq
+        <;> first | assumption | apply Ctx?.SSplit.shunt_left_ty_eq <;> assumption
+      apply Ctx?.UEq.tail; apply_assumption
+      assumption
+      (try simp only [Ctx?.TyEq.cons_iff, and_true])
+      apply Ctx?.MSplit.shunt_right_ty_eq
+        <;> first | assumption | apply Ctx?.SSplit.shunt_left_ty_eq <;> assumption
+      apply_assumption
+      assumption
+      apply Ctx?.SSplit.shunt_right_ty_eq <;> assumption
   | _ =>
     cases D'
     first | (apply_assumption <;> assumption)
@@ -150,6 +171,8 @@ theorem SDeriv.ueq {Γ Γ' : Ctx? α} {A A' : Ty α} {a : Term φ (Ty α)}
              | (apply Ctx?.UEq.tail; apply_assumption)
              | (apply Ctx?.UEq.tail; apply Ctx?.UEq.tail; apply_assumption))
       assumption
+      (try cases_type* Var?)
+      (repeat rename (Var?.Wk _ _) => ρ; cases ρ.ty; clear ρ)
       (try simp only [Ctx?.TyEq.cons_iff, and_true])
       apply Ctx?.SSplit.shunt_left_ty_eq <;> assumption
       apply_assumption
@@ -191,6 +214,41 @@ theorem FDeriv.ty_eq_of {Γ Γ' : Ctx? α} {a : Term φ (Ty α)} {A A' : Ty α}
 
 theorem FDeriv.ty_eq {Γ : Ctx? α} {a : Term φ (Ty α)} {A A' : Ty α}
   (D : Γ ⊢ₛ' a : A) (D' : Γ ⊢ₛ' a : A') : A = A' := D.ty_eq_of (Ctx?.TyEq.refl Γ) D'
+
+def Deriv.factor {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
+  : (Γ ⊢ a : A) → Γ ⊢ₛ' a : A
+  | .bv x => ⟨_, x.toUsed, .bv x.strict⟩
+  | .op hf da => let da := da.factor; ⟨_, da.drop, .op hf da.deriv⟩
+  | .let₁ hΓ da db =>
+    let da := da.factor;
+    match db.factor with
+    | ⟨_, .cons ρ hvw, db⟩ =>
+      ⟨_, hΓ.fuseWk ρ da.drop, .let₁ (hΓ.fuse ρ da.drop) hvw.toWk da.deriv db⟩
+  | .unit (Γ := Γ) hv => ⟨_, Γ.eraseZWk, .unit (by simp)⟩
+  | .pair hΓ da db =>
+    let da := da.factor;
+    let db := db.factor;
+    ⟨_, hΓ.fuseWk da.drop db.drop, .pair (hΓ.fuse da.drop db.drop) da.deriv db.deriv⟩
+  | .let₂ hΓ da db =>
+    let da := da.factor;
+    match db.factor with
+    | ⟨_, .cons (.cons ρ h) h', db⟩ =>
+      ⟨_, hΓ.fuseWk ρ da.drop, .let₂ (hΓ.fuse ρ da.drop) h.toWk h'.toWk da.deriv db⟩
+  | .inl da => let da := da.factor; ⟨_, da.drop, .inl da.deriv⟩
+  | .inr db => let db := db.factor; ⟨_, db.drop, .inr db.deriv⟩
+  | .case hΓ da db dc =>
+    let da := da.factor;
+    match db.factor, dc.factor with
+    | ⟨_, .cons ρb hb, db⟩, ⟨_, .cons ρc hc, dc⟩ =>
+      let ρ := ρb.wkMSplit ρc;
+      ⟨_, hΓ.fuseWk ρ da.drop,
+        .case (hΓ.fuse ρ da.drop) (ρb.toMSplit ρc) hb.toWk hc.toWk da.deriv db dc⟩
+  | .abort da => let da := da.factor; ⟨_, da.drop, .abort da.deriv⟩
+  | .iter hΓ hc hd da db =>
+    let da := da.factor;
+    match db.factor with
+    | ⟨_, .cons ρ h, db⟩ =>
+      ⟨_, hΓ.fuseWk ρ da.drop, .iter (hΓ.fuse ρ da.drop) h.toWk ρ.copy ρ.del da.deriv db⟩
 
 end Term
 
