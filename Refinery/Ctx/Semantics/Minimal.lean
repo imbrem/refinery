@@ -1,5 +1,6 @@
 import Refinery.Ctx.Semantics
 import Refinery.Ctx.Minimal
+import Refinery.Ctx.Semantics.Coherence
 
 namespace Refinery
 
@@ -74,3 +75,13 @@ theorem Ctx?.At.factor_wk_den {v : Var? α} {Γ : Ctx? α} {n} (x : Γ.At v n)
 theorem Ctx?.SAt.den_strict_unstrict {v : Var? α} {Γ : Ctx? α} {n} (x : Γ.SAt v n)
   : x.unstrict.strict.den (C := C) = eqToHom (by rw [x.unstrict_used_eq]) ≫ x.den
   := by rw [x.strict_unstrict, den_cast_src]
+
+theorem Ctx?.SSplit.den_fuse {Γ Δ Ξ Δ' Ξ' : Ctx? α}
+  (σ : Γ.SSplit Δ Ξ) (ρ : Δ.ZWk Δ') (ρ' : Ξ.ZWk Ξ')
+  : σ.den (C := C) ≫ (ρ.den ⊗ ρ'.den) = (σ.fuseWk ρ ρ').den ≫ (σ.fuse ρ ρ').den
+  := by
+  rw [
+    <-ρ.den_toPWk, <-ρ'.den_toPWk, <-σ.den_unstrict, σ.unstrict.den_wkOut, <-Ctx?.ZWk.den_toPWk,
+    <-Ctx?.SSplit.den_unstrict, Ctx?.Split.den_wkIn
+  ]
+  apply Ctx?.Split.coherence
