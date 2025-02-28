@@ -328,10 +328,14 @@ theorem Var?.used.quant_anti {v w : Var? α} (h : v ≤ w) (hw : w.used) : quant
     | zero => cases hw
     | rest => cases v; cases h.ty; cases h.q using EQuant.le.casesLE <;> simp [quant]
 
+theorem Var?.Wk.refl (v : Var? α) : v.Wk v := ⟨rfl, le_refl _, λh => h.del⟩
+
+theorem Var?.Wk.comp {u v w : Var? α} (h : u.Wk v) (h' : v.Wk w) : u.Wk w
+  := ⟨h.ty.trans h'.ty, h'.q.trans h.q, λx => (x.del.anti h').anti h⟩
+
 instance Var?.instPartialOrder : PartialOrder (Var? α) where
-  le_refl _ := ⟨rfl, le_refl _, λh => h.del⟩
-  le_trans _ _ _ h h' :=
-    ⟨h.ty.trans h'.ty, h'.q.trans h.q, λx => (x.del.anti h').anti h⟩
+  le_refl _ := Wk.refl _
+  le_trans _ _ _ h h' := Wk.comp h h'
   le_antisymm _ _ h h' := ext h.ty (le_antisymm h'.q h.q)
 
 theorem Var?.Wk.ety_aff {v w : Var? α} (h : v.Wk w) (hv : IsAff v.ety) : IsAff w.ety
@@ -382,7 +386,7 @@ theorem Var?.Wk.quant_le_quant_iff  {A B : Ty α} {q q' : Quant}
   : Var?.mk A q ≤ Var?.mk B q' ↔ A = B ∧ q' ≤ q :=
   ⟨λh => ⟨h.ty, h.q⟩, λ⟨ht, hq⟩ => ⟨ht, hq, (by simp)⟩⟩
 
-theorem Var?.Wk.not_zero_le {A B : Ty α} {q : Quant}  (h : Var?.mk A 0 ≤ ⟨B, q⟩) : False
+theorem Var?.Wk.not_zero_le {A B : Ty α} {q : Quant}  (h : (Var?.mk A 0).Wk ⟨B, q⟩) : False
   := by cases h.q using EQuant.le.casesLE
 
 @[simp]
@@ -410,6 +414,12 @@ theorem Var?.Wk.zero_le_unused {A} {v : Var? α} (h : ⟨A, 0⟩ ≤ v) : v.unus
 theorem Var?.Wk.erase_eq {v w : Var? α} (h : v.Wk w) : v.erase = w.erase
   := by cases v; cases w; cases h.ty; rfl
 
+theorem Var?.Wk.eq_zero {w : Var? α} (h : Wk ⟨A, 0⟩ w) : w = ⟨A, 0⟩
+  := by cases w; cases h.ty; cases h.q using EQuant.le.casesLE; rfl
+
+theorem Var?.Wk.eq_erase {v w : Var? α} (h : v.erase.Wk w) : w = v.erase
+  := h.eq_zero
+
 inductive Ctx?.PWk : Ctx? α → Ctx? α → Type _ where
   | nil : Ctx?.PWk .nil .nil
   | cons {Γ Δ v w} (h : Ctx?.PWk Γ Δ) (hvw : v ≤ w) : Ctx?.PWk (Ctx?.cons Γ v) (Ctx?.cons Δ w)
@@ -423,7 +433,7 @@ theorem Ctx?.PWk.head {Γ Δ v w} (h : PWk (α := α) (.cons Γ v) (.cons Δ w))
 def Ctx?.PWk.tail {Γ Δ v w} (h : PWk (α := α) (.cons Γ v) (.cons Δ w)) : PWk Γ Δ
   := match h with | Ctx?.PWk.cons h _ => h
 
-@[simp]
+@[simp, refl]
 def Ctx?.PWk.refl : (Γ : Ctx? α) → PWk Γ Γ
   | .nil => .nil
   | .cons Γ v => .cons (refl Γ) (le_refl v)

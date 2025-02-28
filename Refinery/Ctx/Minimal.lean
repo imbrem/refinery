@@ -59,6 +59,12 @@ inductive Var?.ZQEq : Var? α → Var? α → Prop
 attribute [refl] Var?.ZQEq.refl
 attribute [simp] Var?.ZQEq.refl Var?.ZQEq.erase_left Var?.ZQEq.erase_right
 
+@[simp]
+theorem Var?.ZQEq.zero_right {A : Ty α} {q} : ZQEq ⟨A, q⟩ ⟨A, 0⟩ := ZQEq.erase_right
+
+@[simp]
+theorem Var?.ZQEq.zero_left {A : Ty α} {q} : ZQEq ⟨A, 0⟩ ⟨A, q⟩ := ZQEq.erase_left (v := ⟨A, q⟩)
+
 theorem Var?.ZQEq.ty {u v : Var? α} (h : Var?.ZQEq u v) : u.ty = v.ty := by
   cases h <;> rfl
 
@@ -87,7 +93,7 @@ theorem Ctx?.ZQEq.head {Γ Δ : Ctx? α} {v w}
 theorem Ctx?.ZQEq.length_eq {Γ Δ : Ctx? α} (h : Γ.ZQEq Δ) : Γ.length = Δ.length := by
   induction h <;> simp [*]
 
-@[simp]
+@[simp, refl]
 theorem Ctx?.ZQEq.refl (Γ : Ctx? α) : Ctx?.ZQEq Γ Γ := by induction Γ <;> simp [*]
 
 @[simp]
@@ -188,6 +194,101 @@ theorem Ctx?.UEq.zqeq {Γ Δ : Ctx? α} (h : Ctx?.UEq Γ Δ) (h' : Ctx?.ZQEq Γ 
   := h'.ueq h
 
 variable [HasQuant α]
+
+inductive Var?.ZWk : Var? α → Var? α → Type _ where
+  | refl (u) : Var?.ZWk u u
+  | erase {A q} (h : Var?.del ⟨A, q⟩) : Var?.ZWk ⟨A, q⟩ ⟨A, 0⟩
+
+attribute [refl] Var?.ZWk.refl
+
+theorem Var?.ZWk.toWk {u v : Var? α} : (ρ : u.ZWk v) → u.Wk v
+  | .refl u => le_refl u
+  | .erase h => h.erase_le
+
+def Var?.ZWk.comp {u v w : Var? α} : u.ZWk v → v.ZWk w → u.ZWk w
+  | .refl _, ρ => ρ
+  | .erase h, .refl _ => .erase h
+  | .erase h, .erase h' => .erase h
+
+@[simp]
+theorem Var?.ZWk.zqeq {u v : Var? α} (ρ : u.ZWk v) : u.ZQEq v := by cases ρ <;> simp [*]
+
+inductive Ctx?.ZWk : Ctx? α → Ctx? α → Type _ where
+  | nil : Ctx?.ZWk .nil .nil
+  | cons {Γ Δ} {v w} (h : Ctx?.ZWk Γ Δ) (hv : v.ZWk w)
+    : Ctx?.ZWk (Ctx?.cons Γ v) (Ctx?.cons Δ w)
+
+@[simp, refl]
+def Ctx?.ZWk.refl : (Γ : Ctx? α) → ZWk Γ Γ
+  | .nil => .nil
+  | .cons Γ v => .cons (refl Γ) (.refl v)
+
+@[simp]
+def Ctx?.ZWk.toPWk {Γ Δ : Ctx? α} : ZWk Γ Δ → PWk Γ Δ
+  | .nil => .nil
+  | .cons ρ v => .cons (toPWk ρ) v.toWk
+
+@[simp]
+def Ctx?.ZWk.comp {Γ Δ Ξ : Ctx? α} : ZWk Γ Δ → ZWk Δ Ξ → ZWk Γ Ξ
+  | .nil, .nil => .nil
+  | .cons ρ h, .cons ρ' h' => .cons (comp ρ ρ') (h.comp h')
+
+instance Ctx?.ZWk.coePWk {Γ Δ : Ctx? α} : Coe (Ctx?.ZWk Γ Δ) (Ctx?.PWk Γ Δ) := ⟨Ctx?.ZWk.toPWk⟩
+
+@[simp]
+theorem Ctx?.ZWk.zqeq {Γ Δ : Ctx? α} (ρ : Γ.ZWk Δ) : Γ.ZQEq Δ
+  := by induction ρ <;> simp [*]; apply Var?.ZWk.zqeq; assumption
+
+theorem Ctx?.ZWk.antisymm  {Γ Δ : Ctx? α} (ρ : Γ.ZWk Δ) (σ : Δ.ZWk Γ) : Γ = Δ := PWk.antisymm ρ σ
+
+def Var?.SSplit.fuseCtx {u v w v' w' : Var? α} : u.SSplit v w → v.ZWk v' → w.ZWk w' → Var? α
+  | .left _, .refl _, _ => u
+  | .left _, .erase _, _ => u.erase
+  | .right _, _, .refl _ => u
+  | .right _, _, .erase _ => u.erase
+  | .sboth _, .erase _, .erase _ => u.erase
+  | .sboth _, _, _ => u
+
+def Var?.SSplit.fuse {u v w v' w' : Var? α} :
+  (σ : u.SSplit v w) → (ρ : v.ZWk v') → (ρ' : w.ZWk w') → (σ.fuseCtx ρ ρ').SSplit v' w'
+  | .left _, .refl _, .refl _ => .left _
+  | .left _, .refl _, .erase _ => .left _
+  | .left _, .erase _, .refl _ => .left _
+  | .left _, .erase _, .erase _ => .left _
+  | .right _, .refl _, .refl _ => .right _
+  | .right _, .refl _, .erase _ => .right _
+  | .right _, .erase _, .refl _ => .right _
+  | .right _, .erase _, .erase _ => .right _
+  | .sboth _, .erase _, .erase _ => .left _
+  | .sboth _, .refl _, .erase _ => .left _
+  | .sboth _, .erase _, .refl _ => .right _
+  | .sboth h, .refl _, .refl _ => .sboth h
+
+def Var?.SSplit.fuseWk {u v w v' w' : Var? α} :
+  (σ : u.SSplit v w) → (ρ : v.ZWk v') → (ρ' : w.ZWk w') → u.ZWk (σ.fuseCtx ρ ρ')
+  | .left _, .refl _, _ => .refl _
+  | .left _, .erase h, _ => .erase h
+  | .right _, _, .refl _ => .refl _
+  | .right _, _, .erase h => .erase h
+  | .sboth _, .refl _, .refl _
+  | .sboth _, .refl _, .erase _ => .refl _
+  | .sboth _, .erase _, .refl _ => .refl _
+  | .sboth _, .erase _, .erase h => .erase h
+
+def Ctx?.SSplit.fuseCtx {Γ Δ Ξ Δ' Ξ' : Ctx? α}
+  : Γ.SSplit Δ Ξ → Δ.ZWk Δ' → Ξ.ZWk Ξ' → Ctx? α
+  | .nil, .nil, .nil => .nil
+  | .cons σ hvw, .cons ρ h, .cons ρ' h' => (σ.fuseCtx ρ ρ').cons (hvw.fuseCtx h h')
+
+def Ctx?.SSplit.fuse {Γ Δ Ξ Δ' Ξ' : Ctx? α}
+  : (σ : Γ.SSplit Δ Ξ) → (ρ : Δ.ZWk Δ') → (ρ' : Ξ.ZWk Ξ') → (σ.fuseCtx ρ ρ').SSplit Δ' Ξ'
+  | .nil, .nil, .nil => .nil
+  | .cons σ hvw, .cons ρ h, .cons ρ' h' => (σ.fuse ρ ρ').cons (hvw.fuse h h')
+
+def Ctx?.SSplit.fuseWk {Γ Δ Ξ Δ' Ξ' : Ctx? α}
+  : (σ : Γ.SSplit Δ Ξ) → (ρ : Δ.ZWk Δ') → (ρ' : Ξ.ZWk Ξ') → Γ.ZWk (σ.fuseCtx ρ ρ')
+  | .nil, .nil, .nil => .nil
+  | .cons σ hvw, .cons ρ h, .cons ρ' h' => (σ.fuseWk ρ ρ').cons (hvw.fuseWk h h')
 
 theorem Ctx?.At.ty_eq_of {v v' : Var? α} {Γ Γ' : Ctx? α} {n}
   (hΓ : Γ.TyEq Γ') (x : Γ.At v n) (x' : Γ'.At v' n) : v.ty = v'.ty := by
@@ -374,10 +475,14 @@ instance Ctx?.At.unused_del {v : Var? α} {Γ : Ctx? α} {n} (x : Γ.At v n) : x
 instance Ctx?.At.used_del {v : Var? α} {Γ : Ctx? α} {n} (x : Γ.At v n) [hv : v.del] : x.used.del
   := by induction x with | here _ hw => simp [hv.anti hw] | there => simp [*]
 
+def Ctx?.eraseZWk (Γ : Ctx? α) [h : Γ.del] : Γ.ZWk Γ.erase := match Γ, h with
+  | .nil, _ => .nil
+  | .cons Γ _, h => .cons (Γ.eraseZWk (h := h.tail)) (.erase h.head)
+
 @[simp]
-def Ctx?.At.toUsed {v : Var? α} {Γ : Ctx? α} {n} : (x : Γ.At v n) → Γ.PWk x.used
-  | .here (Γ := Γ) _ hvw => Γ.erasePWk.cons (le_refl _)
-  | .there (w := w) x hw => x.toUsed.cons (Var?.del_iff_erase_le.mp hw)
+def Ctx?.At.toUsed {v : Var? α} {Γ : Ctx? α} {n} : (x : Γ.At v n) → Γ.ZWk x.used
+  | .here (Γ := Γ) _ hvw => Γ.eraseZWk.cons (.refl _)
+  | .there (w := w) x hw => x.toUsed.cons (.erase hw)
 
 @[simp]
 def Ctx?.At.strict {v : Var? α} {Γ : Ctx? α} {n} : (x : Γ.At v n) → x.used.SAt v n

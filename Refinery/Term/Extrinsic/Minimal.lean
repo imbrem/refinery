@@ -46,7 +46,7 @@ notation Γ "⊢ₛ" a ":" A => SDeriv Γ A a
 
 structure FDeriv (Γ : Ctx? α) (A : Ty α) (a : Term φ (Ty α)) where
   used : Ctx? α
-  drop : Γ.PWk used
+  drop : Γ.ZWk used
   deriv : used ⊢ₛ a : A
 
 notation Γ "⊢ₛ' " a ":" A => FDeriv Γ A a
@@ -72,7 +72,7 @@ def FDeriv.toDeriv {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢�
   := D.deriv.unstrict.pwk D.drop
 
 def FDeriv.ofStrict {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ₛ a : A) : Γ ⊢ₛ' a : A
-  := ⟨Γ, Ctx?.PWk.refl _, D⟩
+  := ⟨Γ, Ctx?.ZWk.refl _, D⟩
 
 -- theorem FDeriv.toDeriv_ofStrict {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ₛ a : A)
 --   : (FDeriv.ofStrict D).toDeriv = D.unstrict := by stop simp [toDeriv, ofStrict]; sorry
@@ -103,7 +103,8 @@ theorem SDeriv.cast_cast {Γ Γ' Γ'' : Ctx? α} {A A' A'' : Ty α} {a a' a'' : 
 
 def FDeriv.cast {Γ Γ' : Ctx? α} {A A' : Ty α} {a a' : Term φ (Ty α)}
   (hΓ : Γ = Γ') (hA : A = A') (ha : a = a')
-  (D : Γ ⊢ₛ' a : A) : Γ' ⊢ₛ' a' : A' := ⟨D.used, hΓ ▸ D.drop, D.deriv.cast rfl hA ha⟩
+  (D : Γ ⊢ₛ' a : A) : Γ' ⊢ₛ' a' : A'
+  := ⟨D.used, hΓ ▸ D.drop, D.deriv.cast rfl hA ha⟩
 
 abbrev FDeriv.cast_ctx {Γ Γ' : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
   (hΓ : Γ = Γ') (D : Γ ⊢ₛ' a : A) : Γ' ⊢ₛ' a : A := D.cast hΓ rfl rfl

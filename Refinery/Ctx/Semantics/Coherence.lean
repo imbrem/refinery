@@ -26,6 +26,10 @@ theorem Var?.Wk.ety_coherence {v w : Var? α} (ρ : v.Wk w) (h : v.ety = w.ety)
   | zero => cases h; simp [M.drop_unit]
   | rest => rfl
 
+theorem Var?.Wk.quant_coherence {A : Ty α} {q q' : Quant} {w} (ρ : Wk ⟨A, q⟩ w) (ρ' : Wk ⟨A, q'⟩ w)
+  : ρ.den (C := C) = ρ'.den (C := C)
+  := by cases w using Var?.casesZero <;> simp
+
 theorem Ctx?.ety_eq_length_eq {Γ Δ : Ctx? α} (h : Γ.ety = Δ.ety)
   : Γ.length = Δ.length := by induction Γ generalizing Δ with
   | nil => cases Δ with
@@ -108,6 +112,117 @@ theorem Var?.Split.den_both_quant {u : Var? α} {X Y : Ty α} {qX qY : Quant}
     ≫ (σ.wk_left_both.den (C := C) ⊗ σ.wk_right_both.den)
   := by cases σ; rfl
 
+theorem Var?.Split.den_comm {u v w : Var? α} (σ : u.Split v w)
+  : σ.den (C := C) ≫ (β'_ _ _).hom = σ.comm.den
+  := by cases σ with
+  | sboth =>
+    simp [
+      tensorHom_def, BraidedCategory'.braiding_naturality_left_assoc,
+      BraidedCategory'.braiding_naturality_right
+    ]
+    rw [M.copy_swap_assoc (hA := _), <-tensorHom_def, <-tensorHom_def_of_left]
+  | _ => simp [MonoidalCategory'.unitors_inv_equal]
+
+theorem Var?.Split.den_comm_self {u : Var? α} (σ : u.Split u u)
+  : σ.den (C := C) ≫ (β'_ _ _).hom = σ.den
+  := by rw [den_comm]; apply coherence
+
+theorem Var?.Split.den_wkIn {u' u v w : Var? α} (ρ : u'.Wk u) (σ : u.Split v w)
+  : ρ.den (C := C) ≫ σ.den = (σ.wkIn ρ).den
+  := by cases v using Var?.casesZero with
+  | zero _ => simp [den_left_zero]
+  | rest => cases u using Var?.casesZero with
+  | zero => cases σ.zero_not_left_quant
+  | rest => cases w using Var?.casesZero with
+  | zero _ => simp [den_right_zero]
+  | rest => cases u' using Var?.casesZero with
+  | zero => cases ρ.not_zero_le
+  | rest =>
+    cases ρ.ty
+    cases σ.ty_eq_left
+    cases σ.ty_eq_right
+    simp [ety, den_both_quant]
+
+theorem Var?.Split.den_wkOutL {u v v' w : Var? α} (σ : u.Split v w) (ρ : v.Wk v')
+  : σ.den (C := C) ≫ ρ.den ▷ _ = (σ.wkOutL ρ).den
+  := by cases v using Var?.casesZero with
+  | zero _ => cases v'; cases ρ.ty; cases ρ.q using EQuant.le.casesLE; simp [den_left_zero]
+  | rest => cases u using Var?.casesZero with
+  | zero => cases σ.zero_not_left_quant
+  | rest => cases σ.ty_eq_left; cases σ.ty_eq_right; cases w using Var?.casesZero with
+  | zero => simp [ety, den_right_zero]; apply Var?.Wk.quant_coherence
+  | rest => cases v' using Var?.casesZero with
+  | zero =>
+    cases ρ.ty; simp [ety, den_left_zero, den_both_quant]
+    exact M.copy_drop_left (hA := _) (hA' := _)
+  | rest => cases ρ.ty; simp [den_both_quant]
+
+theorem Var?.Split.den_wkOutR {u v w w' : Var? α} (σ : u.Split v w) (ρ : w.Wk w')
+  : σ.den (C := C) ≫ _ ◁ ρ.den = (σ.wkOutR ρ).den
+  := by cases w using Var?.casesZero with
+  | zero _ => cases w'; cases ρ.ty; cases ρ.q using EQuant.le.casesLE; simp [den_right_zero]
+  | rest => cases u using Var?.casesZero with
+  | zero => cases σ.zero_not_right_quant
+  | rest => cases σ.ty_eq_left; cases σ.ty_eq_right; cases v using Var?.casesZero with
+  | zero => simp [ety, den_left_zero]; apply Var?.Wk.quant_coherence
+  | rest => cases σ.ty_eq_left; cases σ.ty_eq_right; cases w' using Var?.casesZero with
+  | zero =>
+    cases ρ.ty; simp [ety, den_right_zero, den_both_quant]
+    exact M.copy_drop_right (hA := _) (hA' := _)
+  | rest => cases ρ.ty; simp [den_both_quant]
+
+theorem Var?.Split.den_wkOut {u v w v' w' : Var? α} (σ : u.Split v w) (ρv : v.Wk v') (ρw : w.Wk w')
+  : σ.den (C := C) ≫ (ρv.den ⊗ ρw.den) = (σ.wkOut ρv ρw).den
+  := by rw [<-wkOutL_wkOutR, <-den_wkOutR, <-den_wkOutL, Category.assoc, tensorHom_def]
+
+theorem Ctx?.Split.den_wkIn {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.PWk Γ) (σ : Γ.Split Δ Ξ)
+  : ρ.den (C := C) ≫ σ.den = (σ.wkIn ρ).den
+  := by induction σ generalizing Γ' with
+  | nil => cases ρ; simp; convert Category.id_comp _
+  | cons σ ρ' I =>
+    cases ρ; simp [<-tensor_comp_of_left_assoc, I, Var?.Split.den_wkIn, Ctx?.Split.wkIn]
+
+theorem Ctx?.Split.den_wkOutL {Γ Δ Δ' Ξ : Ctx? α} (σ : Γ.Split Δ Ξ) (ρ : Δ.PWk Δ')
+  : σ.den (C := C) ≫ ρ.den ▷ _ = (σ.wkOutL ρ).den
+  := by induction σ generalizing Δ' with
+  | nil => cases ρ; simp; convert Category.comp_id _; apply PremonoidalCategory.id_whiskerRight _ _
+  | cons σ ρ' I =>
+    cases ρ
+    simp only [
+      den, tensorHom_def, Category.assoc, PWk.den, comp_whiskerRight, wkOutL, Ctx?.den, Ty.den,
+      Ctx?.ety,
+    ]
+    rw [
+      <-swap_inner_naturality_outer_left_assoc, <-swap_inner_naturality_right,
+      Central.left_exchange_assoc, <-PremonoidalCategory.comp_whiskerRight_assoc,
+      I, <-Central.left_exchange_assoc, <-PremonoidalCategory.whiskerLeft_comp_assoc,
+      Var?.Split.den_wkOutL
+    ]
+
+theorem Ctx?.Split.den_wkOutR {Γ Δ Ξ Ξ' : Ctx? α} (σ : Γ.Split Δ Ξ) (ρ : Ξ.PWk Ξ')
+  : σ.den (C := C) ≫ _ ◁ ρ.den = (σ.wkOutR ρ).den
+  := by induction σ generalizing Ξ' with
+  | nil => cases ρ; simp; convert Category.comp_id _; apply PremonoidalCategory.whiskerLeft_id _ _
+  | cons σ ρ' I =>
+    cases ρ
+    simp only [
+      den, tensorHom_def, Category.assoc, PWk.den, PremonoidalCategory.whiskerLeft_comp, wkOutR,
+      Ctx?.den, Ty.den, Ctx?.ety,
+    ]
+    rw [
+      <-swap_inner_naturality_left_assoc,
+      <-swap_inner_naturality_outer_right,
+      Central.left_exchange_assoc, <-PremonoidalCategory.comp_whiskerRight_assoc,
+      I, <-Central.left_exchange_assoc, <-PremonoidalCategory.whiskerLeft_comp_assoc,
+      Var?.Split.den_wkOutR
+    ]
+
+theorem Ctx?.Split.den_wkOut {Γ Δ Δ' Ξ Ξ' : Ctx? α}
+  (σ : Γ.Split Δ Ξ) (ρΞ : Ξ.PWk Ξ') (ρΔ : Δ.PWk Δ')
+  : σ.den (C := C) ≫ (ρΔ.den ⊗ ρΞ.den) = (σ.wkOut ρΔ ρΞ).den
+  := by rw [<-wkOutL_wkOutR, <-den_wkOutR, <-den_wkOutL, Category.assoc, tensorHom_def]
+
+
 theorem Var?.Split.assoc_coherence {u₁₂₃ u₁₂ u₂₃ u₁ u₂ u₃ : Var? α}
   (σ123_12_3 : u₁₂₃.Split u₁₂ u₃) (σ12 : u₁₂.Split u₁ u₂)
   (σ123_1_23 : u₁₂₃.Split u₁ u₂₃) (σ23 : u₂₃.Split u₂ u₃)
@@ -186,6 +301,36 @@ variable {φ : Type _} {α : Type _} {ε : Type _} [Signature φ α ε]
          {C : Type _} [Category C] [PremonoidalCategory C] [ChosenFiniteCoproducts C]
          [SymmetricCategory' C] [Iterate C] [E : Elgot2 C ε]
          [M : Model φ α ε C]
+
+theorem Ctx?.Split.den_comm {Γ Δ Ξ : Ctx? α} (σ : Γ.Split Δ Ξ)
+  : σ.den (C := C) ≫ (β'_ _ _).hom = σ.comm.den
+  := by induction σ with
+  | nil => simp [Ctx?.den]; premonoidal_coherence
+  | cons σ σv I =>
+    calc
+      _ = (σ.den (C := C) ⊗ σv.den)
+        ≫ (βi_ _ _ _ _).hom
+        ≫ (βi_ _ _ _ _).hom
+        ≫ (β'_ _ _).hom ▷ _
+        ≫ _ ◁ (β'_ _ _).hom
+        ≫ (βi_ _ _ _ _).hom
+        := by
+          simp only [
+            den, Category.assoc, tensorHom_def, assoc_inner, swap_inner, Ctx?.den, Ctx?.ety, Ty.den,
+            BraidedCategory'.braiding_tensor_left, BraidedCategory'.braiding_tensor_right,
+          ]
+          premonoidal
+      _ = (σ.comm.den (C := C) ⊗ σv.comm.den)
+        ≫ (βi_ _ _ _ _).hom
+        := by
+        simp only [
+          MonoidalCategory'.swap_inner_swap_inner_assoc, tensorHom_def_of_left, Category.assoc,
+          <-PremonoidalCategory.comp_whiskerRight_assoc, I
+        ]
+        rw [
+          Central.left_exchange_assoc, <-PremonoidalCategory.whiskerLeft_comp_assoc,
+          Var?.Split.den_comm
+        ]
 
 set_option maxHeartbeats 1000000000 in
 theorem Ctx?.Split.assoc_coherence {Γ₁₂₃ Γ₁₂ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}

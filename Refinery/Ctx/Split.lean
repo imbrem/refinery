@@ -6,8 +6,8 @@ variable [HasQuant α]
 
 inductive Var?.Split : Var? α → Var? α → Var? α → Type _
   | neither {A q} : del ⟨A, q⟩ → Split ⟨A, q⟩ ⟨A, 0⟩ ⟨A, 0⟩
-  | left {v w} (h : v ≤ w) : Split v w v.erase
-  | right {v w} (h : v ≤ w) : Split v v.erase w
+  | left {A q w} (h : Wk ⟨A, q⟩ w) : Split ⟨A, q⟩ w ⟨A, 0⟩
+  | right {A q w} (h : Wk ⟨A, q⟩ w) : Split ⟨A, q⟩ ⟨A, 0⟩ w
   | sboth {u v w} (hu : u.scopy) (hv : u ≤ v) (hw : u ≤ w) : Split u v w
 
 abbrev Var?.splitN (v : Var? α) [hv : v.del] : v.Split v.erase v.erase := .neither hv
@@ -33,10 +33,10 @@ theorem Var?.Split.used_of_right {u v w : Var? α} (σ : u.Split v w) (h : w.use
   <;> first | assumption | cases h | (apply Var?.used.anti (hw := by assumption); assumption)
 
 theorem Var?.Split.erase_eq_left {u v w : Var? α} (σ : u.Split v w)
-  : u.erase = v.erase := by cases σ <;> simp [*]; rename_i h; rw [h.ty]; rename_i h _; rw [h.ty]
+  : u.erase = v.erase := by cases σ <;> simp [*]; rename_i h; rw [<-h.ty]; rename_i h _; rw [h.ty]
 
 theorem Var?.Split.erase_eq_right {u v w : Var? α} (σ : u.Split v w)
-  : u.erase = w.erase := by cases σ <;> simp [*]; rename_i h; rw [h.ty]; rename_i _ h; rw [h.ty]
+  : u.erase = w.erase := by cases σ <;> simp [*]; rename_i h; rw [<-h.ty]; rename_i _ h; rw [h.ty]
 
 theorem Var?.Split.erase_eq_both {u v w : Var? α} (σ : u.Split v w)
   : v.erase = w.erase := by rw [<-σ.erase_eq_left, <-σ.erase_eq_right]
@@ -156,18 +156,108 @@ abbrev Var?.Split.cast_right {u v w w' : Var? α}
   : u.Split v w'
   := σ.cast rfl rfl hw
 
-def Var?.Split.wk {u' u v w : Var? α} (ρ : u' ≤ u) : u.Split v w → u'.Split v w
-  | .neither h => (Split.neither (h.anti ρ)).cast (by simp [ρ.ty]) (by rw [ρ.ty]) (by rw [ρ.ty])
-  | .left h => (Split.left (le_trans ρ h)).cast_right ρ.erase_eq
-  | .right h => (Split.right (le_trans ρ h)).cast_left ρ.erase_eq
-  | .sboth hu hv hw => .sboth (hu.anti ρ) (le_trans ρ hv) (le_trans ρ hw)
+def Var?.Split.wkIn {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.Split v w) : u'.Split v w
+  := match u', u, v, w, σ with
+  | _, _, _, _, .neither h => (Split.neither (h.anti ρ)).cast (by simp [ρ.ty]) (by rw [ρ.ty]) (by rw [ρ.ty])
+  | _, _, _, _, .left h => (Split.left (le_trans ρ h)).cast_right ρ.erase_eq
+  | _, _, _, _, .right h => (Split.right (le_trans ρ h)).cast_left ρ.erase_eq
+  | _, _, _, _, .sboth hu hv hw => .sboth (hu.anti ρ) (le_trans ρ hv) (le_trans ρ hw)
+
+def Var?.Split.wkOutL {u v v' w : Var? α} (ρ : v ≤ v') : u.Split v w → u.Split v' w
+  | .neither h => (Split.neither h).cast_left ρ.eq_zero.symm
+  | .left h => .left (h.comp ρ)
+  | .right h => (Split.right h).cast_left ρ.eq_erase.symm
+  | .sboth hu hv hw => .sboth hu (hv.comp ρ) hw
 
 @[simp]
-def Var?.Split.comm {u v w : Var? α} : u.Split v w → u.Split w v
-  | .neither h => .neither h
-  | .left h => .right h
-  | .right h => .left h
-  | .sboth hu hv hw => .sboth hu hw hv
+theorem Var?.Split.wkOutL_neither {A : Ty α} {q : EQuant} (ρ : Wk ⟨A, 0⟩ ⟨B, 0⟩) (h : del ⟨A, q⟩)
+  : (Split.neither h).wkOutL ρ = (Split.neither h).cast_left ρ.eq_zero.symm  := rfl
+
+@[simp]
+theorem Var?.Split.wkOutL_left {u v : Var? α} (ρ : v ≤ v') (h : u ≤ v)
+  : (Split.left h).wkOutL ρ = .left (h.comp ρ)
+  := rfl
+
+@[simp]
+theorem Var?.Split.wkOutL_right {u w : Var? α} (ρ : u.erase ≤ v') (h : u ≤ w)
+  : (Split.right h).wkOutL ρ = (Split.right h).cast_left ρ.eq_erase.symm
+  := rfl
+
+@[simp]
+theorem Var?.Split.wkOutL_sboth
+  {u v w : Var? α} (ρ : v ≤ v') (hu : u.scopy) (hv : u ≤ v) (hw : u ≤ w)
+  : (Split.sboth hu hv hw).wkOutL ρ = .sboth hu (hv.trans ρ) hw
+  := rfl
+
+def Var?.Split.wkOutR {u v w w' : Var? α} (ρ : w ≤ w') : u.Split v w → u.Split v w'
+  | .neither h => ρ.eq_zero ▸ .neither h
+  | .left h => ρ.eq_erase ▸ .left h
+  | .right h => .right (h.comp ρ)
+  | .sboth hu hv hw => .sboth hu hv (hw.trans ρ)
+
+@[simp]
+theorem Var?.Split.wkOutR_neither {A : Ty α} {q : EQuant} (ρ : Wk ⟨A, 0⟩ ⟨B, 0⟩) (h : del ⟨A, q⟩)
+  : (Split.neither h).wkOutR ρ = (Split.neither h).cast_right ρ.eq_zero.symm
+  := by cases ρ.ty; rfl
+
+@[simp]
+theorem Var?.Split.wkOutR_left {u v : Var? α} (ρ : u.erase ≤ w') (h : u ≤ v)
+  : (Split.left h).wkOutR ρ = (Split.left h).cast_right ρ.eq_erase.symm
+  := rfl
+
+@[simp]
+theorem Var?.Split.wkOutR_right {u w : Var? α} (ρ : w ≤ w') (h : u ≤ w)
+  : (Split.right h).wkOutR ρ = .right (h.trans ρ)
+  := rfl
+
+@[simp]
+theorem Var?.Split.wkOutR_sboth {u v w : Var? α} (ρ : w ≤ w') (hu : u.scopy) (hv : u ≤ v) (hw : u ≤ w)
+  : (Split.sboth hu hv hw).wkOutR ρ = .sboth hu hv (hw.trans ρ)
+  := rfl
+
+def Var?.Split.wkOut {u v v' w w' : Var? α} (σ : u.Split v w) (ρv : v ≤ v') (ρw : w ≤ w')
+  : u.Split v' w' := (σ.wkOutL ρv).wkOutR ρw
+
+@[simp]
+theorem Var?.Split.wkOut_neither
+   {A : Ty α} {q : EQuant} (h : del ⟨A, q⟩) (ρv : Wk ⟨A, 0⟩ ⟨B, 0⟩) (ρw : Wk ⟨A, 0⟩ ⟨C, 0⟩)
+  : (Split.neither h).wkOut ρv ρw = (Split.neither h).cast rfl ρv.eq_zero.symm ρw.eq_zero.symm
+  := by cases ρv.eq_zero; cases ρw.eq_zero; rfl
+
+@[simp]
+theorem Var?.Split.wkOut_left {u v : Var? α} (h : u ≤ v) (ρv : v ≤ v') (ρw : u.erase ≤ w')
+  : (Split.left h).wkOut ρv ρw = (Split.left (h.trans ρv)).cast_right ρw.eq_erase.symm
+  := rfl
+
+@[simp]
+theorem Var?.Split.wkOut_right {u w : Var? α} (h : u ≤ w) (ρv : u.erase ≤ v') (ρw : w ≤ w')
+  : (Split.right h).wkOut ρv ρw = (Split.right (h.trans ρw)).cast_left ρv.eq_erase.symm
+  := by cases ρv.eq_erase; rfl
+
+@[simp]
+theorem Var?.Split.wkOut_sboth {u v w : Var? α} (hu : u.scopy) (hv : u ≤ v) (hw : u ≤ w)
+  (ρv : v ≤ v') (ρw : w ≤ w')
+  : (Split.sboth hu hv hw).wkOut ρv ρw = .sboth hu (hv.trans ρv) (hw.trans ρw)
+  := rfl
+
+theorem Var?.Split.wkOutL_wkOutR {u v v' w w' : Var? α} (σ : u.Split v w) (ρv : v ≤ v') (ρw : w ≤ w')
+  : (σ.wkOutL ρv).wkOutR ρw = σ.wkOut ρv ρw := rfl
+
+theorem Var?.Split.wkOutR_wkOutL {u v v' w w' : Var? α}
+  (σ : u.Split v w) (ρv : v ≤ v') (ρw : w ≤ w')
+  : (σ.wkOutR ρw).wkOutL ρv = σ.wkOut ρv ρw
+  := by cases σ with
+  | left => cases ρw.eq_zero; rfl
+  | right => cases ρv.eq_zero; rfl
+  | neither => cases ρv.eq_zero; cases ρw.eq_zero; rfl
+  | _ => rfl
+
+@[simp]
+def Var?.Split.comm : {u v w : Var? α} → u.Split v w → u.Split w v
+  | _, _, _, .neither h => .neither h
+  | _, _, _, .left h => .right h
+  | _, _, _, .right h => .left h
+  | _, _, _, .sboth hu hv hw => .sboth hu hw hv
 
 @[simp]
 def Ctx?.Split.comm {Γ Δ Ξ : Ctx? α} : Γ.Split Δ Ξ → Γ.Split Ξ Δ
@@ -226,7 +316,39 @@ def Ctx?.Split.wk {Γ' Γ Δ Ξ : Ctx? α}
   : (ρ : Γ'.Wk Γ) → (σ : Γ.Split Δ Ξ) → Γ'.Split (σ.wkLeft ρ) (σ.wkRight ρ)
   | .nil, .nil => .nil
   | .skip ρ hv, σ => .cons (σ.wk ρ) (.neither hv)
-  | .cons (v := v) ρ hvw, .cons σ hlr => .cons (σ.wk ρ) (hlr.wk hvw)
+  | .cons (v := v) ρ hvw, .cons σ hlr => .cons (σ.wk ρ) (hlr.wkIn hvw)
+
+def Ctx?.Split.wkIn {Γ' Γ Δ Ξ : Ctx? α}
+  : Γ'.PWk Γ → Γ.Split Δ Ξ → Γ'.Split Δ Ξ
+  | .nil, .nil => .nil
+  | .cons (v := v) ρ hvw, .cons σ hlr => .cons (σ.wkIn ρ) (hlr.wkIn hvw)
+
+@[simp]
+def Ctx?.Split.wkOutL {Γ Δ Δ' Ξ : Ctx? α}
+  : Γ.Split Δ Ξ → Δ.PWk Δ' → Γ.Split Δ' Ξ
+  | .nil, .nil => .nil
+  | .cons σ hlr, .cons ρ hvw => .cons (σ.wkOutL ρ) (hlr.wkOutL hvw)
+
+@[simp]
+def Ctx?.Split.wkOutR {Γ Δ Ξ Ξ' : Ctx? α}
+  : Γ.Split Δ Ξ → Ξ.PWk Ξ' → Γ.Split Δ Ξ'
+  | .nil, .nil => .nil
+  | .cons σ hlr, .cons ρ hvw => .cons (σ.wkOutR ρ) (hlr.wkOutR hvw)
+
+@[simp]
+def Ctx?.Split.wkOut {Γ Δ Δ' Ξ Ξ' : Ctx? α}
+  : Γ.Split Δ Ξ → Δ.PWk Δ' → Ξ.PWk Ξ' → Γ.Split Δ' Ξ'
+  | .nil, .nil, .nil => .nil
+  | .cons σ hlr, .cons ρ hvw, .cons ρ' hvw' => .cons (σ.wkOut ρ ρ') (hlr.wkOut hvw hvw')
+
+theorem Ctx?.Split.wkOutL_wkOutR  {Γ Δ Δ' Ξ Ξ' : Ctx? α}
+  (σ : Γ.Split Δ Ξ) (ρ : Δ.PWk Δ') (ρ' : Ξ.PWk Ξ') : (σ.wkOutL ρ).wkOutR ρ' = σ.wkOut ρ ρ'
+  := by induction σ  generalizing Δ' Ξ' <;> cases ρ <;> cases ρ' <;> simp [Var?.Split.wkOut, *]
+
+theorem Ctx?.Split.wkOutR_wkOutL {Γ Δ Δ' Ξ Ξ' : Ctx? α}
+  (σ : Γ.Split Δ Ξ) (ρ : Δ.PWk Δ') (ρ' : Ξ.PWk Ξ') : (σ.wkOutR ρ').wkOutL ρ = σ.wkOut ρ ρ'
+  := by induction σ generalizing Δ' Ξ' <;> cases ρ <;> cases ρ'
+        <;> simp [Var?.Split.wkOutR_wkOutL, *]
 
 @[simp]
 def Ctx?.Split.leftWk {Γ' Γ Δ Ξ : Ctx? α} : (ρ : Γ'.Wk Γ) → (σ : Γ.Split Δ Ξ) → (σ.wkLeft ρ).Wk Δ

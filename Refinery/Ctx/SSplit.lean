@@ -13,17 +13,17 @@ inductive Var?.SSplit : Var? α → Var? α → Var? α → Type _
   | sboth {v} : v.scopy → SSplit v v v
 
 def Var?.SSplit.unstrict {u v w : Var? α} : u.SSplit v w → u.Split v w
-  | .left _ => .left (le_refl _)
-  | .right _ => .right (le_refl _)
-  | .sboth h => .sboth h (le_refl _) (le_refl _)
+  | .left _ => .left (Wk.refl _)
+  | .right _ => .right (Wk.refl _)
+  | .sboth h => .sboth h (Wk.refl _) (Wk.refl _)
 
 @[simp]
 theorem Var?.SSplit.unstrict_left {u : Var? α}
-  : (SSplit.left u).unstrict = .left (le_refl _) := rfl
+  : (SSplit.left u).unstrict = .left (Wk.refl _) := rfl
 
 @[simp]
 theorem Var?.SSplit.unstrict_right {u : Var? α}
-  : (SSplit.right u).unstrict = .right (le_refl _) := rfl
+  : (SSplit.right u).unstrict = .right (Wk.refl _) := rfl
 
 @[simp]
 theorem Var?.SSplit.unstrict_sboth {u : Var? α} (h : u.scopy)
