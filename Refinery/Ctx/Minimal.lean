@@ -242,6 +242,10 @@ def Ctx?.ZWk.comp {Γ Δ Ξ : Ctx? α} : ZWk Γ Δ → ZWk Δ Ξ → ZWk Γ Ξ
   | .nil, .nil => .nil
   | .cons ρ h, .cons ρ' h' => .cons (comp ρ ρ') (h.comp h')
 
+@[simp]
+theorem Ctx?.ZWk.toPWk_refl {Γ : Ctx? α} : (ZWk.refl Γ).toPWk = PWk.refl Γ := by
+  induction Γ <;> simp [*]
+
 def Ctx?.ZWk.tail {Γ Δ : Ctx? α} {v}
   : Ctx?.ZWk (Ctx?.cons Γ v) Δ → Ctx?.ZWk Γ Δ.tail
   | .cons ρ _ => ρ
@@ -392,6 +396,36 @@ theorem Ctx?.SSplit.zqeq_right {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) : Γ.
 
 theorem Ctx?.SSplit.zqeq_out {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) : Δ.ZQEq Ξ := by
   induction σ <;> simp [*]; apply Var?.SSplit.zqeq_out; assumption
+
+theorem Var?.SSplit.zqeq_left_of_eq {u v w v' w' : Var? α} (σ : u.SSplit v w) (σ' : u.SSplit v' w')
+  : v.ZQEq v' := by
+  cases σ <;> cases σ' <;> simp
+
+theorem Var?.SSplit.zqeq_right_of_eq {u v w v' w' : Var? α} (σ : u.SSplit v w) (σ' : u.SSplit v' w')
+  : w.ZQEq w' := by
+  cases σ <;> cases σ' <;> simp
+
+theorem Ctx?.SSplit.zqeq_left_of_eq  {Γ Δ Ξ Δ' Ξ' : Ctx? α}
+  (σ : Γ.SSplit Δ Ξ) (σ' : Γ.SSplit Δ' Ξ')
+  : Δ.ZQEq Δ' := by
+  induction σ generalizing Δ' Ξ' with
+  | nil => cases σ'; constructor
+  | cons σ h I => cases σ' with
+  | cons σ' h' =>
+    constructor
+    apply I σ'
+    apply h.zqeq_left_of_eq h'
+
+theorem Ctx?.SSplit.zqeq_right_of_eq {Γ Δ Ξ Δ' Ξ' : Ctx? α}
+  (σ : Γ.SSplit Δ Ξ) (σ' : Γ.SSplit Δ' Ξ')
+  : Ξ.ZQEq Ξ' := by
+  induction σ generalizing Δ' Ξ' with
+  | nil => cases σ'; constructor
+  | cons σ h I => cases σ' with
+  | cons σ' h' =>
+    constructor
+    apply I σ'
+    apply h.zqeq_right_of_eq h'
 
 @[simp]
 theorem Ctx?.IsZero.del {Γ : Ctx? α} (h : Γ.IsZero) : Γ.del := by induction h <;> simp [*]
@@ -698,3 +732,26 @@ def Ctx?.ZWk.toMSplit {Γ Δ Ξ : Ctx? α} (ρ : Γ.ZWk Δ) (ρ' : Γ.ZWk Ξ) : 
 
 def Ctx?.ZWk.wkMSplit {Γ Δ Ξ : Ctx? α} (ρ : Γ.ZWk Δ) (ρ' : Γ.ZWk Ξ) : Γ.ZWk (ρ.mSplitCtx ρ')
   := Γ.bothMSplit.fuseWk ρ ρ'
+
+theorem Var?.ZWk.shunt_zqeq {u v w : Var? α} (h : u.ZWk v) (h' : u.ZWk w) : v.ZQEq w
+  := by cases h <;> cases h' <;> simp
+
+theorem Ctx?.ZWk.shunt_zqeq {Γ Δ Ξ : Ctx? α} (h : Γ.ZWk Δ) (h' : Γ.ZWk Ξ) : Δ.ZQEq Ξ
+  := by induction h generalizing Ξ with
+  | nil => cases h'; constructor
+  | cons h t I =>
+    cases h'; constructor; apply I; assumption; apply Var?.ZWk.shunt_zqeq <;> assumption
+
+theorem Var?.MSplit.zqeq_left_of_eq {u v w v' w' : Var? α} (σ : u.MSplit v w) (σ' : u.MSplit v' w')
+  : v.ZQEq v' := σ.zwkLeft.shunt_zqeq σ'.zwkLeft
+
+theorem Var?.MSplit.zqeq_right_of_eq {u v w v' w' : Var? α} (σ : u.MSplit v w) (σ' : u.MSplit v' w')
+  : w.ZQEq w' := σ.zwkRight.shunt_zqeq σ'.zwkRight
+
+theorem Ctx?.MSplit.zqeq_left_of_eq  {Γ Δ Ξ Δ' Ξ' : Ctx? α}
+  (σ : Γ.MSplit Δ Ξ) (σ' : Γ.MSplit Δ' Ξ')
+  : Δ.ZQEq Δ' := σ.zwkLeft.shunt_zqeq σ'.zwkLeft
+
+theorem Ctx?.MSplit.zqeq_right_of_eq {Γ Δ Ξ Δ' Ξ' : Ctx? α}
+  (σ : Γ.MSplit Δ Ξ) (σ' : Γ.MSplit Δ' Ξ')
+  : Ξ.ZQEq Ξ' := σ.zwkRight.shunt_zqeq σ'.zwkRight

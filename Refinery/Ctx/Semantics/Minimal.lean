@@ -39,18 +39,36 @@ theorem Ctx?.SAt.den_cast_trg {v v' : Var? α} {Γ : Ctx? α} {n} (hv : v = v') 
 theorem Ctx?.SAt.den_cast_idx {v : Var? α} {Γ : Ctx? α} {n n'} (hn : n = n') (x : Γ.SAt v n)
   : (x.cast_idx hn).den (C := C) = x.den := by cases hn; simp
 
-@[simp]
 def Var?.ZWk.den {u v : Var? α} : u.ZWk v → ((v⟦ u ⟧ : C) ⟶ v⟦ v ⟧)
   | .refl _ => 𝟙 _
   | .erase h => haveI _ := h.ety_aff; !_ _
+
+@[simp]
+theorem Var?.ZWk.den_refl {v : Var? α} : (ZWk.refl v).den (C := C) = 𝟙 _ := rfl
+
+@[simp]
+theorem Var?.ZWk.den_erase {A : Ty α} {q : EQuant} (h : Var?.del ⟨A, q⟩)
+  : (Var?.ZWk.erase h).den (C := C) = haveI _ := h.ety_aff; !_ _ := rfl
+
+theorem Var?.ZWk.den_toWk {u v : Var? α} (h : u.ZWk v) : h.toWk.den (C := C) = h.den := by
+  cases h <;> simp
 
 @[simp]
 def Ctx?.ZWk.den {Γ : Ctx? α} {Δ : Ctx? α} : Γ.ZWk Δ → ((g⟦ Γ ⟧ : C) ⟶ g⟦ Δ ⟧)
   | .nil => 𝟙 (𝟙_ C)
   | .cons ρ h => ρ.den ⊗ h.den
 
+theorem Ctx?.ZWk.den_nil : (Ctx?.ZWk.nil).den (M := M) = 𝟙 (𝟙_ C) := rfl
+
+theorem Ctx?.ZWk.den_cons {Γ Δ : Ctx? α} (ρ : Γ.ZWk Δ) {v w : Var? α} (h : v.ZWk w)
+  : (Ctx?.ZWk.cons ρ h).den = ρ.den (C := C) ⊗ h.den := rfl
+
 theorem Ctx?.ZWk.den_toPWk {Γ : Ctx? α} {Δ : Ctx? α} (ρ : Γ.ZWk Δ) : ρ.toPWk.den (C := C) = ρ.den
   := by induction ρ with | nil => rfl | cons ρ h => cases h <;> simp [*]
+
+@[simp]
+theorem Ctx?.ZWk.den_refl {Γ : Ctx? α} : (ZWk.refl Γ).den (C := C) = 𝟙 _ := by
+  rw [<-den_toPWk]; simp
 
 theorem Ctx?.ZWk.coherence {Γ : Ctx? α} {Δ : Ctx? α} (ρ ρ' : Γ.ZWk Δ)
   : ρ.den (C := C) = ρ'.den

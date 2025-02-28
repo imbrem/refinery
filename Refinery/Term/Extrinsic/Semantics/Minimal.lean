@@ -54,11 +54,14 @@ theorem SDeriv.den_cast_term {Γ : Ctx? α} {A : Ty α} {a a' : Term φ (Ty α)}
   : (D.cast_term ha).den (C := C) = D.den
   := by cases ha; rfl
 
+theorem Deriv.den_zwk {Γ Δ : Ctx? α} (ρ : Γ.ZWk Δ) {A : Ty α} {a : Term φ (Ty α)} (D : Δ ⊢ a : A)
+  : (D.pwk ρ).den (C := C) = ρ.den ≫ D.den := by rw [<-ρ.den_toPWk, den_pwk]
+
 theorem SDeriv.den_unstrict {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ₛ a : A)
   : D.unstrict.den = D.den (C := C) := by
   induction D <;> simp [
-    den, unstrict, Deriv.den, Deriv.den_pwk, tensorHom_def, Ctx?.SAt.den_unstrict,
-    Ctx?.ZWk.den_toPWk, *]
+    den, unstrict, Deriv.den, Deriv.den_pwk, Deriv.den_zwk, tensorHom_def, Ctx?.SAt.den_unstrict,
+    Ctx?.ZWk.den_toPWk, <-Var?.ZWk.den_toWk, *]
 
 def FDeriv.den {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ₛ' a : A)
   : (g⟦ Γ ⟧ : C) ⟶ t⟦ A ⟧ := D.drop.den ≫ D.deriv.den
@@ -67,25 +70,25 @@ theorem FDeriv.den_toDeriv {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D :
   : D.toDeriv.den (C := C) = D.den := by simp only [toDeriv, Deriv.den_pwk, Ctx?.ZWk.den_toPWk,
     SDeriv.den_unstrict, den]
 
-theorem SDeriv.coherence {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
-  (D D' : Γ ⊢ₛ a : A) : D.den (C := C) = D'.den := by induction D with
-  | bv x => cases D' with | bv x' => rw [Subsingleton.elim x x']
-  | op hf => cases D' with | op hf' =>
-    cases hf.trg; cases hf'.trg; cases hf.src; cases hf'.src
-    simp only [den]; congr 1; apply_assumption
-  | let₁ =>
-    cases D'
-    simp only [den]
-    rename Ctx?.SSplit _ _ _ => hΓ
-    sorry
-  | _ => sorry
+-- theorem SDeriv.coherence {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
+--   (D D' : Γ ⊢ₛ a : A) : D.den (C := C) = D'.den := by induction D with
+--   | bv x => cases D' with | bv x' => rw [Subsingleton.elim x x']
+--   | op hf => cases D' with | op hf' =>
+--     cases hf.trg; cases hf'.trg; cases hf.src; cases hf'.src
+--     simp only [den]; congr 1; apply_assumption
+--   | let₁ =>
+--     cases D'
+--     simp only [den]
+--     rename Ctx?.SSplit _ _ _ => hΓ
+--     sorry
+--   | _ => sorry
 
-theorem FDeriv.coherence {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
-  (D D' : Γ ⊢ₛ' a : A) : D.den (C := C) = D'.den := sorry
+-- theorem FDeriv.coherence {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
+--   (D D' : Γ ⊢ₛ' a : A) : D.den (C := C) = D'.den := sorry
 
-theorem Deriv.den_factor {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ a : A)
-  : D.factor.den (C := C) = D.den := sorry
+-- theorem Deriv.den_factor {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ a : A)
+--   : D.factor.den (C := C) = D.den := sorry
 
-theorem Deriv.coherence {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
-  (D D' : Γ ⊢ a : A) : D.den (C := C) = D'.den
-  := by rw [<-D.den_factor, <-D'.den_factor, D.factor.coherence D'.factor]
+-- theorem Deriv.coherence {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
+--   (D D' : Γ ⊢ a : A) : D.den (C := C) = D'.den
+--   := by rw [<-D.den_factor, <-D'.den_factor, D.factor.coherence D'.factor]

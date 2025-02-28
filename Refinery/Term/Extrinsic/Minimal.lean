@@ -15,7 +15,7 @@ inductive SDeriv : Ctx? α → Ty α → Term φ (Ty α) → Type _
   | op {Γ A B f a} : S.FnTy f A B → SDeriv Γ A a → SDeriv Γ B (.op f a)
   | let₁ {Γ Γl Γr A B a b v} :
     Γ.SSplit Γl Γr →
-    (hq : (Var?.mk A ⊤).Wk v) →
+    (hq : (Var?.mk A ⊤).ZWk v) →
     SDeriv Γr A a → SDeriv (Γl.cons v) B b → SDeriv Γ B (.let₁ a A b)
   | unit {Γ} : Γ.IsZero → SDeriv Γ .unit .unit
   | pair {Γ Γl Γr A B a b} :
@@ -23,8 +23,8 @@ inductive SDeriv : Ctx? α → Ty α → Term φ (Ty α) → Type _
     SDeriv Γl A a → SDeriv Γr B b → SDeriv Γ (.tensor A B) (.pair a b)
   | let₂ {Γ Γl Γr A B C a b v w} :
     Γ.SSplit Γl Γr →
-    (hqa : (Var?.mk A ⊤).Wk v) →
-    (hqb : (Var?.mk B ⊤).Wk w) →
+    (hqa : (Var?.mk A ⊤).ZWk v) →
+    (hqb : (Var?.mk B ⊤).ZWk w) →
     SDeriv Γr (.tensor A B) a → SDeriv ((Γl.cons v).cons w) C b
       → SDeriv Γ C (.let₂ a A B b)
   | inl {Γ A B a} : SDeriv Γ A a → SDeriv Γ (.coprod A B) (.inl A B a)
@@ -32,14 +32,14 @@ inductive SDeriv : Ctx? α → Ty α → Term φ (Ty α) → Type _
   | case {Γ Γl Γll Γlr Γr A B C a b c v w} :
     Γ.SSplit Γl Γr →
     Γl.MSplit Γll Γlr →
-    (hqa : (Var?.mk A ⊤).Wk v) →
-    (hqb : (Var?.mk B ⊤).Wk w) →
+    (hqa : (Var?.mk A ⊤).ZWk v) →
+    (hqb : (Var?.mk B ⊤).ZWk w) →
     SDeriv Γr (.coprod A B) a → SDeriv (Γll.cons v) C b → SDeriv (Γlr.cons w) C c
       → SDeriv Γ C (.case a A B b c)
   | abort {Γ A a} : SDeriv Γ .empty a → SDeriv Γ A (.abort A a)
   | iter {Γ Γl Γr A B a b v} :
     Γ.SSplit Γl Γr →
-    (hq : (Var?.mk A ⊤).Wk v) →
+    (hq : (Var?.mk A ⊤).ZWk v) →
     Γl.copy → Γl.del →
     SDeriv Γr A a → SDeriv (Γl.cons v) (.coprod B A) b → SDeriv Γ B (.iter a A B b)
 
@@ -55,19 +55,19 @@ notation Γ "⊢ₛ' " a ":" A => FDeriv Γ A a
 def SDeriv.unstrict {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} : (Γ ⊢ₛ a : A) → Γ ⊢ a : A
   | .bv hv => .bv hv.unstrict
   | .op hf da => .op hf da.unstrict
-  | .let₁ hΓ hq da db => .let₁ hΓ da.unstrict (db.unstrict.pwk ((Ctx?.PWk.refl _).cons hq))
+  | .let₁ hΓ hq da db => .let₁ hΓ da.unstrict (db.unstrict.pwk ((Ctx?.ZWk.refl _).cons hq).toPWk)
   | .unit hv => .unit hv.del
   | .pair hΓ da db => .pair hΓ da.unstrict db.unstrict
   | .let₂ hΓ hqa hqb da db =>
-    .let₂ hΓ da.unstrict (db.unstrict.pwk (((Ctx?.PWk.refl _).cons hqa).cons hqb))
+    .let₂ hΓ da.unstrict (db.unstrict.pwk (((Ctx?.ZWk.refl _).cons hqa).cons hqb).toPWk)
   | .inl da => .inl da.unstrict
   | .inr db => .inr db.unstrict
   | .case hΓ hΓl hqa hqb da db dc =>
-    .case hΓ da.unstrict  (db.unstrict.pwk (hΓl.zwkLeft.toPWk.cons hqa))
-                          (dc.unstrict.pwk (hΓl.zwkRight.toPWk.cons hqb))
+    .case hΓ da.unstrict  (db.unstrict.pwk (hΓl.zwkLeft.cons hqa))
+                          (dc.unstrict.pwk (hΓl.zwkRight.cons hqb))
   | .abort da => .abort da.unstrict
   | .iter hΓ hq hc hd da db =>
-    .iter hΓ hc hd da.unstrict (db.unstrict.pwk ((Ctx?.PWk.refl _).cons hq))
+    .iter hΓ hc hd da.unstrict (db.unstrict.pwk ((Ctx?.ZWk.refl _).cons hq).toPWk)
 
 def FDeriv.toDeriv {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ₛ' a : A) : Γ ⊢ a : A
   := D.deriv.unstrict.pwk D.drop
@@ -146,7 +146,7 @@ theorem SDeriv.ueq {Γ Γ' : Ctx? α} {A A' : Ty α} {a : Term φ (Ty α)}
     cases D' with
     | case σ' hΓl' =>
       (try cases_type* Var?)
-      (repeat rename (Var?.Wk _ _) => ρ; cases ρ.ty; clear ρ)
+      (repeat rename (Var?.ZWk _ _) => ρ; cases ρ.ty; clear ρ)
       apply σ.in_ueq σ'
       apply hΓl.in_ueq hΓl'
       apply Ctx?.UEq.tail; apply_assumption
@@ -172,7 +172,7 @@ theorem SDeriv.ueq {Γ Γ' : Ctx? α} {A A' : Ty α} {a : Term φ (Ty α)}
              | (apply Ctx?.UEq.tail; apply Ctx?.UEq.tail; apply_assumption))
       assumption
       (try cases_type* Var?)
-      (repeat rename (Var?.Wk _ _) => ρ; cases ρ.ty; clear ρ)
+      (repeat rename (Var?.ZWk _ _) => ρ; cases ρ.ty; clear ρ)
       (try simp only [Ctx?.TyEq.cons_iff, and_true])
       apply Ctx?.SSplit.shunt_left_ty_eq <;> assumption
       apply_assumption
@@ -197,6 +197,29 @@ theorem Deriv.ty_eq_of {Γ Γ' : Ctx? α} {a : Term φ (Ty α)} {A A' : Ty α}
         | (apply Ctx?.SSplit.shunt_left_ty_eq <;> assumption)
         | (apply Ctx?.SSplit.shunt_right_ty_eq <;> assumption))
   }
+
+theorem SDeriv.shunt_left_ctx_eq_ssplit {Γ Γl Γr Γl' Γr' : Ctx? α} {A A' : Ty α}
+  {a : Term φ (Ty α)} (σ : Γ.SSplit Γl Γr)
+  (σ' : Γ.SSplit Γl' Γr') (D : Γl ⊢ₛ a : A) (D' : Γl' ⊢ₛ a : A')
+  : Γl = Γl' := D.eq_of_zqeq D' (σ.zqeq_left_of_eq σ')
+
+theorem SDeriv.shunt_right_ctx_eq_ssplit {Γ Γl Γr Γl' Γr' : Ctx? α} {A A' : Ty α}
+  {a : Term φ (Ty α)} (σ : Γ.SSplit Γl Γr)
+  (σ' : Γ.SSplit Γl' Γr') (D : Γr ⊢ₛ a : A) (D' : Γr' ⊢ₛ a : A')
+  : Γr = Γr' := D.eq_of_zqeq D' (σ.zqeq_right_of_eq σ')
+
+theorem SDeriv.shunt_left_one_eq_ssplit {Γ Γl Γr Γl' Γr' : Ctx? α} {u v v' : Var? α} {A A' : Ty α}
+  {a : Term φ (Ty α)} (σ : Γ.SSplit Γl Γr)
+  (σ' : Γ.SSplit Γl' Γr') (hv : u.ZWk v) (hv' : u.ZWk v')
+  (D : Γl.cons v ⊢ₛ a : A) (D' : Γl'.cons v' ⊢ₛ a : A')
+  : Γl.cons v = Γl'.cons v' := D.eq_of_zqeq D' ((σ.zqeq_left_of_eq σ').cons (hv.shunt_zqeq hv'))
+
+theorem SDeriv.shunt_left_two_eq_ssplit {Γ Γl Γr Γl' Γr' : Ctx? α} {u₁ u₂ v w v' w' : Var? α}
+  {A A' : Ty α} {a : Term φ (Ty α)} (σ : Γ.SSplit Γl Γr)
+  (σ' : Γ.SSplit Γl' Γr') (hv : u₁.ZWk v) (hw : u₂.ZWk w) (hv' : u₁.ZWk v') (hw' : u₂.ZWk w')
+  (D : (Γl.cons v).cons w ⊢ₛ a : A) (D' : (Γl'.cons v').cons w' ⊢ₛ a : A')
+  : (Γl.cons v).cons w = (Γl'.cons v').cons w'
+  := D.eq_of_zqeq D' (((σ.zqeq_left_of_eq σ').cons (hv.shunt_zqeq hv')).cons (hw.shunt_zqeq hw'))
 
 theorem Deriv.ty_eq {Γ : Ctx? α} {a : Term φ (Ty α)} {A A' : Ty α}
   (D : Γ ⊢ a : A) (D' : Γ ⊢ a : A') : A = A' := D.ty_eq_of (Ctx?.TyEq.refl Γ) D'
@@ -223,7 +246,7 @@ def Deriv.factor {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
     let da := da.factor;
     match db.factor with
     | ⟨_, .cons ρ hvw, db⟩ =>
-      ⟨_, hΓ.fuseWk ρ da.drop, .let₁ (hΓ.fuse ρ da.drop) hvw.toWk da.deriv db⟩
+      ⟨_, hΓ.fuseWk ρ da.drop, .let₁ (hΓ.fuse ρ da.drop) hvw da.deriv db⟩
   | .unit (Γ := Γ) hv => ⟨_, Γ.eraseZWk, .unit (by simp)⟩
   | .pair hΓ da db =>
     let da := da.factor;
@@ -233,7 +256,7 @@ def Deriv.factor {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
     let da := da.factor;
     match db.factor with
     | ⟨_, .cons (.cons ρ h) h', db⟩ =>
-      ⟨_, hΓ.fuseWk ρ da.drop, .let₂ (hΓ.fuse ρ da.drop) h.toWk h'.toWk da.deriv db⟩
+      ⟨_, hΓ.fuseWk ρ da.drop, .let₂ (hΓ.fuse ρ da.drop) h h' da.deriv db⟩
   | .inl da => let da := da.factor; ⟨_, da.drop, .inl da.deriv⟩
   | .inr db => let db := db.factor; ⟨_, db.drop, .inr db.deriv⟩
   | .case hΓ da db dc =>
@@ -242,13 +265,13 @@ def Deriv.factor {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
     | ⟨_, .cons ρb hb, db⟩, ⟨_, .cons ρc hc, dc⟩ =>
       let ρ := ρb.wkMSplit ρc;
       ⟨_, hΓ.fuseWk ρ da.drop,
-        .case (hΓ.fuse ρ da.drop) (ρb.toMSplit ρc) hb.toWk hc.toWk da.deriv db dc⟩
+        .case (hΓ.fuse ρ da.drop) (ρb.toMSplit ρc) hb hc da.deriv db dc⟩
   | .abort da => let da := da.factor; ⟨_, da.drop, .abort da.deriv⟩
   | .iter hΓ hc hd da db =>
     let da := da.factor;
     match db.factor with
     | ⟨_, .cons ρ h, db⟩ =>
-      ⟨_, hΓ.fuseWk ρ da.drop, .iter (hΓ.fuse ρ da.drop) h.toWk ρ.copy ρ.del da.deriv db⟩
+      ⟨_, hΓ.fuseWk ρ da.drop, .iter (hΓ.fuse ρ da.drop) h ρ.copy ρ.del da.deriv db⟩
 
 end Term
 
