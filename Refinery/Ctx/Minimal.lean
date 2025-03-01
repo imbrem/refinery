@@ -661,6 +661,14 @@ theorem Ctx?.MSplit.zqeq_right {Γ Δ Ξ : Ctx? α} (σ : Γ.MSplit Δ Ξ) : Γ.
 theorem Ctx?.MSplit.zqeq_out {Γ Δ Ξ : Ctx? α} (σ : Γ.MSplit Δ Ξ) : Δ.ZQEq Ξ := by
   induction σ <;> simp [*]; apply Var?.MSplit.zqeq_out; assumption
 
+theorem Var?.MSplit.in_eq {u v w u' : Var? α} (σ : u.MSplit v w) (σ' : u'.MSplit v w) : u = u' := by
+  cases σ <;> cases σ' <;> rfl
+
+theorem Ctx?.MSplit.in_eq {Γ Δ Ξ Γ' : Ctx? α} (σ : Γ.MSplit Δ Ξ) (σ' : Γ'.MSplit Δ Ξ) : Γ = Γ'
+  := by induction σ generalizing Γ' with
+  | nil => cases σ'; rfl
+  | cons σΓ σv I => cases σ'; rw [I, σv.in_eq] <;> assumption
+
 def Ctx?.MSplit.zwkLeft {Γ Δ Ξ : Ctx? α}
   : Γ.MSplit Δ Ξ → Γ.ZWk Δ
   | .nil => .nil

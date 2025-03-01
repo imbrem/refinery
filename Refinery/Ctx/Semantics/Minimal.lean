@@ -53,6 +53,9 @@ theorem Var?.ZWk.den_erase {A : Ty α} {q : EQuant} (h : Var?.del ⟨A, q⟩)
 theorem Var?.ZWk.den_toWk {u v : Var? α} (h : u.ZWk v) : h.toWk.den (C := C) = h.den := by
   cases h <;> simp
 
+theorem Var?.ZWk.coherence {u v : Var? α} (ρ ρ' : u.ZWk v) : ρ.den (C := C) = ρ'.den
+  := by rw [<-ρ.den_toWk, <-ρ'.den_toWk]
+
 @[simp]
 def Ctx?.ZWk.den {Γ : Ctx? α} {Δ : Ctx? α} : Γ.ZWk Δ → ((g⟦ Γ ⟧ : C) ⟶ g⟦ Δ ⟧)
   | .nil => 𝟙 (𝟙_ C)
