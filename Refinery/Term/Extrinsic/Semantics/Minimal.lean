@@ -71,87 +71,91 @@ theorem FDeriv.den_toDeriv {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D :
     SDeriv.den_unstrict, den]
 
 --TODO: golf
--- theorem SDeriv.coherence {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
---   (D D' : Γ ⊢ₛ a : A) : D.den (C := C) = D'.den := by induction D with
---   | bv x => cases D' with | bv x' => rw [Subsingleton.elim x x']
---   | op hf => cases D' with | op hf' =>
---     cases hf.trg; cases hf'.trg; cases hf.src; cases hf'.src
---     simp only [den]; congr 1; apply_assumption
---   | let₁ σ ρ da db => cases D' with
---     | let₁ σ' ρ' da' db' =>
---       cases shunt_right_ctx_eq_ssplit σ σ' da da'
---       cases shunt_left_one_eq_ssplit σ σ' ρ ρ' db db'
---       simp only [den]
---       congr 1
---       apply Ctx?.SSplit.coherence
---       congr 2
---       apply_assumption
---       congr 1
---       apply Var?.ZWk.coherence
---       apply_assumption
---   | unit ρ => cases D' with | unit ρ' => rfl
---   | pair σ da db => cases D' with | pair σ' da' db' =>
---     cases shunt_left_ctx_eq_ssplit σ σ' da da'
---     cases shunt_right_ctx_eq_ssplit σ σ' db db'
---     simp only [den]
---     congr 1
---     apply Ctx?.SSplit.coherence
---     congr 1 <;> apply_assumption
---   | let₂ σ ρ₁ ρ₂ da db => cases D' with | let₂ σ' ρ₁' ρ₂' da' db' =>
---     cases shunt_right_ctx_eq_ssplit σ σ' da da'
---     cases shunt_left_two_eq_ssplit σ σ' ρ₁ ρ₂ ρ₁' ρ₂' db db'
---     simp only [den]
---     congr 1
---     apply Ctx?.SSplit.coherence
---     congr 2
---     apply_assumption
---     congr 2
---     congr 1
---     apply Var?.ZWk.coherence
---     apply_assumption
---     apply Var?.ZWk.coherence
---     apply_assumption
---   | inl da => cases D' with | inl da' => simp only [den]; congr 1; apply_assumption
---   | inr db => cases D' with | inr db' => simp only [den]; congr 1; apply_assumption
---   | case σ σm ρ₁ ρ₂ da db dc => cases D' with | case σ' σm' ρ₁' ρ₂' da' db' dc' =>
---     cases shunt_right_ctx_eq_ssplit σ σ' da da'
---     have h := db.eq_of_zqeq db' ?h
---     cases h
---     have h := dc.eq_of_zqeq dc' ?h'
---     cases h
---     cases σm.in_eq σm'
---     simp only [den]
---     congr 1
---     apply Ctx?.SSplit.coherence
---     congr 2
---     apply_assumption
---     congr 2
---     congr 1
---     apply Ctx?.ZWk.coherence
---     apply Var?.ZWk.coherence
---     apply_assumption
---     congr 1
---     apply Ctx?.ZWk.coherence
---     apply Var?.ZWk.coherence
---     apply_assumption
---     constructor
---     sorry
---     exact ρ₂.shunt_zqeq ρ₂'
---     constructor
---     sorry
---     exact ρ₁.shunt_zqeq ρ₁'
---   | abort da => cases D' with | abort da' => simp only [den]; congr 1; apply_assumption
---   | iter σ ρ hc hd da db => cases D' with | iter σ' ρ' hc' hd' da' db' =>
---     cases shunt_right_ctx_eq_ssplit σ σ' da da'
---     cases shunt_left_one_eq_ssplit σ σ' ρ ρ' db db'
---     simp only [den]
---     congr 1
---     apply Ctx?.SSplit.coherence
---     congr 2
---     apply_assumption
---     congr 5
---     apply Var?.ZWk.coherence
---     apply_assumption
+theorem SDeriv.coherence {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
+  (D D' : Γ ⊢ₛ a : A) : D.den (C := C) = D'.den := by induction D with
+  | bv x => cases D' with | bv x' => rw [Subsingleton.elim x x']
+  | op hf => cases D' with | op hf' =>
+    cases hf.trg; cases hf'.trg; cases hf.src; cases hf'.src
+    simp only [den]; congr 1; apply_assumption
+  | let₁ σ ρ da db => cases D' with
+    | let₁ σ' ρ' da' db' =>
+      cases shunt_right_ctx_eq_ssplit σ σ' da da'
+      cases shunt_left_one_eq_ssplit σ σ' ρ ρ' db db'
+      simp only [den]
+      congr 1
+      apply Ctx?.SSplit.coherence
+      congr 2
+      apply_assumption
+      congr 1
+      apply Var?.ZWk.coherence
+      apply_assumption
+  | unit ρ => cases D' with | unit ρ' => rfl
+  | pair σ da db => cases D' with | pair σ' da' db' =>
+    cases shunt_left_ctx_eq_ssplit σ σ' da da'
+    cases shunt_right_ctx_eq_ssplit σ σ' db db'
+    simp only [den]
+    congr 1
+    apply Ctx?.SSplit.coherence
+    congr 1 <;> apply_assumption
+  | let₂ σ ρ₁ ρ₂ da db => cases D' with | let₂ σ' ρ₁' ρ₂' da' db' =>
+    cases shunt_right_ctx_eq_ssplit σ σ' da da'
+    cases shunt_left_two_eq_ssplit σ σ' ρ₁ ρ₂ ρ₁' ρ₂' db db'
+    simp only [den]
+    congr 1
+    apply Ctx?.SSplit.coherence
+    congr 2
+    apply_assumption
+    congr 2
+    congr 1
+    apply Var?.ZWk.coherence
+    apply_assumption
+    apply Var?.ZWk.coherence
+    apply_assumption
+  | inl da => cases D' with | inl da' => simp only [den]; congr 1; apply_assumption
+  | inr db => cases D' with | inr db' => simp only [den]; congr 1; apply_assumption
+  | case σ σm ρ₁ ρ₂ da db dc => cases D' with | case σ' σm' ρ₁' ρ₂' da' db' dc' =>
+    cases shunt_right_ctx_eq_ssplit σ σ' da da'
+    have h := db.eq_of_zqeq db' ?h
+    cases h
+    have h := dc.eq_of_zqeq dc' ?h'
+    cases h
+    cases σm.in_eq σm'
+    simp only [den]
+    congr 1
+    apply Ctx?.SSplit.coherence
+    congr 2
+    apply_assumption
+    congr 2
+    congr 1
+    apply Ctx?.ZWk.coherence
+    apply Var?.ZWk.coherence
+    apply_assumption
+    congr 1
+    apply Ctx?.ZWk.coherence
+    apply Var?.ZWk.coherence
+    apply_assumption
+    constructor
+    apply Ctx?.ZQEq.zig
+    apply σ.zle_left.trans σm.zle_right
+    apply σ'.zle_left.trans σm'.zle_right
+    exact ρ₂.shunt_zqeq ρ₂'
+    constructor
+    apply Ctx?.ZQEq.zig
+    apply σ.zle_left.trans σm.zle_left
+    apply σ'.zle_left.trans σm'.zle_left
+    exact ρ₁.shunt_zqeq ρ₁'
+  | abort da => cases D' with | abort da' => simp only [den]; congr 1; apply_assumption
+  | iter σ ρ hc hd da db => cases D' with | iter σ' ρ' hc' hd' da' db' =>
+    cases shunt_right_ctx_eq_ssplit σ σ' da da'
+    cases shunt_left_one_eq_ssplit σ σ' ρ ρ' db db'
+    simp only [den]
+    congr 1
+    apply Ctx?.SSplit.coherence
+    congr 2
+    apply_assumption
+    congr 5
+    apply Var?.ZWk.coherence
+    apply_assumption
 
 -- theorem FDeriv.coherence {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
 --   (D D' : Γ ⊢ₛ' a : A) : D.den (C := C) = D'.den := sorry
