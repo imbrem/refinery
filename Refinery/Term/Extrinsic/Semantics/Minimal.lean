@@ -157,8 +157,14 @@ theorem SDeriv.coherence {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
     apply Var?.ZWk.coherence
     apply_assumption
 
--- theorem FDeriv.coherence {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
---   (D D' : Γ ⊢ₛ' a : A) : D.den (C := C) = D'.den := sorry
+theorem FDeriv.coherence {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
+  : (D D' : Γ ⊢ₛ' a : A) → D.den (C := C) = D'.den
+  | ⟨Γ, ρ, D⟩, ⟨Γ', ρ', D'⟩ => by
+    cases D.eq_of_zqeq D' (ρ.shunt_zqeq ρ')
+    simp only [den]
+    congr 1
+    apply Ctx?.ZWk.coherence
+    apply SDeriv.coherence
 
 -- theorem Deriv.den_factor {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ a : A)
 --   : D.factor.den (C := C) = D.den := sorry
