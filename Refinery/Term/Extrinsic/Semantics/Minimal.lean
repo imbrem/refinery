@@ -14,7 +14,7 @@ open ChosenFiniteCoproducts
 
 variable {φ : Type _} {α : outParam (Type _)} {ε : outParam (Type _)} [S : Signature φ α ε]
          {C : Type _} [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
-        [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε] [Model φ α ε C]
+        [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
 
 namespace Term
 
@@ -166,9 +166,99 @@ theorem FDeriv.coherence {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
     apply Ctx?.ZWk.coherence
     apply SDeriv.coherence
 
--- theorem Deriv.den_factor {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ a : A)
---   : D.factor.den (C := C) = D.den := sorry
+theorem Deriv.den_factor {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : Γ ⊢ a : A)
+  : D.factor.den (C := C) = D.den := by induction D with
+  | bv x => exact x.factor_den (C := C)
+  | op | inl | inr | abort =>
+    simp only [factor, den, FDeriv.den]; rw [SDeriv.den, <-Category.assoc]; congr
+  | let₁ σ da db Ia Ib =>
+    simp only [factor, den]
+    split
+    rename_i db' Γ v ρ hvw db'' heq
+    simp only [FDeriv.den]
+    rw [SDeriv.den, <-Ctx?.SSplit.den_fuse_assoc, tensorHom_def_of_left]
+    simp only [Category.assoc]
+    rw [Central.left_exchange_assoc (f := ρ.den), <-PremonoidalCategory.whiskerLeft_comp_assoc]
+    congr
+    rw [<-Ib, heq]
+    simp [FDeriv.den, tensorHom_def]
+  | unit =>
+    simp [den, factor, FDeriv.den, SDeriv.den]
+    rw [M.drop_aff ⊥ _ (h := _) (hA := _) (hB := _)]
+    apply Ctx?.ZWk.den_pure
+  | pair σ da db Ia Ib =>
+    simp only [factor, den, FDeriv.den]
+    rw [SDeriv.den, <-Ctx?.SSplit.den_fuse_assoc, tensorHom_def]
+    simp only [Category.assoc, ltimes, <-Central.right_exchange_assoc]
+    rw [<-PremonoidalCategory.comp_whiskerRight_assoc, <-PremonoidalCategory.whiskerLeft_comp]
+    congr
+  | let₂ σ da db Ia Ib =>
+    simp only [factor, den]
+    split
+    rename_i db' Γ v ρ ρ' hvw db'' heq
+    simp only [FDeriv.den]
+    rw [SDeriv.den, <-Ctx?.SSplit.den_fuse_assoc, tensorHom_def_of_left]
+    simp only [Category.assoc]
+    rw [Central.left_exchange_assoc (f := ρ.den), <-PremonoidalCategory.whiskerLeft_comp_assoc]
+    congr 2
+    congr
+    rw [<-Ib, heq]
+    simp [FDeriv.den, tensorHom_def]
+  | case σ da db dc Ia Ib Ic =>
+    simp only [factor, den]
+    split
+    rename_i db' dc' Γb vb ρb ρb' db'' Γc vc ρc ρc' dc'' heqb heqc
+    simp only [FDeriv.den]
+    rw [SDeriv.den, <-Ctx?.SSplit.den_fuse_assoc, tensorHom_def_of_left]
+    simp only [Category.assoc]
+    congr 1
+    rw [Central.left_exchange_assoc, <-PremonoidalCategory.whiskerLeft_comp_assoc]
+    congr 1
+    congr
+    simp only [Ty.den]
+    rw [DistributiveCategory.distl_inv_naturality_left_assoc]
+    congr 1
+    simp only [desc_comp, Category.assoc, inl_desc, inr_desc]
+    congr
+    rw [<-Ib, heqb]
+    simp [FDeriv.den, tensorHom_def]
+    rw [<-PremonoidalCategory.comp_whiskerRight_assoc, <-Ctx?.ZWk.den_comp]
+    congr 2
+    apply Ctx?.ZWk.coherence
+    rw [<-Ic, heqc]
+    simp [FDeriv.den, tensorHom_def]
+    rw [<-PremonoidalCategory.comp_whiskerRight_assoc, <-Ctx?.ZWk.den_comp]
+    congr 2
+    apply Ctx?.ZWk.coherence
+  | iter σ hc hd da db Ia Ib =>
+    simp only [factor, den]
+    split
+    rename_i db' Γ v ρ hvw db'' heq
+    simp only [FDeriv.den]
+    rw [SDeriv.den, <-Ctx?.SSplit.den_fuse_assoc, tensorHom_def_of_left]
+    simp only [Category.assoc]
+    rw [Central.left_exchange_assoc (f := ρ.den), <-PremonoidalCategory.whiskerLeft_comp_assoc]
+    congr
+    apply E.pure_uniform
+    have _ := ρ.copy
+    rw [<-PremonoidalCategory.comp_whiskerRight_assoc, M.copy_rel_ltimes ⊥ ρ.den (hA := _)]
+    simp only [comp_whiskerRight, whisker_assoc, Ty.den.eq_5, Category.assoc, Iso.inv_hom_id_assoc,
+      desc_comp, inl_desc, Category.id_comp, inr_desc]
+    congr 1
+    rw [PremonoidalCategory.associator_naturality_left_assoc]
+    congr 1
+    simp only [Central.left_exchange_assoc]
+    simp only [<-PremonoidalCategory.whiskerLeft_comp_assoc]
+    congr 1
+    congr
+    rw [<-Ib, heq]
+    simp [FDeriv.den, tensorHom_def]
+    rw [DistributiveCategory.distl_inv_naturality_left_assoc]
+    simp only [desc_comp, Category.assoc, inl_desc, inr_desc, Category.id_comp,
+      Iso.cancel_iso_inv_left]
+    congr 1
+    rw [<-PremonoidalCategory.comp_whiskerRight_assoc, M.drop_aff ⊥]
 
--- theorem Deriv.coherence {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
---   (D D' : Γ ⊢ a : A) : D.den (C := C) = D'.den
---   := by rw [<-D.den_factor, <-D'.den_factor, D.factor.coherence D'.factor]
+theorem Deriv.coherence {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
+  (D D' : Γ ⊢ a : A) : D.den (C := C) = D'.den
+  := by rw [<-D.den_factor, <-D'.den_factor, D.factor.coherence D'.factor]
