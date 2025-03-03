@@ -266,28 +266,28 @@ def Deriv.substTerm {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A : Ty α} {a : T
     let s := σ.ssplit hΔ;
     .iter (da.substTerm s.substRight) A B (db.substTerm (s.substLeft.lift _))
 
-def Deriv.subst {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A : Ty α} {a : Term φ (Ty α)}
+def Deriv.substD {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A : Ty α} {a : Term φ (Ty α)}
   : (D : Δ ⊢ a : A) → (Γ ⊢ D.substTerm σ : A)
   | .bv hv => σ.at hv
-  | .op hf da => .op hf (da.subst σ)
+  | .op hf da => .op hf (da.substD σ)
   | .let₁ hΔ da db =>
     let s := σ.ssplit hΔ;
-    .let₁ s.ssplitIn (da.subst s.substRight) (db.subst (s.substLeft.lift _))
+    .let₁ s.ssplitIn (da.substD s.substRight) (db.substD (s.substLeft.lift _))
   | .unit _ => .unit σ.del
   | .pair hΔ da db =>
     let s := σ.ssplit hΔ;
-    .pair s.ssplitIn (da.subst s.substLeft) (db.subst s.substRight)
+    .pair s.ssplitIn (da.substD s.substLeft) (db.substD s.substRight)
   | .let₂ hΔ da db =>
     let s := σ.ssplit hΔ;
-    .let₂ s.ssplitIn (da.subst s.substRight) (db.subst ((s.substLeft.lift _).lift _))
-  | .inl da => .inl (da.subst σ)
-  | .inr db => .inr (db.subst σ)
+    .let₂ s.ssplitIn (da.substD s.substRight) (db.substD ((s.substLeft.lift _).lift _))
+  | .inl da => .inl (da.substD σ)
+  | .inr db => .inr (db.substD σ)
   | .case hΔ da db dc =>
     let s := σ.ssplit hΔ;
-    .case s.ssplitIn (da.subst s.substRight) (db.subst (s.substLeft.lift _))
-          (dc.subst (s.substLeft.lift _))
-  | .abort da => .abort (da.subst σ)
+    .case s.ssplitIn (da.substD s.substRight) (db.substD (s.substLeft.lift _))
+          (dc.substD (s.substLeft.lift _))
+  | .abort da => .abort (da.substD σ)
   | .iter hΔ _ _ da db =>
     let s := σ.ssplit hΔ;
     .iter s.ssplitIn (σ.split_copy_left hΔ) (σ.split_del_left hΔ)
-                        (da.subst s.substRight) (db.subst (s.substLeft.lift _))
+                        (da.substD s.substRight) (db.substD (s.substLeft.lift _))
