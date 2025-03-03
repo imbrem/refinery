@@ -26,9 +26,8 @@ theorem RWS.IsWt.mk' (R : RWS φ α)
   right_wt hab := (both_wt hab).right
 
 inductive RWS.uniform (R : RWS φ α) : RWS φ α
-  | base {Γ A a b} : (Γ ⊢ a : A) → (Γ ⊢ b : A) → R Γ A a b → uniform R Γ A a b
+  | base {Γ A a b} : R Γ A a b → (Γ ⊢ a : A) → (Γ ⊢ b : A) → uniform R Γ A a b
   | refl {Γ a A} : (Γ ⊢ a : A) → uniform R Γ A a a
-  | symm {Γ a b A} : uniform R Γ A a b → uniform R Γ A b a
   | trans {Γ a b c A} : uniform R Γ A a b → uniform R Γ A b c → uniform R Γ A a c
   | let₁ {Γ Γl Γr A B a b a' b'} :
     Γ.SSplit Γl Γr →
