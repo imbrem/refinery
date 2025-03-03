@@ -14,18 +14,18 @@ variable {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε]
 inductive Deriv?.HasEff
   : (e : ε) → {Γ : Ctx? α} → {v : Var? α} → {a : Term φ (Ty α)} → (Deriv? Γ v a) → Prop
   | valid
-    {Γ : Ctx? α} {v : Var? α} {a : Term φ (Ty α)}
-    (hv : v.used) (D : Γ ⊢ a : v.ty) (hΓ : quant v ≤ quant Γ)
-    (ha : a.HasEff e) : HasEff e (.valid hv D hΓ)
+    {Γ : Ctx? α} {A} {q : Quant}
+    {a : Term φ (Ty α)} (D : Γ ⊢ a : A) (hΓ : quant (Var?.mk A q) ≤ quant Γ)
+    (ha : a.HasEff e) : HasEff e (.valid A q D hΓ)
   | zero {Γ : Ctx? α} (hΓ : Γ.del) (a A) : HasEff e (.zero hΓ a A)
 
 attribute [class] Deriv?.HasEff
 
 instance Deriv?.HasEff.instValid
-    {Γ : Ctx? α} {v : Var? α} {hv : v.used}
-    {a : Term φ (Ty α)} {D : Γ ⊢ a : v.ty} {hΓ : quant v ≤ quant Γ}
+    {Γ : Ctx? α} {A} {q : Quant}
+    {a : Term φ (Ty α)} {D : Γ ⊢ a : A} {hΓ : quant (Var?.mk A q) ≤ quant Γ}
     [ha : a.HasEff e]
-    : HasEff e (.valid hv D hΓ) := HasEff.valid hv D hΓ ha
+    : HasEff e (.valid A q D hΓ) := HasEff.valid D hΓ ha
 
 instance Deriv?.HasEff.instZero {Γ : Ctx? α} [hΓ : Γ.del] {a A}
   : HasEff e (.zero hΓ a A) := HasEff.zero hΓ a A

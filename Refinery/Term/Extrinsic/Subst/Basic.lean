@@ -10,8 +10,8 @@ open HasQuant
 variable {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε]
 
 inductive Deriv? : Ctx? α → Var? α → Term φ (Ty α) → Type _
-  | valid {Γ : Ctx? α} {v : Var? α} {a : Term φ (Ty α)} (hv : v.used) (D : Γ ⊢ a : v.ty)
-    (hΓ : quant v ≤ quant Γ) : Deriv? Γ v a
+  | valid {Γ : Ctx? α} {a : Term φ (Ty α)} (A : Ty α) (q : Quant) (D : Γ ⊢ a : A)
+    (hΓ : quant (Var?.mk A q) ≤ quant Γ) : Deriv? Γ ⟨A, q⟩ a
   | zero {Γ : Ctx? α} (hΓ : Γ.del) (a A) : Deriv? Γ ⟨A, 0⟩ a
 
 notation Γ "⊢?" a ":" v => Deriv? Γ v a
@@ -34,35 +34,30 @@ def Deriv?.unused {Γ : Ctx? α} {v : Var? α} (hΓ : Γ.del)  (a : Term φ (Ty 
 
 theorem Deriv?.copy {Γ : Ctx? α} {v : Var? α} {a : Term φ (Ty α)}
   (D : Γ ⊢? a : v) (hv : v.used) (hc : v.copy) : Γ.copy := by cases D with
-  | valid hv D hΓ =>
-    cases v with | mk A q => cases q using EQuant.casesZero with
-    | zero => cases hv
-    | rest q =>
-      constructor
-      rw [<-EQuant.coe_le_coe]
-      apply le_trans _ hΓ
-      simp [Var?.copy_iff] at hc
-      simp [quant]
-      constructor
-      exact hc.q
-      exact hc.ty.copy_le_quant
+  | valid A q D hΓ =>
+    constructor
+    rw [<-EQuant.coe_le_coe]
+    apply le_trans _ hΓ
+    simp [Var?.copy_iff] at hc
+    simp [quant]
+    constructor
+    exact hc.q
+    exact hc.ty.copy_le_quant
   | zero => cases hv
 
 theorem Deriv?.del_of_unused {Γ : Ctx? α} {v : Var? α} {a : Term φ (Ty α)}
   (D : Γ ⊢? a : v) (hv : v.unused) : Γ.del := by cases D with
-  | valid hv' D hΓ => exact (Var?.unused_iff.mp hv hv').elim
+  | valid hv' D hΓ => cases hv
   | zero hΓ _ _ => exact hΓ
 
 theorem Deriv?.del {Γ : Ctx? α} {v : Var? α} {a : Term φ (Ty α)}
   (D : Γ ⊢? a : v) (hd : v.del) : Γ.del := by cases D with
-  | valid hv D hΓ => cases v with | mk A q => cases q using EQuant.casesZero with
-    | zero => simp at hΓ; exact ⟨by simp [hΓ]⟩
-    | rest q => exact ⟨le_trans hd.del_le_quant (le_trans (by simp [quant]) hΓ)⟩
+  | valid A q D hΓ => exact ⟨le_trans hd.del_le_quant (le_trans (by simp [quant]) hΓ)⟩
   | zero hΓ _ _ => exact hΓ
 
 def Deriv?.wk {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {v : Var? α} {a : Term φ (Ty α)}
   (hΓΔ : quant Δ ≤ quant Γ) : (D : Δ ⊢? a : v) → (Γ ⊢? a.ren ρ : v)
-  | .valid hv D hΔ => .valid hv (D.wk ρ) (le_trans hΔ (EQuant.coe_le_coe.mpr hΓΔ))
+  | .valid A q D hΔ => .valid A q (D.wk ρ) (le_trans hΔ (EQuant.coe_le_coe.mpr hΓΔ))
   | .zero hΓ a A => .zero (hΓ.wk ρ) (a.ren ρ) A
 
 inductive SubstDS (φ) {α ε} [S : Signature φ α ε] : Ctx? α → Ctx? α → Type _
@@ -230,17 +225,21 @@ theorem SubstDS.del {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [hΔ : Δ.del] : �
 
 def SubstDS.at {Γ Δ : Ctx? α} {q : Quant}
   : (σ : SubstDS φ Γ Δ) →  (hv : Δ.At ⟨A, q⟩ n) → Γ ⊢ σ n : A
-  | .cons hΓ σ (.valid _ da _), .here d hvw
+  | .cons hΓ σ (.valid _ _ da _), .here d hvw
     => (da.pwk (hΓ.pwk_left_del (hΔ := σ.del))).cast_ty hvw.ty
   | .cons hΓ σ da, .there x hv => (σ.at x).pwk (hΓ.pwk_right_del (hΞ := da.del hv))
 
-def SubstDS.lift {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (A : Ty α)
-  : SubstDS φ (Γ.cons ⟨A, ⊤⟩) (Δ.cons ⟨A, ⊤⟩)
+def Deriv?.bv0 (Γ : Ctx? α)
+  : (v : Var? α) → Γ.erase.cons v ⊢? .bv (φ := φ) 0 : v
+  | ⟨A, 0⟩ => .zero inferInstance _ _
+  | ⟨A, (q : Quant)⟩ => .valid _ _ (.bv (.here inferInstance ⟨rfl, by simp, by simp⟩)) (by simp)
+
+def SubstDS.lift {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (v : Var? α)
+  : SubstDS φ (Γ.cons v) (Δ.cons v)
   := .cons (a := .bv 0)
            (.cons Γ.erase_right (.right _))
-           (σ.wkIn (Γ.wk0 ⟨A, 0⟩)) (.valid (by simp)
-                                           (.bv (.here inferInstance ⟨rfl, by simp, by simp⟩))
-                                           (by simp))
+           (σ.wkIn (Γ.wk0 v.erase))
+           (Deriv?.bv0 Γ v)
 
 def Deriv.substTerm {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A : Ty α} {a : Term φ (Ty α)}
   : (Δ ⊢ a : A) → Term φ (Ty α)
