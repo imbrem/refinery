@@ -28,7 +28,7 @@ class Signature.FnTy (f : φ) (A B : Ty α) : Prop where
   src : src f = A
   trg : trg f = B
 
-class Signature.IsFn (f : φ) (e : ε) (A B : Ty α) extends FnTy f A B, FnEff e f : Prop where
+class Signature.IsFn (f : φ) (e : ε) (A B : Ty α) : Prop extends FnTy f A B, FnEff e f where
 
 instance Signature.IsFn.instMk {f : φ} {e : ε} {A B : Ty α} [h : FnTy f A B] [he : FnEff e f]
   : IsFn f e A B := ⟨⟩

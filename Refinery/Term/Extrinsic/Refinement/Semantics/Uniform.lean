@@ -27,43 +27,78 @@ instance RWS.instValidBot : Valid (φ := φ) ⊥ C where den_ref h := h.elim
 
 -- theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform R Γ A a b)
 --   (Da : Γ ⊢ a : A) (Db : Γ ⊢ b : A) : Da.den (C := C) ↠ Db.den := by induction h with
---   | base h => apply V.den_ref h
---   | refl => apply refines_of_eq; apply Deriv.coherence
---   | trans hab hbc I I' => have ⟨Db'⟩ := hbc.wt.left; exact refines_trans (I Da Db') (I' Db' Db)
---   | let₁ hΓ ra rb Ia Ib =>
---     have ⟨Dax⟩ := ra.wt.left; have ⟨Dbx⟩ := rb.wt.left;
---     have ⟨Day⟩ := ra.wt.right; have ⟨Dby⟩ := rb.wt.right;
---     convert_to (Dax.let₁ hΓ Dbx).den (C := C) ↠ (Day.let₁ hΓ Dby).den
---     apply Deriv.coherence
---     apply Deriv.coherence
---     simp only [Deriv.den]
---     sorry
---   | let₂ hΓ ra rb Ia Ib =>
---     have ⟨Dax⟩ := ra.wt.left; have ⟨Dbx⟩ := rb.wt.left;
---     have ⟨Day⟩ := ra.wt.right; have ⟨Dby⟩ := rb.wt.right;
---     convert_to (Dax.let₂ hΓ Dbx).den (C := C) ↠ (Day.let₂ hΓ Dby).den
---     apply Deriv.coherence
---     apply Deriv.coherence
---     simp only [Deriv.den]
---     sorry
---   | pair hΓ ra rb Ia Ib =>
---     have ⟨Dax⟩ := ra.wt.left; have ⟨Dbx⟩ := rb.wt.left;
---     have ⟨Day⟩ := ra.wt.right; have ⟨Dby⟩ := rb.wt.right;
---     convert_to (Dax.pair hΓ Dbx).den (C := C) ↠ (Day.pair hΓ Dby).den
---     apply Deriv.coherence
---     apply Deriv.coherence
---     simp only [Deriv.den]
---     sorry
---   | inl ra Ia => cases Da with | inl da => cases Db with | inl db => simp [Deriv.den, Ia da db]
---   | inr ra Ia => cases Da with | inr da => cases Db with | inr db => simp [Deriv.den, Ia da db]
---   | abort ra Ia =>
---     cases Da with | abort da => cases Db with | abort db => simp [Deriv.den, Ia da db]
---   | iter hΓ hc hd ra rb Ia Ib =>
---     have ⟨Dax⟩ := ra.wt.left; have ⟨Dbx⟩ := rb.wt.left;
---     have ⟨Day⟩ := ra.wt.right; have ⟨Dby⟩ := rb.wt.right;
---     convert_to (Dax.iter hΓ hc hd Dbx).den (C := C) = (Day.iter hΓ hc hd Dby).den
---     apply Deriv.coherence
---     apply Deriv.coherence
---     simp only [Deriv.den, Ia Dax Day, Ib Dbx Dby]
+--   -- | base h => apply V.den_ref h
+--   -- | refl => apply refines_of_eq; apply Deriv.coherence
+--   -- | trans hab hbc I I' => have ⟨Db'⟩ := hbc.wt.left; exact refines_trans (I Da Db') (I' Db' Db)
+--   -- | let₁ hΓ ra rb Ia Ib =>
+--   --   have ⟨Dax⟩ := ra.wt.left; have ⟨Dbx⟩ := rb.wt.left;
+--   --   have ⟨Day⟩ := ra.wt.right; have ⟨Dby⟩ := rb.wt.right;
+--   --   convert_to (Dax.let₁ hΓ Dbx).den (C := C) ↠ (Day.let₁ hΓ Dby).den
+--   --   apply Deriv.coherence
+--   --   apply Deriv.coherence
+--   --   simp only [Deriv.den]
+--   --   apply refines_comp
+--   --   rfl
+--   --   apply refines_comp
+--   --   apply refines_whiskerLeft
+--   --   exact Ia Dax Day
+--   --   exact Ib Dbx Dby
+--   -- | let₂ hΓ ra rb Ia Ib =>
+--   --   have ⟨Dax⟩ := ra.wt.left; have ⟨Dbx⟩ := rb.wt.left;
+--   --   have ⟨Day⟩ := ra.wt.right; have ⟨Dby⟩ := rb.wt.right;
+--   --   convert_to (Dax.let₂ hΓ Dbx).den (C := C) ↠ (Day.let₂ hΓ Dby).den
+--   --   apply Deriv.coherence
+--   --   apply Deriv.coherence
+--   --   simp only [Deriv.den]
+--   --   apply refines_comp
+--   --   rfl
+--   --   apply refines_comp
+--   --   apply refines_whiskerLeft
+--   --   exact Ia Dax Day
+--   --   apply refines_comp
+--   --   rfl
+--   --   exact Ib Dbx Dby
+--   -- | pair hΓ ra rb Ia Ib =>
+--   --   have ⟨Dax⟩ := ra.wt.left; have ⟨Dbx⟩ := rb.wt.left;
+--   --   have ⟨Day⟩ := ra.wt.right; have ⟨Dby⟩ := rb.wt.right;
+--   --   convert_to (Dax.pair hΓ Dbx).den (C := C) ↠ (Day.pair hΓ Dby).den
+--   --   apply Deriv.coherence
+--   --   apply Deriv.coherence
+--   --   simp only [Deriv.den]
+--   --   apply refines_comp
+--   --   rfl
+--   --   apply refines_comp
+--   --   apply refines_whiskerRight
+--   --   exact Ia Dax Day
+--   --   apply refines_whiskerLeft
+--   --   exact Ib Dbx Dby
+--   -- | inl | inr | abort =>
+--   --   cases Da; cases Db;
+--   --   simp only [Deriv.den]
+--   --   apply refines_comp
+--   --   apply_assumption
+--   --   rfl
+--   -- | iter hΓ hc hd ra rb Ia Ib =>
+--   --   have ⟨Dax⟩ := ra.wt.left; have ⟨Dbx⟩ := rb.wt.left;
+--   --   have ⟨Day⟩ := ra.wt.right; have ⟨Dby⟩ := rb.wt.right;
+--   --   convert_to (Dax.iter hΓ hc hd Dbx).den (C := C) ↠ (Day.iter hΓ hc hd Dby).den
+--   --   apply Deriv.coherence
+--   --   apply Deriv.coherence
+--   --   simp only [Deriv.den]
+--   --   apply refines_comp
+--   --   rfl
+--   --   apply refines_comp
+--   --   apply refines_whiskerLeft
+--   --   exact Ia Dax Day
+--   --   apply refines_iterate
+--   --   apply refines_comp
+--   --   rfl
+--   --   apply refines_comp
+--   --   rfl
+--   --   apply refines_comp
+--   --   apply refines_whiskerLeft
+--   --   exact Ib Dbx Dby
+--   --   rfl
 --   | pos_unif hcr hlm hc hd hei => sorry
 --   | neg_unif => sorry
+--   | _ => sorry
