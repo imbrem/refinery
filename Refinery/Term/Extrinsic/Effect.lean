@@ -155,6 +155,9 @@ theorem HasEff.iter_body {e : ε} {A B : Ty α} {a b : Term φ (Ty α)} (h : Has
 theorem HasEff.wk_iff (ρ : ℕ → ℕ) {e : ε} {a : Term φ (Ty α)} : HasEff e (a.ren ρ) ↔ HasEff e a :=
   by induction a generalizing ρ <;> simp [*]
 
+instance HasEff.instWk {e : ε} {a : Term φ (Ty α)} (ρ : ℕ → ℕ) [ha : HasEff e a]
+  : HasEff e (a.ren ρ) := by rw [HasEff.wk_iff]; exact ha
+
 theorem HasEff.mono {e e' : ε} (he : e ≤ e') {a : Term φ (Ty α)} (h : HasEff e a) : HasEff e' a :=
   by induction h <;> simp [Signature.FnEff.mono he, S.iterative_is_upper he, *]
 

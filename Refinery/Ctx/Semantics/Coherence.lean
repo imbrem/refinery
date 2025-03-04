@@ -222,7 +222,6 @@ theorem Ctx?.Split.den_wkOut {Γ Δ Δ' Ξ Ξ' : Ctx? α}
   : σ.den (C := C) ≫ (ρΔ.den ⊗ ρΞ.den) = (σ.wkOut ρΔ ρΞ).den
   := by rw [<-wkOutL_wkOutR, <-den_wkOutR, <-den_wkOutL, Category.assoc, tensorHom_def]
 
-
 theorem Var?.Split.assoc_coherence {u₁₂₃ u₁₂ u₂₃ u₁ u₂ u₃ : Var? α}
   (σ123_12_3 : u₁₂₃.Split u₁₂ u₃) (σ12 : u₁₂.Split u₁ u₂)
   (σ123_1_23 : u₁₂₃.Split u₁ u₂₃) (σ23 : u₂₃.Split u₂ u₃)
@@ -292,45 +291,6 @@ theorem Var?.Split.assoc_inv_coherence {u₁₂₃ u₁₂ u₂₃ u₁ u₂ u�
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
   apply Eq.symm
   apply assoc_coherence
-
-end Braided
-
-section Symmetric
-
-variable {φ : Type _} {α : Type _} {ε : Type _} [Signature φ α ε]
-         {C : Type _} [Category C] [PremonoidalCategory C] [ChosenFiniteCoproducts C]
-         [SymmetricCategory' C] [Iterate C] [E : Elgot2 C ε]
-         [M : Model φ α ε C]
-
-theorem Ctx?.Split.den_comm {Γ Δ Ξ : Ctx? α} (σ : Γ.Split Δ Ξ)
-  : σ.den (C := C) ≫ (β'_ _ _).hom = σ.comm.den
-  := by induction σ with
-  | nil => simp [Ctx?.den]; premonoidal_coherence
-  | cons σ σv I =>
-    calc
-      _ = (σ.den (C := C) ⊗ σv.den)
-        ≫ (βi_ _ _ _ _).hom
-        ≫ (βi_ _ _ _ _).hom
-        ≫ (β'_ _ _).hom ▷ _
-        ≫ _ ◁ (β'_ _ _).hom
-        ≫ (βi_ _ _ _ _).hom
-        := by
-          simp only [
-            den, Category.assoc, tensorHom_def, assoc_inner, swap_inner, Ctx?.den, Ctx?.ety, Ty.den,
-            BraidedCategory'.braiding_tensor_left, BraidedCategory'.braiding_tensor_right,
-          ]
-          premonoidal
-      _ = (σ.comm.den (C := C) ⊗ σv.comm.den)
-        ≫ (βi_ _ _ _ _).hom
-        := by
-        simp only [
-          MonoidalCategory'.swap_inner_swap_inner_assoc, tensorHom_def_of_left, Category.assoc,
-          <-PremonoidalCategory.comp_whiskerRight_assoc, I
-        ]
-        rw [
-          Central.left_exchange_assoc, <-PremonoidalCategory.whiskerLeft_comp_assoc,
-          Var?.Split.den_comm
-        ]
 
 set_option maxHeartbeats 1000000000 in
 theorem Ctx?.Split.assoc_coherence {Γ₁₂₃ Γ₁₂ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}
@@ -424,3 +384,57 @@ theorem Ctx?.Split.assoc_coherence {Γ₁₂₃ Γ₁₂ Γ₂₃ Γ₁ Γ₂ Γ
       _ = (_ ◁ L ▷ _) := by premonoidal
       _ = (_ ◁ R ▷ _) := by rw [hLR]
       _ = _ := by premonoidal
+
+theorem Ctx?.SSplit.den_both {Γ : Ctx? α} [hΓ : Γ.copy]
+  : Γ.both.den (C := C) = Δ_ _ := by
+  generalize hΓ = hΓ
+  induction Γ with
+  | nil => simp only [both, den.eq_1, ety, Model.copy_unit, Ty.den]; rfl
+  | cons Γ v I =>
+    rw [both]
+    simp only [den, ety, I, Var?.SSplit.both]
+    have _ := hΓ.head;
+    have _ := hΓ.tail;
+    rw [M.copy_tensor]
+    cases v using Var?.casesZero with
+    | zero A => simp [Var?.ety, MonoidalCategory'.unitors_inv_equal]
+    | rest A q => simp
+
+end Braided
+
+section Symmetric
+
+variable {φ : Type _} {α : Type _} {ε : Type _} [Signature φ α ε]
+         {C : Type _} [Category C] [PremonoidalCategory C] [ChosenFiniteCoproducts C]
+         [SymmetricCategory' C] [Iterate C] [E : Elgot2 C ε]
+         [M : Model φ α ε C]
+
+theorem Ctx?.Split.den_comm {Γ Δ Ξ : Ctx? α} (σ : Γ.Split Δ Ξ)
+  : σ.den (C := C) ≫ (β'_ _ _).hom = σ.comm.den
+  := by induction σ with
+  | nil => simp [Ctx?.den]; premonoidal_coherence
+  | cons σ σv I =>
+    calc
+      _ = (σ.den (C := C) ⊗ σv.den)
+        ≫ (βi_ _ _ _ _).hom
+        ≫ (βi_ _ _ _ _).hom
+        ≫ (β'_ _ _).hom ▷ _
+        ≫ _ ◁ (β'_ _ _).hom
+        ≫ (βi_ _ _ _ _).hom
+        := by
+          simp only [
+            den, Category.assoc, tensorHom_def, assoc_inner, swap_inner, Ctx?.den, Ctx?.ety, Ty.den,
+            BraidedCategory'.braiding_tensor_left, BraidedCategory'.braiding_tensor_right,
+          ]
+          premonoidal
+      _ = (σ.comm.den (C := C) ⊗ σv.comm.den)
+        ≫ (βi_ _ _ _ _).hom
+        := by
+        simp only [
+          MonoidalCategory'.swap_inner_swap_inner_assoc, tensorHom_def_of_left, Category.assoc,
+          <-PremonoidalCategory.comp_whiskerRight_assoc, I
+        ]
+        rw [
+          Central.left_exchange_assoc, <-PremonoidalCategory.whiskerLeft_comp_assoc,
+          Var?.Split.den_comm
+        ]

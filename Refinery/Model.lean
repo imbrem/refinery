@@ -87,12 +87,13 @@ class Model
   copy_swap {A : Ty α} [hA : IsRel A] : Δ_ A ≫ (β'_ _ _).hom = copy A
   copy_assoc {A : Ty α} [hA : IsRel A] :
     Δ_ A ≫ Δ_ A ▷ (t⟦ A ⟧ : C) ≫ (α_ _ _ _).hom = Δ_ A ≫ t⟦ A ⟧ ◁ Δ_ A
-  drop_pure {A} [IsAff A] : E.eff ⊥ (drop A)
-  copy_pure {A} [IsRel A] : E.eff ⊥ (copy A)
+  drop_pure {A} [hA : IsAff A] : E.eff ⊥ (drop A)
+  copy_pure {A} [hA : IsRel A] : E.eff ⊥ (copy A)
   drop_unit : drop .unit = 𝟙 (𝟙_ C)
-  drop_tensor {A B} [IsAff A] [IsAff B] : drop (.tensor A B) = (drop A ⊗ drop B) ≫ (λ_ _).hom
+  drop_tensor {A B} [hA : IsAff A] [hB : IsAff B]
+    : drop (.tensor A B) = (drop A ⊗ drop B) ≫ (λ_ _).hom
   copy_unit : copy .unit = (λ_ _).inv
-  copy_tensor {A B} [IsRel A] [IsRel B]
+  copy_tensor {A B} [hA : IsRel A] [hB : IsRel B]
     : copy (.tensor A B) = (copy A ⊗ copy B) ≫ (βi_ _ _ _ _).hom
   drop_rem {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
     [IsAff A] [IsAff B] [hf : IsRem e] : f ≫ drop _ ↠ drop _

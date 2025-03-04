@@ -54,14 +54,18 @@ inductive RWS.uniform (R : RWS φ α) : RWS φ α
     (Γr ⊢ a : A) → a.HasEff e → ((Γm.cons ⟨A, ⊤⟩) ⊢ s : X) → s.HasEff e' →
     ((Γl.cons ⟨X, ⊤⟩) ⊢ b : B.coprod X) → b.HasEff e →
     ((Γc.cons ⟨A, ⊤⟩) ⊢ b' : B.coprod A) → b'.HasEff e →
-    uniform R (Γc.cons ⟨A, ⊤⟩) (.coprod B X) (.let₁ s X b) (.case b' B A (.bv 0) (↑¹ s)) →
+    uniform R (Γc.cons ⟨A, ⊤⟩) (.coprod B X)
+      (.let₁ s X (↑¹ b))
+      (.case b' B A (.inl B X (.bv 0)) (.inr B X (↑¹ s))) →
     uniform R Γ B (.let₁ a A (.iter s X B (↑¹ b))) (.iter a A B b')
   | neg_unif {Γ Γc Γl Γm Γr e e' A B X a b b'} :
     Γ.SSplit Γc Γr → Γc.SSplit Γl Γm → Γc.copy → Γc.del → e ∈ S.iterative → e' ↽ e →
     (Γr ⊢ a : A) → a.HasEff e → ((Γm.cons ⟨A, ⊤⟩) ⊢ s : X) → s.HasEff e' →
     ((Γl.cons ⟨X, ⊤⟩) ⊢ b : B.coprod X) → b.HasEff e →
     ((Γc.cons ⟨A, ⊤⟩) ⊢ b' : B.coprod A) → b'.HasEff e →
-    uniform R (Γc.cons ⟨A, ⊤⟩) (.coprod B X) (.let₁ s X b) (.case b' B A (.bv 0) (↑¹ s)) →
+    uniform R (Γc.cons ⟨A, ⊤⟩) (.coprod B X)
+      (.case b' B A (.inl B X (.bv 0)) (.inr B X (↑¹ s)))
+      (.let₁ s X (↑¹ b)) →
     uniform R Γ B (.iter a A B b') (.let₁ a A (.iter s X B (↑¹ b)))
 
 theorem RWS.uniform.wt {R : RWS φ α} {Γ A a a'} (h : uniform R Γ A a a')

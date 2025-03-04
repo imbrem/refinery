@@ -1,5 +1,6 @@
 import Refinery.Term.Extrinsic.Refinement.Uniform
 import Refinery.Term.Extrinsic.Semantics.Minimal
+import Refinery.Term.Extrinsic.Semantics.Effect
 
 namespace Refinery
 
@@ -99,26 +100,33 @@ theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform 
   --   apply refines_whiskerLeft
   --   exact Ib Dbx Dby
   --   rfl
-  -- | pos_unif hΓ hΓc hc hd hei he Dra ha Dms hs Dlb hb Dcb' hb' rs Ia =>
-  --   rename_i s Γ Γc Γl Γm Γr e e' A B X a b b'
-  --   have _ := hΓc.left_copy
-  --   have _ := hΓc.left_del
-  --   let Da' := (Dra.let₁ hΓ (Dms.iter (hΓc.cons (.right _)) inferInstance inferInstance (Dlb.wk1 _)))
-  --   let Db' := (Dra.iter hΓ inferInstance inferInstance Dcb')
-  --   convert_to Da'.den ↠ Db'.den
-  --   apply Deriv.coherence
-  --   apply Deriv.coherence
-  --   simp only [Da', Db', Deriv.den]
-  --   apply refines_comp
-  --   rfl
-  --   apply refines_comp
-  --   rfl
-  --   rw [<-Category.assoc]
-  --   apply (Elgot2.right_mover_right_uniform he).right_uniform
-  --   sorry
-  --   sorry
-  --   sorry
-  --   simp
-  --   sorry
+  | pos_unif hΓ hΓc hc hd hei he Dra ha Dms hs Dlb hb Dcb' hb' rs Ia =>
+    rename_i s Γ Γc Γl Γm Γr e e' A B X a b b'
+    have _ := hΓc.left_copy
+    have _ := hΓc.left_del
+    let Da' := (Dra.let₁ hΓ (Dms.iter (hΓc.cons (.right _)) inferInstance inferInstance (Dlb.wk1 _)))
+    let Db' := (Dra.iter hΓ inferInstance inferInstance Dcb')
+    have Γm_copy := hΓc.right_copy
+    have hIa := Ia (Dms.let₁ (hΓc.cons (.right _)) (Dlb.wk1 _))
+                  (Dcb'.case (Γc.both.cons (.right _))
+                    (Deriv.bv (.here inferInstance Var?.Wk.top_le_quant)).inl
+                    ((Dms.pwk ((hΓc.pwk_left_del).scons _)).wk1 ⟨A, 0⟩).inr)
+    convert_to Da'.den ↠ Db'.den
+    apply Deriv.coherence
+    apply Deriv.coherence
+    simp only [Da', Db', Deriv.den]
+    apply refines_comp
+    rfl
+    apply refines_comp
+    rfl
+    rw [<-Category.assoc]
+    apply (Elgot2.right_mover_right_uniform he).right_uniform
+    apply EffectfulCategory.HasEff.has_eff
+    apply EffectfulCategory.HasEff.has_eff
+    apply EffectfulCategory.HasEff.has_eff
+    stop
+    simp [Deriv.den] at hIa
+    simp
+    sorry
   | neg_unif => sorry
   | _ => sorry
