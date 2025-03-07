@@ -26,9 +26,6 @@ theorem RWS.IsWt.mk' (R : RWS φ α)
   right_wt hab := (both_wt hab).right
 
 inductive RWS.uniform (R : RWS φ α) : RWS φ α
-  | base {Γ A a b} : R Γ A a b → (Γ ⊢ a : A) → (Γ ⊢ b : A) → uniform R Γ A a b
-  | refl {Γ a A} : (Γ ⊢ a : A) → uniform R Γ A a a
-  | trans {Γ a b c A} : uniform R Γ A a b → uniform R Γ A b c → uniform R Γ A a c
   | let₁ {Γ Γl Γr A B a b a' b'} :
     Γ.SSplit Γl Γr →
     uniform R Γr A a a' → uniform R (Γl.cons ⟨A, ⊤⟩) B b b'
@@ -67,6 +64,9 @@ inductive RWS.uniform (R : RWS φ α) : RWS φ α
       (.case b' B A (.inl B X (.bv 0)) (.inr B X (↑¹ s)))
       (.let₁ s X (↑¹ b)) →
     uniform R Γ B (.iter a A B b') (.let₁ a A (.iter s X B (↑¹ b)))
+  | base {Γ A a b} : R Γ A a b → (Γ ⊢ a : A) → (Γ ⊢ b : A) → uniform R Γ A a b
+  | refl {Γ a A} : (Γ ⊢ a : A) → uniform R Γ A a a
+  | trans {Γ a b c A} : uniform R Γ A a b → uniform R Γ A b c → uniform R Γ A a c
 
 theorem RWS.uniform.wt {R : RWS φ α} {Γ A a a'} (h : uniform R Γ A a a')
   : Term.IsWt Γ A a ∧ Term.IsWt Γ A a' := by induction h with
@@ -92,6 +92,18 @@ theorem RWS.uniform.wt {R : RWS φ α} {Γ A a a'} (h : uniform R Γ A a a')
     cases_type* And Nonempty
     constructor <;> constructor
     <;> first | assumption | (constructor <;> first | exact S.top_iterative | assumption)
+
+inductive RWS.swap (R : RWS φ α) : RWS φ α
+  | mk {Γ A a b} : R Γ A b a → swap R Γ A a b
+
+theorem RWS.swap.get {R : RWS φ α} {Γ A a b} (h : swap R Γ A a b)
+  : R Γ A b a := by cases h; assumption
+
+theorem RWS.swap_iff {R : RWS φ α} {Γ A a b} : swap R Γ A a b ↔ R Γ A b a :=
+  ⟨RWS.swap.get, RWS.swap.mk⟩
+
+inductive RWS.equiv (R : RWS φ α) : RWS φ α
+  | mk {Γ A a b} : R Γ A a b → R Γ A b a → equiv R Γ A a b
 
 -- instance RWS.uniform.instWt (R : RWS φ α) : RWS.IsWt (RWS.uniform R) where
 --   left_wt h := (RWS.uniform.wt h).left

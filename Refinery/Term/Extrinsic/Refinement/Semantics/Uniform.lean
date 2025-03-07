@@ -24,9 +24,23 @@ class RWS.Valid (R : RWS φ α) (C : Type _)
   [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
   [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
   : Prop where
-  den_ref {Γ A a b} (h : R Γ A a b) (Da : Γ ⊢ a : A) (Db : Γ ⊢ b : A) : Da.den (C := C) ↠ Db.den
+  den_ref (h : R Γ A a b) (Da : Γ ⊢ a : A) (Db : Γ ⊢ b : A) : Da.den (C := C) ↠ Db.den
 
 instance RWS.instValidBot : Valid (φ := φ) ⊥ C where den_ref h := h.elim
+
+class RWS.AntiValid (R : RWS φ α) (C : Type _)
+  [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
+  [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
+  : Prop where
+  den_ref_anti (h : R Γ A a b) (Da : Γ ⊢ a : A) (Db : Γ ⊢ b : A) : Da.den (C := C) ↞ Db.den
+
+instance RWS.instAntiValidBot : AntiValid (φ := φ) ⊥ C where den_ref_anti h := h.elim
+
+instance RWS.swap_anti_valid (R : RWS φ α) [h : Valid R C] : AntiValid R.swap C where
+  den_ref_anti h Da Db := Valid.den_ref h.get Db Da
+
+instance RWS.swap_valid (R : RWS φ α) [h : AntiValid R C] : Valid R.swap C where
+  den_ref h Da Db := AntiValid.den_ref_anti h.get Db Da
 
 theorem uniformLeftIndHelper {Γc Γl Γm : Ctx? α}
   (hΓc : Γc.SSplit Γl Γm) {A B X : Ty α}
@@ -441,3 +455,17 @@ theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform 
     · simp only [Deriv.den, Deriv.den_wk1]
       apply uniformLeftIndHelper
     rfl
+
+instance RWS.instUniformValid (R : RWS φ α) [V : R.Valid C] : R.uniform.Valid C where
+  den_ref := RWS.uniform.ref
+
+class RWS.BiValid (R : RWS φ α) (C : Type _)
+  [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
+  [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
+  : Prop extends AntiValid R C, Valid R C where
+  den_eq {Γ A a b} (h : R Γ A a b) (Da : Γ ⊢ a : A) (Db : Γ ⊢ b : A) : Da.den (C := C) = Db.den
+    := refines_antisymm (den_ref h Da Db) (den_ref_anti h Da Db)
+  den_ref h Da Db := refines_of_eq (den_eq h Da Db)
+  den_ref_anti h Da Db := refines_of_eq (den_eq h Da Db).symm
+
+instance RWS.symm_bivalid (R : RWS φ α) [V : R.BiValid C] : R.BiValid C where
