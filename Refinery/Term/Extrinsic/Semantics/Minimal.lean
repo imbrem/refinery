@@ -218,7 +218,7 @@ theorem Deriv.den_factor {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : �
     simp only [Ty.den]
     rw [DistributiveCategory.distl_inv_naturality_left_assoc]
     congr 1
-    simp only [desc_comp, Category.assoc, inl_desc, inr_desc]
+    simp only [addHom, desc_comp, Category.assoc, inl_desc, inr_desc]
     congr
     rw [<-Ib, heqb]
     simp [FDeriv.den, tensorHom_def]
@@ -254,7 +254,7 @@ theorem Deriv.den_factor {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)} (D : �
     rw [<-Ib, heq]
     simp [FDeriv.den, tensorHom_def]
     rw [DistributiveCategory.distl_inv_naturality_left_assoc]
-    simp only [desc_comp, Category.assoc, inl_desc, inr_desc, Category.id_comp,
+    simp only [addHom, desc_comp, Category.assoc, inl_desc, inr_desc, Category.id_comp,
       Iso.cancel_iso_inv_left]
     congr 1
     rw [<-PremonoidalCategory.comp_whiskerRight_assoc, M.drop_aff ⊥]

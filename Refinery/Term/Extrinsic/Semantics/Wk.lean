@@ -51,7 +51,7 @@ theorem Deriv.den_wkD {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ
       DistributiveCategory.distl_inv_naturality_left_assoc, Ib, Ic,
       <-PremonoidalCategory.whiskerLeft_comp_assoc, Ia
     ]
-    simp
+    simp [addHom, -desc_comp_inl_inr]
   | iter hΓ hc hd da db Ia Ib =>
     simp only [
       wkD, den, Ctx?.SSplit.wk_den_assoc, tensorHom_def, Category.assoc, Ia,
@@ -72,7 +72,7 @@ theorem Deriv.den_wkD {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ
       DistributiveCategory.distl_inv_naturality_left_assoc
     ]
     simp only [
-      desc_comp, Category.assoc, inl_desc, inr_desc, Category.id_comp,
+      desc_comp, Category.assoc, inl_desc, inr_desc, Category.id_comp, addHom,
       <-PremonoidalCategory.comp_whiskerRight_assoc, Model.drop_aff ⊥
     ]
   | _ => simp [wkD, den, *]
