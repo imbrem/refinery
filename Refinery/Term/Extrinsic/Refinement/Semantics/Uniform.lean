@@ -28,6 +28,41 @@ class RWS.Valid (R : RWS φ α) (C : Type _)
 
 instance RWS.instValidBot : Valid (φ := φ) ⊥ C where den_ref h := h.elim
 
+theorem uniformLeftIndHelper {Γc Γl Γm : Ctx? α}
+  [hΓc_copy : Γc.copy] [hΓl_copy : Γl.copy] [hΓl_del : Γl.del] [hΓm_del : Γm.del]
+  (hΓc : Γc.SSplit Γl Γm) {A B X : Ty α}
+  (f : (t⟦Γm.ety⟧ ⊗ t⟦A⟧ : C) ⟶ t⟦X⟧) (g : (t⟦Γl.ety⟧ ⊗ t⟦X⟧ : C) ⟶ t⟦B⟧ ⊕ₒ t⟦X⟧) :
+  hΓc.den (C := C) ▷ _ ≫ (α_ t⟦Γl.ety⟧ t⟦Γm.ety⟧ t⟦A⟧).hom ≫ t⟦Γl.ety⟧ ◁ f ≫ g =
+  css⟦hΓc.cons (Var?.SSplit.right { ty := A, q := ⊤ })⟧ ≫
+    g⟦Γl.cons ⟨A, 0⟩⟧ ◁ f ≫
+      (t⟦Γl.ety⟧ ◁ !_ Ty.unit) ▷ t⟦X⟧ ≫
+        (ρ_ t⟦Γl.ety⟧).hom ▷ t⟦X⟧ ≫ g
+  := sorry
+
+theorem uniformRightIndHelper {Γc Γl Γm : Ctx? α}
+  [hΓc_copy : Γc.copy] [hΓc_del : Γc.del] [hΓl_del : Γl.del] [hΓm_del : Γm.del]
+  (hΓc : Γc.SSplit Γl Γm) {A B X : Ty α}
+  (f : (t⟦Γm.ety⟧ ⊗ t⟦A⟧ : C) ⟶ t⟦X⟧) (g : (t⟦Γc.ety⟧ ⊗ t⟦A⟧ : C) ⟶ t⟦B⟧ ⊕ₒ t⟦A⟧) :
+  Δ_ Γc.ety ▷ (t⟦A⟧ : C) ≫
+        (α_ t⟦Γc.ety⟧ t⟦Γc.ety⟧ t⟦A⟧).hom ≫
+        t⟦Γc.ety⟧ ◁ g ≫
+        (∂L t⟦Γc.ety⟧ t⟦B⟧ t⟦A⟧).inv ≫
+        (
+          (!_ (Γc.ety) ▷ t⟦B⟧ ≫ (λ_ t⟦B⟧).hom) ⊕ₕ
+          (pw⟦hΓc.pwk_left_del.scons ⟨A, ⊤⟩⟧ ≫ f)) =
+  css⟦Γc.both.cons (Var?.SSplit.right { ty := A, q := ⊤ })⟧ ≫
+      g⟦Γc.cons ⟨A, 0⟩⟧ ◁ g ≫
+        (∂L g⟦Γc.cons ⟨A, 0⟩⟧ t⟦B⟧ t⟦A⟧).inv ≫
+          desc
+            (((!_ (Γc.cons ⟨A, 0⟩).ety ⊗ 𝟙 t⟦B⟧) ≫
+                (λ_ t⟦B⟧).hom) ≫
+              ChosenFiniteCoproducts.inl t⟦B⟧ t⟦X⟧)
+            (((t⟦Γc.ety⟧ ◁ !_ Ty.unit) ▷ t⟦A⟧ ≫
+                (ρ_ t⟦Γc.ety⟧).hom ▷ t⟦A⟧ ≫
+                  pw⟦hΓc.pwk_left_del.scons ⟨A, ⊤⟩⟧ ≫ f) ≫
+              ChosenFiniteCoproducts.inr t⟦B⟧ t⟦X⟧)
+  := sorry
+
 theorem uniformLeftHelper {Γc Γl Γm : Ctx? α}
   [hΓc_copy : Γc.copy] [hΓl_copy : Γl.copy] [hΓl_del : Γl.del] [hΓm_del : Γm.del]
   (hΓc : Γc.SSplit Γl Γm) {A B X : Ty α}
@@ -176,80 +211,79 @@ theorem uniformRightHelper {Γc Γl Γm : Ctx? α}
 
 theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform R Γ A a b)
   (Da : Γ ⊢ a : A) (Db : Γ ⊢ b : A) : Da.den (C := C) ↠ Db.den := by induction h with
-  -- | base h => apply V.den_ref h
-  -- | refl => apply refines_of_eq; apply Deriv.coherence
-  -- | trans hab hbc I I' => have ⟨Db'⟩ := hbc.wt.left; exact refines_trans (I Da Db') (I' Db' Db)
-  -- | let₁ hΓ ra rb Ia Ib =>
-  --   have ⟨Dax⟩ := ra.wt.left; have ⟨Dbx⟩ := rb.wt.left;
-  --   have ⟨Day⟩ := ra.wt.right; have ⟨Dby⟩ := rb.wt.right;
-  --   convert_to (Dax.let₁ hΓ Dbx).den (C := C) ↠ (Day.let₁ hΓ Dby).den
-  --   apply Deriv.coherence
-  --   apply Deriv.coherence
-  --   simp only [Deriv.den]
-  --   apply refines_comp
-  --   rfl
-  --   apply refines_comp
-  --   apply refines_whiskerLeft
-  --   exact Ia Dax Day
-  --   exact Ib Dbx Dby
-  -- | let₂ hΓ ra rb Ia Ib =>
-  --   have ⟨Dax⟩ := ra.wt.left; have ⟨Dbx⟩ := rb.wt.left;
-  --   have ⟨Day⟩ := ra.wt.right; have ⟨Dby⟩ := rb.wt.right;
-  --   convert_to (Dax.let₂ hΓ Dbx).den (C := C) ↠ (Day.let₂ hΓ Dby).den
-  --   apply Deriv.coherence
-  --   apply Deriv.coherence
-  --   simp only [Deriv.den]
-  --   apply refines_comp
-  --   rfl
-  --   apply refines_comp
-  --   apply refines_whiskerLeft
-  --   exact Ia Dax Day
-  --   apply refines_comp
-  --   rfl
-  --   exact Ib Dbx Dby
-  -- | pair hΓ ra rb Ia Ib =>
-  --   have ⟨Dax⟩ := ra.wt.left; have ⟨Dbx⟩ := rb.wt.left;
-  --   have ⟨Day⟩ := ra.wt.right; have ⟨Dby⟩ := rb.wt.right;
-  --   convert_to (Dax.pair hΓ Dbx).den (C := C) ↠ (Day.pair hΓ Dby).den
-  --   apply Deriv.coherence
-  --   apply Deriv.coherence
-  --   simp only [Deriv.den]
-  --   apply refines_comp
-  --   rfl
-  --   apply refines_comp
-  --   apply refines_whiskerRight
-  --   exact Ia Dax Day
-  --   apply refines_whiskerLeft
-  --   exact Ib Dbx Dby
-  -- | inl | inr | abort =>
-  --   cases Da; cases Db;
-  --   simp only [Deriv.den]
-  --   apply refines_comp
-  --   apply_assumption
-  --   rfl
-  -- | iter hΓ hc hd ra rb Ia Ib =>
-  --   have ⟨Dax⟩ := ra.wt.left; have ⟨Dbx⟩ := rb.wt.left;
-  --   have ⟨Day⟩ := ra.wt.right; have ⟨Dby⟩ := rb.wt.right;
-  --   convert_to (Dax.iter hΓ hc hd Dbx).den (C := C) ↠ (Day.iter hΓ hc hd Dby).den
-  --   apply Deriv.coherence
-  --   apply Deriv.coherence
-  --   simp only [Deriv.den]
-  --   apply refines_comp
-  --   rfl
-  --   apply refines_comp
-  --   apply refines_whiskerLeft
-  --   exact Ia Dax Day
-  --   apply refines_iterate
-  --   apply refines_comp
-  --   rfl
-  --   apply refines_comp
-  --   rfl
-  --   apply refines_comp
-  --   apply refines_whiskerLeft
-  --   exact Ib Dbx Dby
-  --   rfl
+  | base h => apply V.den_ref h
+  | refl => apply refines_of_eq; apply Deriv.coherence
+  | trans hab hbc I I' => have ⟨Db'⟩ := hbc.wt.left; exact refines_trans (I Da Db') (I' Db' Db)
+  | let₁ hΓ ra rb Ia Ib =>
+    have ⟨Dax⟩ := ra.wt.left; have ⟨Dbx⟩ := rb.wt.left;
+    have ⟨Day⟩ := ra.wt.right; have ⟨Dby⟩ := rb.wt.right;
+    convert_to (Dax.let₁ hΓ Dbx).den (C := C) ↠ (Day.let₁ hΓ Dby).den
+    apply Deriv.coherence
+    apply Deriv.coherence
+    simp only [Deriv.den]
+    apply refines_comp
+    rfl
+    apply refines_comp
+    apply refines_whiskerLeft
+    exact Ia Dax Day
+    exact Ib Dbx Dby
+  | let₂ hΓ ra rb Ia Ib =>
+    have ⟨Dax⟩ := ra.wt.left; have ⟨Dbx⟩ := rb.wt.left;
+    have ⟨Day⟩ := ra.wt.right; have ⟨Dby⟩ := rb.wt.right;
+    convert_to (Dax.let₂ hΓ Dbx).den (C := C) ↠ (Day.let₂ hΓ Dby).den
+    apply Deriv.coherence
+    apply Deriv.coherence
+    simp only [Deriv.den]
+    apply refines_comp
+    rfl
+    apply refines_comp
+    apply refines_whiskerLeft
+    exact Ia Dax Day
+    apply refines_comp
+    rfl
+    exact Ib Dbx Dby
+  | pair hΓ ra rb Ia Ib =>
+    have ⟨Dax⟩ := ra.wt.left; have ⟨Dbx⟩ := rb.wt.left;
+    have ⟨Day⟩ := ra.wt.right; have ⟨Dby⟩ := rb.wt.right;
+    convert_to (Dax.pair hΓ Dbx).den (C := C) ↠ (Day.pair hΓ Dby).den
+    apply Deriv.coherence
+    apply Deriv.coherence
+    simp only [Deriv.den]
+    apply refines_comp
+    rfl
+    apply refines_comp
+    apply refines_whiskerRight
+    exact Ia Dax Day
+    apply refines_whiskerLeft
+    exact Ib Dbx Dby
+  | inl | inr | abort =>
+    cases Da; cases Db;
+    simp only [Deriv.den]
+    apply refines_comp
+    apply_assumption
+    rfl
+  | iter hΓ hc hd ra rb Ia Ib =>
+    have ⟨Dax⟩ := ra.wt.left; have ⟨Dbx⟩ := rb.wt.left;
+    have ⟨Day⟩ := ra.wt.right; have ⟨Dby⟩ := rb.wt.right;
+    convert_to (Dax.iter hΓ hc hd Dbx).den (C := C) ↠ (Day.iter hΓ hc hd Dby).den
+    apply Deriv.coherence
+    apply Deriv.coherence
+    simp only [Deriv.den]
+    apply refines_comp
+    rfl
+    apply refines_comp
+    apply refines_whiskerLeft
+    exact Ia Dax Day
+    apply refines_iterate
+    apply refines_comp
+    rfl
+    apply refines_comp
+    rfl
+    apply refines_comp
+    apply refines_whiskerLeft
+    exact Ib Dbx Dby
+    rfl
   | pos_unif hΓ hΓc hc hd hei he Dra ha Dms hs Dlb hb Dcb' hb' rs Ia =>
-    stop
     rename_i s Γ Γc Γl Γm Γr e e' A B X a b b'
     have hΓl_copy := hΓc.left_copy
     have hΓl_del := hΓc.left_del
@@ -299,17 +333,14 @@ theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform 
         (∂L _ _ _).inv ≫
         ((!_ _ ▷ _ ≫ (λ_ _).hom) ⊕ₕ ((ρ_ _).inv ▷ _))
     convert_to iter_left ↠ iter_right
-    · stop
-      simp only [
+    · simp only [
         Ctx?.den, Ctx?.ety, Ty.den, Var?.ety_erase, Deriv.den_wk1, Var?.ety, ety_var,
         Ctx?.SSplit.den, Var?.SSplit.den, swap_inner_tensorUnit_right
       ]
       apply uniformLeftHelper
-    · stop
-      simp only [iter_right, hIa_right]
+    · simp only [iter_right, hIa_right]
       convert uniformRightHelper (M := M) hΓc Dms.den Dcb'.den using 1
       simp
-    stop
     simp only [iter_left, iter_right]
     apply refines_comp
     rfl
@@ -320,11 +351,12 @@ theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform 
     apply refines_comp
     apply refines_whiskerLeft
     convert hIa
-    · sorry
-    · sorry
+    · simp only [Deriv.den, Deriv.den_wk1]
+      apply uniformLeftIndHelper
+    · simp only [Deriv.den, Deriv.den_wk1, Deriv.den_pwk, Ctx?.At.den, Var?.Wk.den, eqToHom_refl]
+      apply uniformRightIndHelper
     rfl
   | neg_unif hΓ hΓc hc hd hei he Dra ha Dms hs Dlb hb Dcb' hb' rs Ia =>
-    stop
     rename_i s Γ Γc Γl Γm Γr e e' A B X a b b'
     have hΓl_copy := hΓc.left_copy
     have hΓl_del := hΓc.left_del
@@ -393,7 +425,8 @@ theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform 
     apply refines_comp
     apply refines_whiskerLeft
     convert hIa
-    · sorry
-    · sorry
+    · simp only [Deriv.den, Deriv.den_wk1, Deriv.den_pwk, Ctx?.At.den, Var?.Wk.den, eqToHom_refl]
+      apply uniformRightIndHelper
+    · simp only [Deriv.den, Deriv.den_wk1]
+      apply uniformLeftIndHelper
     rfl
-  | _ => sorry
