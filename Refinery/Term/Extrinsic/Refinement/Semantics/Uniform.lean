@@ -8,6 +8,8 @@ open CategoryTheory
 
 open MonoidalCategory' PremonoidalCategory DistributiveCategory
 
+open ChosenFiniteCoproducts
+
 open scoped MonoidalCategory
 
 open HasCommRel
@@ -16,11 +18,11 @@ namespace Term
 
 variable {φ : Type _} {α : Type _} {ε : Type _} [S : Signature φ α ε]
          {C : Type _} [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
-        [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε] [Model φ α ε C]
+        [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
 
 class RWS.Valid (R : RWS φ α) (C : Type _)
   [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
-  [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε] [Model φ α ε C]
+  [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
   : Prop where
   den_ref {Γ A a b} (h : R Γ A a b) (Da : Γ ⊢ a : A) (Db : Γ ⊢ b : A) : Da.den (C := C) ↠ Db.den
 
@@ -101,9 +103,12 @@ instance RWS.instValidBot : Valid (φ := φ) ⊥ C where den_ref h := h.elim
 --   --   exact Ib Dbx Dby
 --   --   rfl
 --   | pos_unif hΓ hΓc hc hd hei he Dra ha Dms hs Dlb hb Dcb' hb' rs Ia =>
+--     stop
 --     rename_i s Γ Γc Γl Γm Γr e e' A B X a b b'
---     have _ := hΓc.left_copy
---     have _ := hΓc.left_del
+--     have hΓl_copy := hΓc.left_copy
+--     have hΓl_del := hΓc.left_del
+--     have hΓm_copy := hΓc.right_copy
+--     have hΓm_del := hΓc.right_del
 --     let Da' := (Dra.let₁ hΓ (Dms.iter (hΓc.cons (.right _)) inferInstance inferInstance (Dlb.wk1 _)))
 --     let Db' := (Dra.iter hΓ inferInstance inferInstance Dcb')
 --     have Γm_copy := hΓc.right_copy
@@ -119,18 +124,115 @@ instance RWS.instValidBot : Valid (φ := φ) ⊥ C where den_ref h := h.elim
 --     rfl
 --     apply refines_comp
 --     rfl
---     rw [<-Category.assoc]
+--     rw [<-Category.assoc (f := css⟦_⟧)]
 --     apply (Elgot2.right_mover_right_uniform he).right_uniform
 --     apply EffectfulCategory.HasEff.has_eff
 --     apply EffectfulCategory.HasEff.has_eff
 --     apply EffectfulCategory.HasEff.has_eff
---     simp [Deriv.den, Ctx?.SSplit.den_both] at hIa
---     simp only [Ctx?.SSplit.den, Ty.den, Var?.SSplit.den_right, Category.assoc, Ctx?.ety,
---       Ty.den.eq_3, Ty.den.eq_5,
---       PremonoidalCategory.whiskerLeft_comp, triangle_assoc_comp_left_inv, triangle_assoc,
---       whiskerRight_tensor, PremonoidalCategory.whiskerRight_id, comp_whiskerRight,
---       Iso.hom_inv_id_assoc, ChosenFiniteCoproducts.desc_comp, ChosenFiniteCoproducts.inl_desc,
---       Category.id_comp, ChosenFiniteCoproducts.inr_desc, Db', Da']
---     sorry
---   | neg_unif => sorry
+--     let hIa_left : (t⟦Γc.ety⟧ ⊗ t⟦A⟧ : C) ⟶ t⟦B.coprod X⟧ :=
+--       hΓc.den (C := C) ▷ _ ≫
+--         (α_ t⟦Γl.ety⟧ t⟦Γm.ety⟧ t⟦A⟧).hom ≫ t⟦Γl.ety⟧ ◁ Dms.den ≫ Dlb.den;
+--     let hIa_right : (t⟦Γc.ety⟧ ⊗ t⟦A⟧ : C) ⟶ t⟦B.coprod X⟧ :=
+--       Δ_ Γc.ety ▷ (t⟦A⟧ : C) ≫
+--         (α_ t⟦Γc.ety⟧ t⟦Γc.ety⟧ t⟦A⟧).hom ≫
+--         t⟦Γc.ety⟧ ◁ Dcb'.den ≫
+--         (∂L t⟦Γc.ety⟧ t⟦B⟧ t⟦A⟧).inv ≫
+--         (
+--           (!_ (Γc.ety) ▷ t⟦B⟧ ≫ (λ_ t⟦B⟧).hom) ⊕ₕ
+--           ((Deriv.pwk (Ctx?.PWk.scons { ty := A, q := ⊤ } hΓc.pwk_left_del) Dms).den))
+--     let iter_left : (t⟦Γc.ety⟧ ⊗ t⟦A⟧ : C) ⟶ t⟦B⟧ ⊕ₒ (t⟦Γl.ety⟧ ⊗ 𝟙_ C) ⊗ t⟦X⟧ :=
+--       Δ_ Γc.ety ▷ t⟦A⟧ ≫
+--       pw⟦hΓc.pwk_right_del⟧ ▷ _ ▷ _ ≫ (α_ _ _ _).hom ≫
+--       _ ◁ hIa_left ≫
+--       (∂L _ _ _).inv ≫
+--       ((!_ Γl.ety ▷ t⟦B⟧ ≫ (λ_ t⟦B⟧).hom) ⊕ₕ ((ρ_ _).inv ▷ _))
+--     let iter_right : (t⟦Γc.ety⟧ ⊗ t⟦A⟧ : C) ⟶ t⟦B⟧ ⊕ₒ (t⟦Γl.ety⟧ ⊗ 𝟙_ C) ⊗ t⟦X⟧ :=
+--       Δ_ Γc.ety ▷ t⟦A⟧ ≫
+--         pw⟦hΓc.pwk_right_del⟧ ▷ _ ▷ _ ≫ (α_ _ _ _).hom ≫
+--         _◁ hIa_right ≫
+--         (∂L _ _ _).inv ≫
+--         ((!_ _ ▷ _ ≫ (λ_ _).hom) ⊕ₕ ((ρ_ _).inv ▷ _))
+--     convert_to iter_left ↠ iter_right
+--     · sorry
+--     · sorry
+--     simp only [iter_left, iter_right]
+--     apply refines_comp
+--     rfl
+--     apply refines_comp
+--     rfl
+--     apply refines_comp
+--     rfl
+--     apply refines_comp
+--     apply refines_whiskerLeft
+--     convert hIa
+--     · sorry
+--     · sorry
+--     rfl
+--   | neg_unif hΓ hΓc hc hd hei he Dra ha Dms hs Dlb hb Dcb' hb' rs Ia =>
+--     stop
+--     rename_i s Γ Γc Γl Γm Γr e e' A B X a b b'
+--     have hΓl_copy := hΓc.left_copy
+--     have hΓl_del := hΓc.left_del
+--     have hΓm_copy := hΓc.right_copy
+--     have hΓm_del := hΓc.right_del
+--     let Da' := (Dra.let₁ hΓ (Dms.iter (hΓc.cons (.right _)) inferInstance inferInstance (Dlb.wk1 _)))
+--     let Db' := (Dra.iter hΓ inferInstance inferInstance Dcb')
+--     have Γm_copy := hΓc.right_copy
+--     have hIa := Ia
+--                   (Dcb'.case (Γc.both.cons (.right _))
+--                     (Deriv.bv (.here inferInstance Var?.Wk.top_le_quant)).inl
+--                     ((Dms.pwk ((hΓc.pwk_left_del).scons _)).wk1 ⟨A, 0⟩).inr)
+--                   (Dms.let₁ (hΓc.cons (.right _)) (Dlb.wk1 _))
+--     convert_to Db'.den ↠ Da'.den
+--     apply Deriv.coherence
+--     apply Deriv.coherence
+--     simp only [Da', Db', Deriv.den]
+--     apply refines_comp
+--     rfl
+--     apply refines_comp
+--     rfl
+--     rw [<-Category.assoc (f := css⟦_⟧)]
+--     apply (Elgot2.left_mover_left_uniform he).left_uniform
+--     apply EffectfulCategory.HasEff.has_eff
+--     apply EffectfulCategory.HasEff.has_eff
+--     apply EffectfulCategory.HasEff.has_eff
+--     let hIa_left : (t⟦Γc.ety⟧ ⊗ t⟦A⟧ : C) ⟶ t⟦B.coprod X⟧ :=
+--       hΓc.den (C := C) ▷ _ ≫
+--         (α_ t⟦Γl.ety⟧ t⟦Γm.ety⟧ t⟦A⟧).hom ≫ t⟦Γl.ety⟧ ◁ Dms.den ≫ Dlb.den;
+--     let hIa_right : (t⟦Γc.ety⟧ ⊗ t⟦A⟧ : C) ⟶ t⟦B.coprod X⟧ :=
+--       Δ_ Γc.ety ▷ (t⟦A⟧ : C) ≫
+--         (α_ t⟦Γc.ety⟧ t⟦Γc.ety⟧ t⟦A⟧).hom ≫
+--         t⟦Γc.ety⟧ ◁ Dcb'.den ≫
+--         (∂L t⟦Γc.ety⟧ t⟦B⟧ t⟦A⟧).inv ≫
+--         (
+--           (!_ (Γc.ety) ▷ t⟦B⟧ ≫ (λ_ t⟦B⟧).hom) ⊕ₕ
+--           ((Deriv.pwk (Ctx?.PWk.scons { ty := A, q := ⊤ } hΓc.pwk_left_del) Dms).den))
+--     let iter_left : (t⟦Γc.ety⟧ ⊗ t⟦A⟧ : C) ⟶ t⟦B⟧ ⊕ₒ (t⟦Γl.ety⟧ ⊗ 𝟙_ C) ⊗ t⟦X⟧ :=
+--       Δ_ Γc.ety ▷ t⟦A⟧ ≫
+--       pw⟦hΓc.pwk_right_del⟧ ▷ _ ▷ _ ≫ (α_ _ _ _).hom ≫
+--       _ ◁ hIa_left ≫
+--       (∂L _ _ _).inv ≫
+--       ((!_ Γl.ety ▷ t⟦B⟧ ≫ (λ_ t⟦B⟧).hom) ⊕ₕ ((ρ_ _).inv ▷ _))
+--     let iter_right : (t⟦Γc.ety⟧ ⊗ t⟦A⟧ : C) ⟶ t⟦B⟧ ⊕ₒ (t⟦Γl.ety⟧ ⊗ 𝟙_ C) ⊗ t⟦X⟧ :=
+--       Δ_ Γc.ety ▷ t⟦A⟧ ≫
+--         pw⟦hΓc.pwk_right_del⟧ ▷ _ ▷ _ ≫ (α_ _ _ _).hom ≫
+--         _◁ hIa_right ≫
+--         (∂L _ _ _).inv ≫
+--         ((!_ _ ▷ _ ≫ (λ_ _).hom) ⊕ₕ ((ρ_ _).inv ▷ _))
+--     convert_to iter_right ↠ iter_left
+--     · sorry
+--     · sorry
+--     simp only [iter_left, iter_right]
+--     apply refines_comp
+--     rfl
+--     apply refines_comp
+--     rfl
+--     apply refines_comp
+--     rfl
+--     apply refines_comp
+--     apply refines_whiskerLeft
+--     convert hIa
+--     · sorry
+--     · sorry
+--     rfl
 --   | _ => sorry

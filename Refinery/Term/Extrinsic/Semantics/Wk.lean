@@ -85,6 +85,16 @@ theorem Deriv.den_wk {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ 
 theorem Deriv.wk_den {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a : Term φ (Ty α)} (D : Δ ⊢ a : A)
   : ρ.den ≫ D.den = (D.wk ρ).den (C := C) := by rw [den_wk]
 
+theorem Deriv.den_wk0 {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
+  (D : Γ ⊢ a : A) (x : Var? α) [hv : x.del]
+  : (D.wk0 x).den (C := C) = _ ◁ !_ x.ety ≫ (ρ_ _).hom ≫ D.den
+  := by rw [wk0, den_cast_term, den_wk, <-Category.assoc]; simp
+
+theorem Deriv.den_wk1 {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
+  {v : Var? α} (D : Γ.cons v ⊢ a : A) (x : Var? α) [hv : x.del]
+  : (D.wk1 x).den (C := C) = (_ ◁ !_ x.ety) ▷ _ ≫ (ρ_ _).hom ▷ _ ≫ D.den
+  := by rw [wk1, den_cast_term, den_wk, <-Category.assoc]; simp
+
 theorem Deriv.den_pwk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} {a : Term φ (Ty α)} (D : Δ ⊢ a : A)
   : (D.pwk ρ).den (C := C) = ρ.den ≫ D.den := by rw [<-ρ.den_toWk, wk_den, pwk, den_cast_term]
 
