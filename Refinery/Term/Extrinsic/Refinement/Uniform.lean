@@ -93,6 +93,18 @@ theorem RWS.uniform.wt {R : RWS φ α} {Γ A a a'} (h : uniform R Γ A a a')
     constructor <;> constructor
     <;> first | assumption | (constructor <;> first | exact S.top_iterative | assumption)
 
+inductive RWS.symm (R : RWS φ α) : RWS φ α
+  | fwd {Γ A a b} : R Γ A a b → symm R Γ A a b
+  | bwd {Γ A a b} : R Γ A b a → symm R Γ A a b
+
+theorem RWS.symm_iff {R : RWS φ α} {Γ A a b} : symm R Γ A a b ↔ R Γ A a b ∨ R Γ A b a :=
+  ⟨λ h => match h with
+    | RWS.symm.fwd h => Or.inl h
+    | RWS.symm.bwd h => Or.inr h,
+  λ h => match h with
+    | Or.inl h => RWS.symm.fwd h
+    | Or.inr h => RWS.symm.bwd h⟩
+
 inductive RWS.swap (R : RWS φ α) : RWS φ α
   | mk {Γ A a b} : R Γ A b a → swap R Γ A a b
 
@@ -104,6 +116,15 @@ theorem RWS.swap_iff {R : RWS φ α} {Γ A a b} : swap R Γ A a b ↔ R Γ A b a
 
 inductive RWS.equiv (R : RWS φ α) : RWS φ α
   | mk {Γ A a b} : R Γ A a b → R Γ A b a → equiv R Γ A a b
+
+theorem RWS.equiv.fwd {R : RWS φ α} {Γ A a b} (h : equiv R Γ A a b)
+  : R Γ A a b := by cases h; assumption
+
+theorem RWS.equiv.bwd {R : RWS φ α} {Γ A a b} (h : equiv R Γ A a b)
+  : R Γ A b a := by cases h; assumption
+
+theorem RWS.equiv_iff {R : RWS φ α} {Γ A a b} : equiv R Γ A a b ↔ R Γ A a b ∧ R Γ A b a :=
+  ⟨λ h => ⟨RWS.equiv.fwd h, RWS.equiv.bwd h⟩, λ ⟨h₁, h₂⟩ => RWS.equiv.mk h₁ h₂⟩
 
 -- instance RWS.uniform.instWt (R : RWS φ α) : RWS.IsWt (RWS.uniform R) where
 --   left_wt h := (RWS.uniform.wt h).left

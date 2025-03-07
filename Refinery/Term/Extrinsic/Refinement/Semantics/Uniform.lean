@@ -468,4 +468,21 @@ class RWS.BiValid (R : RWS φ α) (C : Type _)
   den_ref h Da Db := refines_of_eq (den_eq h Da Db)
   den_ref_anti h Da Db := refines_of_eq (den_eq h Da Db).symm
 
-instance RWS.symm_bivalid (R : RWS φ α) [V : R.BiValid C] : R.BiValid C where
+instance RWS.instBivalidBot : BiValid (⊥ : RWS φ α) C where
+
+instance RWS.swap_bivalid (R : RWS φ α) [V : R.BiValid C] : R.swap.BiValid C where
+
+instance RWS.symm_bivalid (R : RWS φ α) [V : R.BiValid C] : R.symm.BiValid C where
+  den_ref h Da Db := match h with
+    | .fwd h => Valid.den_ref h Da Db
+    | .bwd h => AntiValid.den_ref_anti h Db Da
+  den_ref_anti h Da Db := match h with
+    | .fwd h => AntiValid.den_ref_anti h Da Db
+    | .bwd h => Valid.den_ref h Db Da
+
+-- Note: uniform does _not_ preserve bivalidity unless all forward commutative effects are also
+-- backward commutative!
+
+instance RWS.equiv_bivalid (R : RWS φ α) [V : R.Valid C] : R.equiv.BiValid C where
+  den_ref h Da Db := Valid.den_ref h.fwd Da Db
+  den_ref_anti h Da Db := Valid.den_ref h.bwd Db Da
