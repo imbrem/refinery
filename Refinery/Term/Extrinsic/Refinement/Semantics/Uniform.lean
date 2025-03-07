@@ -29,7 +29,6 @@ class RWS.Valid (R : RWS φ α) (C : Type _)
 instance RWS.instValidBot : Valid (φ := φ) ⊥ C where den_ref h := h.elim
 
 theorem uniformLeftIndHelper {Γc Γl Γm : Ctx? α}
-  [hΓc_copy : Γc.copy] [hΓl_copy : Γl.copy] [hΓl_del : Γl.del] [hΓm_del : Γm.del]
   (hΓc : Γc.SSplit Γl Γm) {A B X : Ty α}
   (f : (t⟦Γm.ety⟧ ⊗ t⟦A⟧ : C) ⟶ t⟦X⟧) (g : (t⟦Γl.ety⟧ ⊗ t⟦X⟧ : C) ⟶ t⟦B⟧ ⊕ₒ t⟦X⟧) :
   hΓc.den (C := C) ▷ _ ≫ (α_ t⟦Γl.ety⟧ t⟦Γm.ety⟧ t⟦A⟧).hom ≫ t⟦Γl.ety⟧ ◁ f ≫ g =
@@ -37,10 +36,10 @@ theorem uniformLeftIndHelper {Γc Γl Γm : Ctx? α}
     g⟦Γl.cons ⟨A, 0⟩⟧ ◁ f ≫
       (t⟦Γl.ety⟧ ◁ !_ Ty.unit) ▷ t⟦X⟧ ≫
         (ρ_ t⟦Γl.ety⟧).hom ▷ t⟦X⟧ ≫ g
-  := sorry
+  := by simp [Ctx?.SSplit.den, tensorHom_def]; premonoidal
 
 theorem uniformRightIndHelper {Γc Γl Γm : Ctx? α}
-  [hΓc_copy : Γc.copy] [hΓc_del : Γc.del] [hΓl_del : Γl.del] [hΓm_del : Γm.del]
+  [hΓc_copy : Γc.copy] [hΓc_del : Γc.del] [hΓl_del : Γl.del]
   (hΓc : Γc.SSplit Γl Γm) {A B X : Ty α}
   (f : (t⟦Γm.ety⟧ ⊗ t⟦A⟧ : C) ⟶ t⟦X⟧) (g : (t⟦Γc.ety⟧ ⊗ t⟦A⟧ : C) ⟶ t⟦B⟧ ⊕ₒ t⟦A⟧) :
   Δ_ Γc.ety ▷ (t⟦A⟧ : C) ≫
@@ -61,7 +60,19 @@ theorem uniformRightIndHelper {Γc Γl Γm : Ctx? α}
                 (ρ_ t⟦Γc.ety⟧).hom ▷ t⟦A⟧ ≫
                   pw⟦hΓc.pwk_left_del.scons ⟨A, ⊤⟩⟧ ≫ f) ≫
               ChosenFiniteCoproducts.inr t⟦B⟧ t⟦X⟧)
-  := sorry
+  := by
+  simp only [
+    Ctx?.SSplit.den, Ctx?.SSplit.den_both, tensorHom_def, Var?.SSplit.den, Ty.den, Var?.ety,
+    ety_var, swap_inner_tensorUnit_right, Category.assoc, Ctx?.den, Ctx?.ety,
+    Central.left_exchange_assoc (f := (ρ_ _).inv), distl_inv_naturality_left_assoc,
+    addHom_desc, associator_naturality_right_assoc
+  ]
+  rw [
+    <-PremonoidalCategory.whiskerLeft_comp_assoc, whiskerLeft_inv_hom,
+    PremonoidalCategory.whiskerLeft_id, Category.id_comp, addHom,
+    M.drop_tensor, M.drop_unit, tensorHom_def
+  ]
+  congr 5 <;> premonoidal
 
 theorem uniformLeftHelper {Γc Γl Γm : Ctx? α}
   [hΓc_copy : Γc.copy] [hΓl_copy : Γl.copy] [hΓl_del : Γl.del] [hΓm_del : Γm.del]
