@@ -412,6 +412,7 @@ theorem Ctx?.SSplit.den_both {Γ : Ctx? α} [hΓ : Γ.copy]
     | zero A => simp [Var?.ety, MonoidalCategory'.unitors_inv_equal]
     | rest A q => simp
 
+@[reassoc]
 theorem Ctx?.Split.assoc_inv_coherence {Γ₁₂₃ Γ₁₂ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}
   (σ123_12_3 : Γ₁₂₃.Split Γ₁₂ Γ₃) (σ12 : Γ₁₂.Split Γ₁ Γ₂)
   (σ123_1_23 : Γ₁₂₃.Split Γ₁ Γ₂₃) (σ23 : Γ₂₃.Split Γ₂ Γ₃)
@@ -419,6 +420,7 @@ theorem Ctx?.Split.assoc_inv_coherence {Γ₁₂₃ Γ₁₂ Γ₂₃ Γ₁ Γ�
   = σ123_1_23.den ≫ _ ◁ σ23.den ≫ (α_ _ _ _).inv
   := by rw [<-Ctx?.Split.assoc_coherence_assoc, Iso.hom_inv_id, Category.comp_id]
 
+@[reassoc]
 theorem Ctx?.SSplit.assoc_coherence {Γ₁₂₃ Γ₁₂ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}
   (σ123_12_3 : Γ₁₂₃.SSplit Γ₁₂ Γ₃) (σ12 : Γ₁₂.SSplit Γ₁ Γ₂)
   (σ123_1_23 : Γ₁₂₃.SSplit Γ₁ Γ₂₃) (σ23 : Γ₂₃.SSplit Γ₂ Γ₃)
@@ -426,6 +428,7 @@ theorem Ctx?.SSplit.assoc_coherence {Γ₁₂₃ Γ₁₂ Γ₂₃ Γ₁ Γ₂ �
   = σ123_1_23.den ≫ _ ◁ σ23.den
   := by simp only [<-Ctx?.SSplit.den_unstrict]; apply Ctx?.Split.assoc_coherence
 
+@[reassoc]
 theorem Ctx?.SSplit.assoc_inv_coherence {Γ₁₂₃ Γ₁₂ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}
   (σ123_12_3 : Γ₁₂₃.SSplit Γ₁₂ Γ₃) (σ12 : Γ₁₂.SSplit Γ₁ Γ₂)
   (σ123_1_23 : Γ₁₂₃.SSplit Γ₁ Γ₂₃) (σ23 : Γ₂₃.SSplit Γ₂ Γ₃)
@@ -433,12 +436,16 @@ theorem Ctx?.SSplit.assoc_inv_coherence {Γ₁₂₃ Γ₁₂ Γ₂₃ Γ₁ Γ�
   = σ123_1_23.den ≫ _ ◁ σ23.den ≫ (α_ _ _ _).inv
   := by simp only [<-Ctx?.SSplit.den_unstrict]; apply Ctx?.Split.assoc_inv_coherence
 
+@[reassoc]
 theorem Ctx?.SSplit.den_dup_left_dup_eq_wk {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ)
   [hΓ : Γ.copy] [hΞ : Ξ.del]
-  : σ.den (C := C) ≫ (let _ : Δ.copy := σ.left_copy; Δ.both.den) ▷ _
-  = Γ.both.den ≫ (σ.pwk_right_del.den (C := C) ⊗ σ.den) ≫ (α_ _ _ _).inv := by
+  : σ.den (C := C) ≫ (haveI _ : Δ.copy := σ.left_copy; Δ_ Δ.ety) ▷ _
+  = Δ_ Γ.ety ≫ (σ.pwk_right_del.den (C := C) ⊗ σ.den) ≫ (α_ _ _ _).inv := by
   rw [tensorHom_def]
-  simp only [<-Ctx?.SSplit.den_unstrict, Category.assoc, Ctx?.Split.den_wkOutL_assoc]
+  haveI _ : Δ.copy := σ.left_copy
+  simp only [
+    <-Ctx?.SSplit.den_both, <-Ctx?.SSplit.den_unstrict, Category.assoc, Ctx?.Split.den_wkOutL_assoc
+  ]
   apply Ctx?.Split.assoc_inv_coherence
 
 end Braided

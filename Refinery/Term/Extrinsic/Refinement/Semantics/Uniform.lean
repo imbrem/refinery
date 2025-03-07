@@ -28,6 +28,60 @@ class RWS.Valid (R : RWS φ α) (C : Type _)
 
 instance RWS.instValidBot : Valid (φ := φ) ⊥ C where den_ref h := h.elim
 
+theorem uniformLeftHelper {Γc Γl Γm : Ctx? α}
+  [hΓc_copy : Γc.copy] [hΓl_copy : Γl.copy] [hΓl_del : Γl.del] [hΓm_del : Γm.del]
+  (hΓc : Γc.SSplit Γl Γm) {A B X : Ty α}
+  (f : (t⟦Γm.ety⟧ ⊗ t⟦A⟧ : C) ⟶ t⟦X⟧) (g : (t⟦Γl.ety⟧ ⊗ t⟦X⟧ : C) ⟶ t⟦B⟧ ⊕ₒ t⟦X⟧) :
+  (((hΓc.den (C := C) ⊗ (λ_ t⟦A⟧).inv) ≫
+        (α_ t⟦Γl.ety⟧ t⟦Γm.ety⟧ (𝟙_ C ⊗ t⟦A⟧)).hom ≫
+          t⟦Γl.ety⟧ ◁ t⟦Γm.ety⟧ ◁ (λ_ t⟦A⟧).hom ≫ (ρ_ t⟦Γl.ety⟧).inv ▷ _) ≫
+      (t⟦Γl.ety⟧ ⊗ 𝟙_ C) ◁ f) ≫
+    Δ_ (Γl.ety.tensor Ty.unit) ▷ t⟦X⟧ ≫
+      (α_ _ _ t⟦X⟧).hom ≫
+        (t⟦Γl.ety⟧ ⊗ 𝟙_ C) ◁ ((t⟦Γl.ety⟧ ◁ !_ Ty.unit) ▷ t⟦X⟧ ≫ (ρ_ t⟦Γl.ety⟧).hom ▷ t⟦X⟧ ≫ g) ≫
+          (∂L _ t⟦B⟧ t⟦X⟧).inv ≫
+            (!_ (Γl.ety.tensor Ty.unit) ▷ t⟦B⟧ ≫ (λ_ t⟦B⟧).hom ⊕ₕ 𝟙 _)
+  =
+  Δ_ Γc.ety ▷ t⟦A⟧ ≫
+    pw⟦hΓc.pwk_right_del⟧ ▷ _ ▷ _ ≫ (α_ _ _ _).hom ≫
+    _ ◁ (hΓc.den (C := C) ▷ _ ≫
+      (α_ t⟦Γl.ety⟧ t⟦Γm.ety⟧ t⟦A⟧).hom ≫ t⟦Γl.ety⟧ ◁ f ≫ g) ≫
+    (∂L _ _ _).inv ≫
+    ((!_ Γl.ety ▷ t⟦B⟧ ≫ (λ_ t⟦B⟧).hom) ⊕ₕ ((ρ_ _).inv ▷ _))
+  := calc
+  _ = hΓc.den (C := C) ▷ _
+          ≫ (α_ t⟦Γl.ety⟧ t⟦Γm.ety⟧ _).hom
+          ≫ _ ◁ f ≫ Δ_ Γl.ety ▷ _ ≫ (α_ _ _ _).hom ≫ _ ◁ g
+          ≫ (ρ_ _).inv ▷ _
+          ≫ (∂L _ t⟦B⟧ t⟦X⟧).inv
+          ≫ (!_ (Γl.ety.tensor Ty.unit) ▷ t⟦B⟧ ≫ (λ_ t⟦B⟧).hom ⊕ₕ 𝟙 _)
+    := by
+      simp only [M.copy_tensor, M.copy_unit, M.drop_unit, Ty.den, swap_inner_tensorUnit_right]
+      premonoidal
+  _ = hΓc.den (C := C) ▷ _
+          ≫ (α_ t⟦Γl.ety⟧ t⟦Γm.ety⟧ _).hom
+          ≫ _ ◁ f ≫ Δ_ Γl.ety ▷ _ ≫ (α_ _ _ _).hom ≫ _ ◁ g
+          ≫ (∂L _ t⟦B⟧ t⟦X⟧).inv
+          ≫ (!_ Γl.ety ▷ t⟦B⟧ ≫ (λ_ t⟦B⟧).hom ⊕ₕ (ρ_ _).inv ▷ _)
+    := by
+      simp only [Category.assoc, Ty.den, M.drop_tensor, M.drop_unit, tensorHom_id,
+        PremonoidalCategory.whiskerRight_id, comp_whiskerRight, leftUnitor_whiskerRight,
+        triangle_assoc_comp_right_inv_assoc, id_whiskerLeft, Iso.hom_inv_id_assoc, Iso.inv_hom_id,
+        Category.comp_id, distl_inv_naturality_left_assoc, desc_comp, inl_desc,
+        inv_hom_whiskerRight_assoc, inr_desc, Category.id_comp]
+      congr 8
+      rw [Category.assoc]
+  _ = hΓc.den (C := C) ▷ _ ≫ Δ_ Γl.ety ▷ _ ▷ _ ≫ (α_ _ _ _).hom
+          ≫ _ ◁ f ≫ (α_ _ _ _).hom ≫ _ ◁ g
+          ≫ (∂L _ t⟦B⟧ t⟦X⟧).inv
+          ≫ (!_ Γl.ety ▷ t⟦B⟧ ≫ (λ_ t⟦B⟧).hom ⊕ₕ (ρ_ _).inv ▷ _)
+    := by rw [<-Central.left_exchange_assoc, <-associator_naturality_left_assoc]
+  _ = _ := by
+    simp only [<-PremonoidalCategory.comp_whiskerRight_assoc]
+    rw [Ctx?.SSplit.den_dup_left_dup_eq_wk]
+    simp only [tensorHom_def, Category.assoc]
+    premonoidal
+
 theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform R Γ A a b)
   (Da : Γ ⊢ a : A) (Db : Γ ⊢ b : A) : Da.den (C := C) ↠ Db.den := by induction h with
   -- | base h => apply V.den_ref h
@@ -103,6 +157,7 @@ theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform 
   --   exact Ib Dbx Dby
   --   rfl
   | pos_unif hΓ hΓc hc hd hei he Dra ha Dms hs Dlb hb Dcb' hb' rs Ia =>
+    stop
     rename_i s Γ Γc Γl Γm Γr e e' A B X a b b'
     have hΓl_copy := hΓc.left_copy
     have hΓl_del := hΓc.left_del
@@ -153,21 +208,10 @@ theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform 
         ((!_ _ ▷ _ ≫ (λ_ _).hom) ⊕ₕ ((ρ_ _).inv ▷ _))
     convert_to iter_left ↠ iter_right
     · simp only [
-        iter_left, Ctx?.SSplit.den, Var?.SSplit.den, tensorHom_def, Category.assoc, Var?.ety_erase,
-        Ty.den, swap_inner_leftUnitor_assoc, Ctx?.ety, M.copy_tensor, M.copy_unit, Ctx?.den,
-        hIa_left, Deriv.den_wk1, swap_inner_tensorUnit_right,
+        Ctx?.den, Ctx?.ety, Ty.den, Var?.ety_erase, Deriv.den_wk1, Var?.ety, ety_var,
+        Ctx?.SSplit.den, Var?.SSplit.den, swap_inner_tensorUnit_right
       ]
-      -- rw [
-      --   <-Central.left_exchange_assoc, <-comp_whiskerRight_assoc,
-      --   <-rightUnitor_inv_naturality_assoc, swap_inner_tensorUnit_right,
-      --   Deriv.den_wk1,
-      -- ]
-      -- simp only [
-      --   Var?.ety_erase, M.drop_unit, Var?.ety, ety_var, PremonoidalCategory.comp_whiskerRight,
-      --   Category.assoc, <-associator_naturality_left_assoc, <-associator_naturality_middle_assoc,
-      --   <-associator_naturality_left_assoc,
-      -- ]
-      sorry
+      apply uniformLeftHelper
     · sorry
     stop
     simp only [iter_left, iter_right]
@@ -236,7 +280,11 @@ theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform 
         ((!_ _ ▷ _ ≫ (λ_ _).hom) ⊕ₕ ((ρ_ _).inv ▷ _))
     convert_to iter_right ↠ iter_left
     · sorry
-    · sorry
+    · simp only [
+        Ctx?.den, Ctx?.ety, Ty.den, Var?.ety_erase, Deriv.den_wk1, Var?.ety, ety_var,
+        Ctx?.SSplit.den, Var?.SSplit.den, swap_inner_tensorUnit_right
+      ]
+      apply uniformLeftHelper
     simp only [iter_left, iter_right]
     apply refines_comp
     rfl
