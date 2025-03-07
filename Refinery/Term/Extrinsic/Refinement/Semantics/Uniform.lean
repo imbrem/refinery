@@ -155,17 +155,18 @@ theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform 
     · simp only [
         iter_left, Ctx?.SSplit.den, Var?.SSplit.den, tensorHom_def, Category.assoc, Var?.ety_erase,
         Ty.den, swap_inner_leftUnitor_assoc, Ctx?.ety, M.copy_tensor, M.copy_unit, Ctx?.den,
+        hIa_left, Deriv.den_wk1, swap_inner_tensorUnit_right,
       ]
-      rw [
-        <-Central.left_exchange_assoc, <-comp_whiskerRight_assoc,
-        <-rightUnitor_inv_naturality_assoc, swap_inner_tensorUnit_right,
-        Deriv.den_wk1,
-      ]
-      simp only [
-        Var?.ety_erase, M.drop_unit, Var?.ety, ety_var, PremonoidalCategory.comp_whiskerRight,
-        Category.assoc, <-associator_naturality_left_assoc, <-associator_naturality_middle_assoc,
-        <-associator_naturality_left_assoc,
-      ]
+      -- rw [
+      --   <-Central.left_exchange_assoc, <-comp_whiskerRight_assoc,
+      --   <-rightUnitor_inv_naturality_assoc, swap_inner_tensorUnit_right,
+      --   Deriv.den_wk1,
+      -- ]
+      -- simp only [
+      --   Var?.ety_erase, M.drop_unit, Var?.ety, ety_var, PremonoidalCategory.comp_whiskerRight,
+      --   Category.assoc, <-associator_naturality_left_assoc, <-associator_naturality_middle_assoc,
+      --   <-associator_naturality_left_assoc,
+      -- ]
       sorry
     · sorry
     stop
