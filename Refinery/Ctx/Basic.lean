@@ -394,6 +394,10 @@ theorem Var?.Wk.top_le_quant {A : Ty α} {q : Quant}
   : (Var?.mk A ⊤ ≤ Var?.mk A q) := ⟨rfl, le_top, λh => by cases h⟩
 
 @[simp]
+theorem Var?.Wk.top_le_one {A : Ty α}
+  : (Var?.mk A ⊤ ≤ Var?.mk A 1) := Var?.Wk.top_le_quant
+
+@[simp]
 theorem Var?.Wk.zero_le_quant_iff {A B : Ty α} {q : Quant} : (Var?.mk A 0 ≤ ⟨B, q⟩) ↔ False
   := by rw [iff_false]; apply not_zero_le
 
