@@ -337,6 +337,9 @@ theorem Ctx?.PWk.den_double {Γ : Ctx? α} {v w v' w': Var? α} (h : v ≤ w) (h
   : (((refl Γ).cons h).cons h').den (C := C) = (_ ◁ h.den) ▷ _ ≫ _ ◁ h'.den
     := by simp [tensorHom_def]
 
+theorem Ctx?.PWk.den_refl' {Γ : Ctx? α} (ρ : Γ.PWk Γ) : ρ.den (C := C) = 𝟙 (g⟦ Γ ⟧) := by
+  convert Ctx?.PWk.den_refl (Γ := Γ); apply Subsingleton.elim
+
 theorem Ctx?.PWk.den_comp {Γ Δ Ξ : Ctx? α} (ρ : Γ.PWk Δ) (ρ' : Δ.PWk Ξ)
   : ρ.den ≫ ρ'.den = (ρ.comp ρ').den (C := C)
   := by rw [<-ρ.den_toWk, <-ρ'.den_toWk, Wk.den_comp, <-PWk.comp_toWk, den_toWk]
