@@ -66,6 +66,27 @@ instance RWS.symm_bivalid (R : RWS φ α) [V : R.BiValid C] : R.symm.BiValid C w
 -- Note: uniform does _not_ preserve bivalidity unless all forward commutative effects are also
 -- backward commutative!
 
-instance RWS.equiv_bivalid (R : RWS φ α) [V : R.Valid C] : R.equiv.BiValid C where
+instance RWS.iso_bivalid (R : RWS φ α) [V : R.Valid C] : R.iso.BiValid C where
   den_ref h Da Db := Valid.den_ref h.fwd Da Db
   den_ref_anti h Da Db := Valid.den_ref h.bwd Db Da
+
+class DRWS.Valid (R : DRWS φ α) (C : Type _)
+  [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
+  [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
+  : Prop where
+  den_ref (Da : Γ ⊢ a : A) (Db : Γ ⊢ b : A) (h : R Da Db) : Da.den (C := C) ↠ Db.den
+
+class DRWS.AntiValid (R : DRWS φ α) (C : Type _)
+  [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
+  [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
+  : Prop where
+  den_ref_anti (Da : Γ ⊢ a : A) (Db : Γ ⊢ b : A) (h : R Da Db) : Da.den (C := C) ↞ Db.den
+
+class DRWS.BiValid (R : DRWS φ α) (C : Type _)
+  [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
+  [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
+  : Prop extends AntiValid R C, Valid R C where
+  den_eq {Γ A a b} (Da : Γ ⊢ a : A) (Db : Γ ⊢ b : A) (h : R Da Db) : Da.den (C := C) = Db.den
+    := refines_antisymm (den_ref Da Db h) (den_ref_anti Da Db h)
+  den_ref h Da Db := refines_of_eq (den_eq h Da Db)
+  den_ref_anti h Da Db := refines_of_eq (den_eq h Da Db).symm

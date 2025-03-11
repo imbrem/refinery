@@ -257,6 +257,32 @@ theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform 
     exact Ia Dax Day
     apply refines_whiskerLeft
     exact Ib Dbx Dby
+  | op hf =>
+    cases Da with | op hfa => cases Db with | op hfb =>
+    cases hf.src; cases hf.trg;
+    cases hfa.src; cases hfa.trg;
+    cases hfb.src; cases hfb.trg;
+    simp only [Deriv.den]
+    apply refines_comp
+    apply_assumption
+    rfl
+  | case hΓ ra rb rc Ia Ib Ic =>
+    have ⟨Dax⟩ := ra.wt.left; have ⟨Dbx⟩ := rb.wt.left; have ⟨Dcx⟩ := rc.wt.left;
+    have ⟨Day⟩ := ra.wt.right; have ⟨Dby⟩ := rb.wt.right; have ⟨Dcy⟩ := rc.wt.right;
+    convert_to (Dax.case hΓ Dbx Dcx).den (C := C) ↠ (Day.case hΓ Dby Dcy).den
+    apply Deriv.coherence
+    apply Deriv.coherence
+    simp only [Deriv.den]
+    apply refines_comp
+    rfl
+    apply refines_comp
+    apply refines_whiskerLeft
+    exact Ia Dax Day
+    apply refines_comp
+    rfl
+    apply refines_desc
+    apply Ib
+    apply Ic
   | inl | inr | abort =>
     cases Da; cases Db;
     simp only [Deriv.den]
