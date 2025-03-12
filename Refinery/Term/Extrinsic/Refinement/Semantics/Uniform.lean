@@ -458,5 +458,15 @@ theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform 
       apply uniformLeftIndHelper
     rfl
 
-instance RWS.instUniformValid (R : RWS φ α) [V : R.Valid C] : R.uniform.Valid C where
+instance RWS.uniform_valid (R : RWS φ α) [V : R.Valid C] : R.uniform.Valid C where
   den_ref := RWS.uniform.ref
+
+theorem DRWS.uniform.ref {R : DRWS φ α} [V : R.Valid C] {Γ A a b}
+  (Da : Γ ⊢ a : A) (Db : Γ ⊢ b : A) (h : (uniform R).rel Da Db) : Da.den (C := C) ↠ Db.den
+  := by
+  have h : (uniform R).toRWS Γ A a b := ⟨Da, Db, h⟩;
+  rw [DRWS.toRWS_uniform] at h
+  apply RWS.Valid.den_ref h _ _
+
+instance DRWS.uniform_valid (R : DRWS φ α) [V : R.Valid C] : R.uniform.Valid C where
+  den_ref := DRWS.uniform.ref

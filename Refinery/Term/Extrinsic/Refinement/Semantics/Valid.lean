@@ -90,3 +90,11 @@ class DRWS.BiValid (R : DRWS φ α) (C : Type _)
     := refines_antisymm (den_ref Da Db h) (den_ref_anti Da Db h)
   den_ref h Da Db := refines_of_eq (den_eq h Da Db)
   den_ref_anti h Da Db := refines_of_eq (den_eq h Da Db).symm
+
+instance RWS.toDRWS_valid (R : RWS φ α) [V : R.Valid C] : R.toDRWS.Valid C where
+  den_ref Da Db h := V.den_ref h Da Db
+
+instance DRWS.toRWS_valid (R : DRWS φ α) [V : R.Valid C] : R.toRWS.Valid C where
+  den_ref | ⟨da, db, h⟩, Da, Db => by convert V.den_ref da db h using 1 <;> apply Deriv.coherence
+
+--TODO: swap, iso, symm lemmas
