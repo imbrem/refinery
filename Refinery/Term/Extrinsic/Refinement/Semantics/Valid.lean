@@ -74,19 +74,19 @@ class DRWS.Valid (R : DRWS φ α) (C : Type _)
   [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
   [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
   : Prop where
-  den_ref (Da : Γ ⊢ a : A) (Db : Γ ⊢ b : A) (h : R Da Db) : Da.den (C := C) ↠ Db.den
+  den_ref (Da : Γ ⊢ a : A) (Db : Γ ⊢ b : A) (h : R.rel Da Db) : Da.den (C := C) ↠ Db.den
 
 class DRWS.AntiValid (R : DRWS φ α) (C : Type _)
   [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
   [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
   : Prop where
-  den_ref_anti (Da : Γ ⊢ a : A) (Db : Γ ⊢ b : A) (h : R Da Db) : Da.den (C := C) ↞ Db.den
+  den_ref_anti (Da : Γ ⊢ a : A) (Db : Γ ⊢ b : A) (h : R.rel Da Db) : Da.den (C := C) ↞ Db.den
 
 class DRWS.BiValid (R : DRWS φ α) (C : Type _)
   [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
   [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
   : Prop extends AntiValid R C, Valid R C where
-  den_eq {Γ A a b} (Da : Γ ⊢ a : A) (Db : Γ ⊢ b : A) (h : R Da Db) : Da.den (C := C) = Db.den
+  den_eq {Γ A a b} (Da : Γ ⊢ a : A) (Db : Γ ⊢ b : A) (h : R.rel Da Db) : Da.den (C := C) = Db.den
     := refines_antisymm (den_ref Da Db h) (den_ref_anti Da Db h)
   den_ref h Da Db := refines_of_eq (den_eq h Da Db)
   den_ref_anti h Da Db := refines_of_eq (den_eq h Da Db).symm

@@ -216,6 +216,13 @@ theorem RWS.uniform.wt {R : RWS φ α} {Γ A a a'} (h : uniform R Γ A a a')
 
 --TODO: inst uniform wt
 
+theorem RWS.uniform.mono {R : RWS φ α} {Γ A a a'} (h : uniform R Γ A a a') (hR : R ≤ R')
+  : uniform R' Γ A a a' := by induction h with
+  | base h da db => exact base (hR _ _ _ _ h) da db
+  | refl => apply refl; assumption
+  | trans => apply trans <;> assumption
+  | _ => constructor <;> assumption
+
 --TODO: uniform mono
 
 --TODO: uniform idem
@@ -269,23 +276,46 @@ theorem RWS.iso_iff {R : RWS φ α} {Γ A a b} : iso R Γ A a b ↔ R Γ A a b �
 --   --   Γ.SSplit Γc Γr → Γc.SSplit Γl Γm → Rewrite R _ _ .invalid .invalid
 
 abbrev DRWS (φ α) [S : Signature φ α ε]
-  := {Γ : Ctx? α} → {A : Ty α} → {a b : Term φ (Ty α)} → (Γ ⊢ a : A) → (Γ ⊢ b : A) → Prop
+  := (Γ : Ctx? α) → (A : Ty α) → (a b : Term φ (Ty α)) → (Γ ⊢ a : A) → (Γ ⊢ b : A) → Prop
+
+abbrev DRWS.rel (R : DRWS φ α)
+  {Γ : Ctx? α} {A : Ty α} {a b : Term φ (Ty α)} (da : Γ ⊢ a : A) (db : Γ ⊢ b : A) : Prop
+  := R Γ A a b da db
 
 class DRWS.Coherent (R : DRWS φ α) : Prop where
-  elim {Γ A a b} (da da' : Γ ⊢ a : A) (db db' : Γ ⊢ b : A) : R da db → R da' db'
+  elim {Γ A a b} (da da' : Γ ⊢ a : A) (db db' : Γ ⊢ b : A) : R.rel da db → R.rel da' db'
 
-def DRWS.toRWS (R : DRWS φ α) : RWS φ α := λΓ A a b => ∃da : (Γ ⊢ a : A), ∃db : (Γ ⊢ b : A), R da db
+theorem DRWS.coh {R : DRWS φ α} [Coherent R] {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} (h : R.rel da db)
+  (da' : Γ ⊢ a : A) (db' : Γ ⊢ b : A) : R.rel da' db'
+  := Coherent.elim da da' db db' h
 
-def RWS.toDRWS (R : RWS φ α) : DRWS φ α := λ{Γ A a b} _ _ => R Γ A a b
+def DRWS.toRWS (R : DRWS φ α) : RWS φ α
+  := λΓ A a b => ∃da : (Γ ⊢ a : A), ∃db : (Γ ⊢ b : A), R.rel da db
+
+def RWS.toDRWS (R : RWS φ α) : DRWS φ α
+  := λΓ A a b _ _ => R Γ A a b
+
+theorem DRWS.toDRWS_toRWS_coherent (R : DRWS φ α) [hR : Coherent R] : R.toRWS.toDRWS = R := by
+  ext Γ A a b da db
+  simp only [RWS.toDRWS, toRWS]
+  constructor
+  intro ⟨da', db', h⟩; exact hR.elim da' da db' db h
+  intro h; exact ⟨_, _, h⟩
 
 instance RWS.toDRWS_coherent (R : RWS φ α) : DRWS.Coherent R.toDRWS where
   elim _ _ _ _ h := h
 
+def DRWS.cohere (R : DRWS φ α) : DRWS φ α := R.toRWS.toDRWS
+
+instance DRWS.cohere_coherent (R : DRWS φ α) : Coherent R.cohere := R.toRWS.toDRWS_coherent
+
+theorem DRWS.cohere_increasing (R : DRWS φ α) : R ≤ R.cohere := λ_ _ _ _ _ _ h => ⟨_, _, h⟩
+
 inductive DRWS.ref (R : DRWS φ α) : DRWS φ α
-  | base {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R da db → ref R da db
-  | refl {Γ a A} : (da da' : Γ ⊢ a : A) → ref R da da'
+  | base {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R.rel da db → ref R _ _ _ _ da db
+  | refl {Γ a A} : (da da' : Γ ⊢ a : A) → ref R _ _ _ _ da da'
   | trans {Γ a b c A} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} {dc : Γ ⊢ c : A}
-    : ref R da db → ref R db dc → ref R da dc
+    : ref R _ _ _ _ da db → ref R _ _ _ _ db dc → ref R _ _ _ _ da dc
 
 instance DRWS.ref_coherent (R : DRWS φ α) : Coherent R.ref where
   elim da da' db db' h := .trans (.refl da' da) (.trans h (.refl db db'))
@@ -293,11 +323,11 @@ instance DRWS.ref_coherent (R : DRWS φ α) : Coherent R.ref where
 --TODO: DRWS.ref friends
 
 inductive DRWS.equiv (R : DRWS φ α) : DRWS φ α
-  | base {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R da db → equiv R da db
-  | refl {Γ a A} : (da da' : Γ ⊢ a : A) → equiv R da da'
+  | base {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R.rel da db → equiv R _ _ _ _ da db
+  | refl {Γ a A} : (da da' : Γ ⊢ a : A) → equiv R _ _ _ _ da da'
   | trans {Γ a b c A} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} {dc : Γ ⊢ c : A}
-    : equiv R da db → equiv R db dc → equiv R da dc
-  | symm {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : equiv R da db → equiv R db da
+    : equiv R _ _ _ _ da db → equiv R _ _ _ _ db dc → equiv R _ _ _ _ da dc
+  | symm {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : equiv R _ _ _ _ da db → equiv R _ _ _ _ db da
 
 instance DRWS.equiv_coherent (R : DRWS φ α) : Coherent R.equiv where
   elim da da' db db' h := .trans (.refl da' da) (.trans h (.refl db db'))
@@ -307,100 +337,100 @@ instance DRWS.equiv_coherent (R : DRWS φ α) : Coherent R.equiv where
 inductive DRWS.cong (R : DRWS φ α) : DRWS φ α
   | op {Γ A B f a a'}
     {da : Γ ⊢ a : A} {da' : Γ ⊢ a' : A}
-    (hf : S.FnTy f A B) : cong R da da' → cong R (da.op hf) (da'.op hf)
+    (hf : S.FnTy f A B) : cong R _ _ _ _ da da' → cong R _ _ _ _ (da.op hf) (da'.op hf)
   | let₁ {Γ Γl Γr : Ctx? α} {A B a b a' b'}
     {da : Γr ⊢ a : A} {da' : Γr ⊢ a' : A}
     {db : Γl.cons ⟨A, ⊤⟩ ⊢ b : B} {db' : Γl.cons ⟨A, ⊤⟩ ⊢ b' : B}
-    (hΓ : Γ.SSplit Γl Γr) : cong R da da' → cong R db db'
-      → cong R (da.let₁ hΓ db) (da'.let₁ hΓ db')
+    (hΓ : Γ.SSplit Γl Γr) : cong R _ _ _ _ da da' → cong R _ _ _ _ db db'
+      → cong R _ _ _ _ (da.let₁ hΓ db) (da'.let₁ hΓ db')
   | let₂ {Γ Γl Γr : Ctx? α} {A B C a b a' b'}
     {da : Γr ⊢ a : A.tensor B} {da' : Γr ⊢ a' : A.tensor B}
     {db : (Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ b : C} {db' : (Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ b' : C}
-    (hΓ : Γ.SSplit Γl Γr) : cong R da da' → cong R db db'
-      → cong R (da.let₂ hΓ db) (da'.let₂ hΓ db')
+    (hΓ : Γ.SSplit Γl Γr) : cong R _ _ _ _ da da' → cong R _ _ _ _ db db'
+      → cong R _ _ _ _ (da.let₂ hΓ db) (da'.let₂ hΓ db')
   | pair {Γ Γl Γr : Ctx? α} {A B a b a' b'}
     {da : Γl ⊢ a : A} {da' : Γl ⊢ a' : A} {db : Γr ⊢ b : B} {db' : Γr ⊢ b' : B}
-    (hΓ : Γ.SSplit Γl Γr) : cong R da da' → cong R db db'
-      → cong R (da.pair hΓ db) (da.pair hΓ db)
+    (hΓ : Γ.SSplit Γl Γr) : cong R _ _ _ _ da da' → cong R _ _ _ _ db db'
+      → cong R _ _ _ _ (da.pair hΓ db) (da.pair hΓ db)
   | inl {Γ A B a a'}
     {da : Γ ⊢ a : A} {da' : Γ ⊢ a' : A}
-    : cong R da da' → cong R (da.inl (B := B)) (da'.inl (B := B))
+    : cong R _ _ _ _ da da' → cong R _ _ _ _ (da.inl (B := B)) (da'.inl (B := B))
   | inr {Γ A B b b'}
     {db : Γ ⊢ b : B} {db' : Γ ⊢ b' : B}
-    : cong R db db' → cong R (db.inr (A := A)) (db'.inr (A := A))
+    : cong R _ _ _ _ db db' → cong R _ _ _ _ (db.inr (A := A)) (db'.inr (A := A))
   | abort {Γ A a a'}
     {da : Γ ⊢ a : Ty.empty} {da' : Γ ⊢ a' : Ty.empty}
-    : cong R da da' → cong R (da.abort (A := A)) (da'.abort (A := A))
+    : cong R _ _ _ _ da da' → cong R _ _ _ _ (da.abort (A := A)) (da'.abort (A := A))
   | case {Γ Γl Γr : Ctx? α} {A B a b c a' b' c' C}
     {da : Γr ⊢ a : A.coprod B} {db : Γl.cons ⟨A, ⊤⟩ ⊢ b : C} {dc : Γl.cons ⟨B, ⊤⟩ ⊢ c : C}
     {da' : Γr ⊢ a' : A.coprod B} {db' : Γl.cons ⟨A, ⊤⟩ ⊢ b' : C} {dc' : Γl.cons ⟨B, ⊤⟩ ⊢ c' : C}
     (hΓ : Γ.SSplit Γl Γr)
-    : cong R da da' → cong R db db' → cong R dc dc'
-    → cong R (da.case hΓ db dc) (da'.case hΓ db' dc')
+    : cong R _ _ _ _ da da' → cong R _ _ _ _ db db' → cong R _ _ _ _ dc dc'
+    → cong R _ _ _ _ (da.case hΓ db dc) (da'.case hΓ db' dc')
   | iter {Γ Γl Γr : Ctx? α} {A B : Ty α} {a b a' b'}
     {da : Γr ⊢ a : A} {da' : Γr ⊢ a' : A}
     {db : Γl.cons ⟨A, ⊤⟩ ⊢ b : B.coprod A} {db' : Γl.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
     (hΓ : Γ.SSplit Γl Γr) (hc : Γl.copy) (hd : Γl.del)
-    : cong R da da' → cong R db db'
-    → cong R (da.iter hΓ hc hd db) (da'.iter hΓ hc hd db')
-  | base {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R da db → cong R da db
-  | refl {Γ a A} : (da da' : Γ ⊢ a : A) → cong R da da'
+    : cong R _ _ _ _ da da' → cong R _ _ _ _ db db'
+    → cong R _ _ _ _ (da.iter hΓ hc hd db) (da'.iter hΓ hc hd db')
+  | base {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R.rel da db → cong R _ _ _ _ da db
+  | refl {Γ a A} : (da da' : Γ ⊢ a : A) → cong R _ _ _ _ da da'
   | trans {Γ a b c A} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} {dc : Γ ⊢ c : A}
-    : cong R da db → cong R db dc → cong R da dc
+    : cong R _ _ _ _ da db → cong R _ _ _ _ db dc → cong R _ _ _ _ da dc
 
 --TODO: DRWS.cong + friends
 
 inductive DRWS.isoUniform (R : DRWS φ α) : DRWS φ α
   | op {Γ A B f a a'}
     {da : Γ ⊢ a : A} {da' : Γ ⊢ a' : A}
-    (hf : S.FnTy f A B) : isoUniform R da da' → isoUniform R (da.op hf) (da'.op hf)
+    (hf : S.FnTy f A B) : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ (da.op hf) (da'.op hf)
   | let₁ {Γ Γl Γr : Ctx? α} {A B a b a' b'}
     {da : Γr ⊢ a : A} {da' : Γr ⊢ a' : A}
     {db : Γl.cons ⟨A, ⊤⟩ ⊢ b : B} {db' : Γl.cons ⟨A, ⊤⟩ ⊢ b' : B}
-    (hΓ : Γ.SSplit Γl Γr) : isoUniform R da da' → isoUniform R db db'
-      → isoUniform R (da.let₁ hΓ db) (da'.let₁ hΓ db')
+    (hΓ : Γ.SSplit Γl Γr) : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ db db'
+      → isoUniform R _ _ _ _ (da.let₁ hΓ db) (da'.let₁ hΓ db')
   | let₂ {Γ Γl Γr : Ctx? α} {A B C a b a' b'}
     {da : Γr ⊢ a : A.tensor B} {da' : Γr ⊢ a' : A.tensor B}
     {db : (Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ b : C} {db' : (Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ b' : C}
-    (hΓ : Γ.SSplit Γl Γr) : isoUniform R da da' → isoUniform R db db'
-      → isoUniform R (da.let₂ hΓ db) (da'.let₂ hΓ db')
+    (hΓ : Γ.SSplit Γl Γr) : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ db db'
+      → isoUniform R _ _ _ _ (da.let₂ hΓ db) (da'.let₂ hΓ db')
   | pair {Γ Γl Γr : Ctx? α} {A B a b a' b'}
     {da : Γl ⊢ a : A} {da' : Γl ⊢ a' : A} {db : Γr ⊢ b : B} {db' : Γr ⊢ b' : B}
-    (hΓ : Γ.SSplit Γl Γr) : isoUniform R da da' → isoUniform R db db'
-      → isoUniform R (da.pair hΓ db) (da.pair hΓ db)
+    (hΓ : Γ.SSplit Γl Γr) : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ db db'
+      → isoUniform R _ _ _ _ (da.pair hΓ db) (da.pair hΓ db)
   | inl {Γ A B a a'}
     {da : Γ ⊢ a : A} {da' : Γ ⊢ a' : A}
-    : isoUniform R da da' → isoUniform R (da.inl (B := B)) (da'.inl (B := B))
+    : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ (da.inl (B := B)) (da'.inl (B := B))
   | inr {Γ A B b b'}
     {db : Γ ⊢ b : B} {db' : Γ ⊢ b' : B}
-    : isoUniform R db db' → isoUniform R (db.inr (A := A)) (db'.inr (A := A))
+    : isoUniform R _ _ _ _ db db' → isoUniform R _ _ _ _ (db.inr (A := A)) (db'.inr (A := A))
   | abort {Γ A a a'}
     {da : Γ ⊢ a : Ty.empty} {da' : Γ ⊢ a' : Ty.empty}
-    : isoUniform R da da' → isoUniform R (da.abort (A := A)) (da'.abort (A := A))
+    : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ (da.abort (A := A)) (da'.abort (A := A))
   | case {Γ Γl Γr : Ctx? α} {A B a b c a' b' c' C}
     {da : Γr ⊢ a : A.coprod B} {db : Γl.cons ⟨A, ⊤⟩ ⊢ b : C} {dc : Γl.cons ⟨B, ⊤⟩ ⊢ c : C}
     {da' : Γr ⊢ a' : A.coprod B} {db' : Γl.cons ⟨A, ⊤⟩ ⊢ b' : C} {dc' : Γl.cons ⟨B, ⊤⟩ ⊢ c' : C}
     (hΓ : Γ.SSplit Γl Γr)
-    : isoUniform R da da' → isoUniform R db db' → isoUniform R dc dc'
-    → isoUniform R (da.case hΓ db dc) (da'.case hΓ db' dc')
+    : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ db db' → isoUniform R _ _ _ _ dc dc'
+    → isoUniform R _ _ _ _ (da.case hΓ db dc) (da'.case hΓ db' dc')
   | iter {Γ Γl Γr : Ctx? α} {A B : Ty α} {a b a' b'}
     {da : Γr ⊢ a : A} {da' : Γr ⊢ a' : A}
     {db : Γl.cons ⟨A, ⊤⟩ ⊢ b : B.coprod A} {db' : Γl.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
     (hΓ : Γ.SSplit Γl Γr) (hc : Γl.copy) (hd : Γl.del)
-    : isoUniform R da da' → isoUniform R db db'
-    → isoUniform R (da.iter hΓ hc hd db) (da'.iter hΓ hc hd db')
+    : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ db db'
+    → isoUniform R _ _ _ _ (da.iter hΓ hc hd db) (da'.iter hΓ hc hd db')
   | pos_unif {Γ Γc Γl Γm Γr : Ctx? α} {e e'} {A B X : Ty α} {a b b'}
     {da : Γr ⊢ a : A} {ds : Γm.cons ⟨A, ⊤⟩ ⊢ s : X}
     {db : Γl.cons ⟨X, ⊤⟩ ⊢ b : B.coprod X} {db' : Γc.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
     (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
     (hc : Γc.copy) (hd : Γc.del) (hcl : Γl.copy) (hdl : Γl.del)
-    : e ∈ S.iterative → e' ⇌ e
-      → isoUniform R
+    : a.HasEff e → s.HasEff e' → b.HasEff e → b'.HasEff e → e ∈ S.iterative → e' ⇌ e
+      → isoUniform R _ _ _ _
           (ds.let₁ (hΓc.cons (.right _)) (db.wk1 _))
           (db'.case (Γc.both.cons (.right _))
             (Deriv.bv (.here inferInstance Var?.Wk.top_le_quant)).inl
             ((ds.pwk ((hΓc.pwk_left_del).scons _)).wk1 ⟨A, 0⟩).inr)
-      → isoUniform R
+      → isoUniform R _ _ _ _
         (da.let₁ hΓ (ds.iter (hΓc.cons (.right _)) inferInstance inferInstance (db.wk1 _)))
         (da.iter hΓ hc hd db')
   | neg_unif {Γ Γc Γl Γm Γr : Ctx? α} {e e'} {A B X : Ty α} {a b b'}
@@ -408,110 +438,223 @@ inductive DRWS.isoUniform (R : DRWS φ α) : DRWS φ α
     {db : Γl.cons ⟨X, ⊤⟩ ⊢ b : B.coprod X} {db' : Γc.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
     (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
     (hc : Γc.copy) (hd : Γc.del) (hcl : Γl.copy) (hdl : Γl.del)
-    : e ∈ S.iterative → e' ⇌ e
-      → isoUniform R
+    : a.HasEff e → s.HasEff e' → b.HasEff e → b'.HasEff e → e ∈ S.iterative → e' ⇌ e
+      → isoUniform R _ _ _ _
           (db'.case (Γc.both.cons (.right _))
             (Deriv.bv (.here inferInstance Var?.Wk.top_le_quant)).inl
             ((ds.pwk ((hΓc.pwk_left_del).scons _)).wk1 ⟨A, 0⟩).inr)
           (ds.let₁ (hΓc.cons (.right _)) (db.wk1 _))
-      → isoUniform R
+      → isoUniform R _ _ _ _
         (da.iter hΓ hc hd db')
         (da.let₁ hΓ (ds.iter (hΓc.cons (.right _)) inferInstance inferInstance (db.wk1 _)))
-  | base {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R da db → isoUniform R da db
-  | refl {Γ a A} : (da da' : Γ ⊢ a : A) → isoUniform R da da'
+  | base {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R.rel da db → isoUniform R _ _ _ _ da db
+  | refl {Γ a A} : (da da' : Γ ⊢ a : A) → isoUniform R _ _ _ _ da da'
   | trans {Γ a b c A} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} {dc : Γ ⊢ c : A}
-    : isoUniform R da db → isoUniform R db dc → isoUniform R da dc
+    : isoUniform R _ _ _ _ da db → isoUniform R _ _ _ _ db dc → isoUniform R _ _ _ _ da dc
 
 --TODO: DRWS.isoUniform + friends
 
 inductive DRWS.uniform (R : DRWS φ α) : DRWS φ α
   | op {Γ A B f a a'}
     {da : Γ ⊢ a : A} {da' : Γ ⊢ a' : A}
-    (hf : S.FnTy f A B) : uniform R da da' → uniform R (da.op hf) (da'.op hf)
+    (hf : S.FnTy f A B) : uniform R _ _ _ _ da da' → uniform R _ _ _ _ (da.op hf) (da'.op hf)
   | let₁ {Γ Γl Γr : Ctx? α} {A B a b a' b'}
     {da : Γr ⊢ a : A} {da' : Γr ⊢ a' : A}
     {db : Γl.cons ⟨A, ⊤⟩ ⊢ b : B} {db' : Γl.cons ⟨A, ⊤⟩ ⊢ b' : B}
-    (hΓ : Γ.SSplit Γl Γr) : uniform R da da' → uniform R db db'
-      → uniform R (da.let₁ hΓ db) (da'.let₁ hΓ db')
+    (hΓ : Γ.SSplit Γl Γr) : uniform R _ _ _ _ da da' → uniform R _ _ _ _ db db'
+      → uniform R _ _ _ _ (da.let₁ hΓ db) (da'.let₁ hΓ db')
   | let₂ {Γ Γl Γr : Ctx? α} {A B C a b a' b'}
     {da : Γr ⊢ a : A.tensor B} {da' : Γr ⊢ a' : A.tensor B}
     {db : (Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ b : C} {db' : (Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ b' : C}
-    (hΓ : Γ.SSplit Γl Γr) : uniform R da da' → uniform R db db'
-      → uniform R (da.let₂ hΓ db) (da'.let₂ hΓ db')
+    (hΓ : Γ.SSplit Γl Γr) : uniform R _ _ _ _ da da' → uniform R _ _ _ _ db db'
+      → uniform R _ _ _ _ (da.let₂ hΓ db) (da'.let₂ hΓ db')
   | pair {Γ Γl Γr : Ctx? α} {A B a b a' b'}
     {da : Γl ⊢ a : A} {da' : Γl ⊢ a' : A} {db : Γr ⊢ b : B} {db' : Γr ⊢ b' : B}
-    (hΓ : Γ.SSplit Γl Γr) : uniform R da da' → uniform R db db'
-      → uniform R (da.pair hΓ db) (da.pair hΓ db)
+    (hΓ : Γ.SSplit Γl Γr) : uniform R _ _ _ _ da da' → uniform R _ _ _ _ db db'
+      → uniform R _ _ _ _ (da.pair hΓ db) (da'.pair hΓ db')
   | inl {Γ A B a a'}
     {da : Γ ⊢ a : A} {da' : Γ ⊢ a' : A}
-    : uniform R da da' → uniform R (da.inl (B := B)) (da'.inl (B := B))
+    : uniform R _ _ _ _ da da' → uniform R _ _ _ _ (da.inl (B := B)) (da'.inl (B := B))
   | inr {Γ A B b b'}
     {db : Γ ⊢ b : B} {db' : Γ ⊢ b' : B}
-    : uniform R db db' → uniform R (db.inr (A := A)) (db'.inr (A := A))
+    : uniform R _ _ _ _ db db' → uniform R _ _ _ _ (db.inr (A := A)) (db'.inr (A := A))
   | abort {Γ A a a'}
     {da : Γ ⊢ a : Ty.empty} {da' : Γ ⊢ a' : Ty.empty}
-    : uniform R da da' → uniform R (da.abort (A := A)) (da'.abort (A := A))
+    : uniform R _ _ _ _ da da' → uniform R _ _ _ _ (da.abort (A := A)) (da'.abort (A := A))
   | case {Γ Γl Γr : Ctx? α} {A B a b c a' b' c' C}
     {da : Γr ⊢ a : A.coprod B} {db : Γl.cons ⟨A, ⊤⟩ ⊢ b : C} {dc : Γl.cons ⟨B, ⊤⟩ ⊢ c : C}
     {da' : Γr ⊢ a' : A.coprod B} {db' : Γl.cons ⟨A, ⊤⟩ ⊢ b' : C} {dc' : Γl.cons ⟨B, ⊤⟩ ⊢ c' : C}
     (hΓ : Γ.SSplit Γl Γr)
-    : uniform R da da' → uniform R db db' → uniform R dc dc'
-    → uniform R (da.case hΓ db dc) (da'.case hΓ db' dc')
+    : uniform R _ _ _ _ da da' → uniform R _ _ _ _ db db' → uniform R _ _ _ _ dc dc'
+    → uniform R _ _ _ _ (da.case hΓ db dc) (da'.case hΓ db' dc')
   | iter {Γ Γl Γr : Ctx? α} {A B : Ty α} {a b a' b'}
     {da : Γr ⊢ a : A} {da' : Γr ⊢ a' : A}
     {db : Γl.cons ⟨A, ⊤⟩ ⊢ b : B.coprod A} {db' : Γl.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
     (hΓ : Γ.SSplit Γl Γr) (hc : Γl.copy) (hd : Γl.del)
-    : uniform R da da' → uniform R db db' → uniform R (da.iter hΓ hc hd db) (da'.iter hΓ hc hd db')
+    : uniform R _ _ _ _ da da' → uniform R _ _ _ _ db db'
+    → uniform R _ _ _ _ (da.iter hΓ hc hd db) (da'.iter hΓ hc hd db')
   | pos_unif {Γ Γc Γl Γm Γr : Ctx? α} {e e'} {A B X : Ty α} {a b b'}
     {da : Γr ⊢ a : A} {ds : Γm.cons ⟨A, ⊤⟩ ⊢ s : X}
     {db : Γl.cons ⟨X, ⊤⟩ ⊢ b : B.coprod X} {db' : Γc.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
     (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
-    (hc : Γc.copy) (hd : Γc.del) (hcl : Γl.copy) (hdl : Γl.del)
-    : e ∈ S.iterative → e' ⇀ e
-      → uniform R
+    (hc : Γc.copy) (hd : Γc.del)
+    : a.HasEff e → s.HasEff e' → b.HasEff e → b'.HasEff e → e ∈ S.iterative → e' ⇀ e
+      → uniform R _ _ _ _
           (ds.let₁ (hΓc.cons (.right _)) (db.wk1 _))
           (db'.case (Γc.both.cons (.right _))
             (Deriv.bv (.here inferInstance Var?.Wk.top_le_quant)).inl
-            ((ds.pwk ((hΓc.pwk_left_del).scons _)).wk1 ⟨A, 0⟩).inr)
-      → uniform R
-        (da.let₁ hΓ (ds.iter (hΓc.cons (.right _)) inferInstance inferInstance (db.wk1 _)))
+            ((ds.pwk ((have _ := hΓc.left_del; hΓc.pwk_left_del).scons _)).wk1 ⟨A, 0⟩).inr)
+      → uniform R _ _ _ _
+        (da.let₁ hΓ (ds.iter (hΓc.cons (.right _))
+          (have _ := hΓc.left_copy; inferInstance)
+          (have _ := hΓc.left_del; inferInstance) (db.wk1 _)))
         (da.iter hΓ hc hd db')
   | neg_unif {Γ Γc Γl Γm Γr : Ctx? α} {e e'} {A B X : Ty α} {a b b'}
     {da : Γr ⊢ a : A} {ds : Γm.cons ⟨A, ⊤⟩ ⊢ s : X}
     {db : Γl.cons ⟨X, ⊤⟩ ⊢ b : B.coprod X} {db' : Γc.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
     (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
-    (hc : Γc.copy) (hd : Γc.del) (hcl : Γl.copy) (hdl : Γl.del)
-    : e ∈ S.iterative → e' ↽ e
-      → uniform R
+    (hc : Γc.copy) (hd : Γc.del)
+    : a.HasEff e → s.HasEff e' → b.HasEff e → b'.HasEff e → e ∈ S.iterative → e' ↽ e
+      → uniform R _ _ _ _
           (db'.case (Γc.both.cons (.right _))
             (Deriv.bv (.here inferInstance Var?.Wk.top_le_quant)).inl
-            ((ds.pwk ((hΓc.pwk_left_del).scons _)).wk1 ⟨A, 0⟩).inr)
+            ((ds.pwk ((have _ := hΓc.left_del; hΓc.pwk_left_del).scons _)).wk1 ⟨A, 0⟩).inr)
           (ds.let₁ (hΓc.cons (.right _)) (db.wk1 _))
-      → uniform R
+      → uniform R _ _ _ _
         (da.iter hΓ hc hd db')
-        (da.let₁ hΓ (ds.iter (hΓc.cons (.right _)) inferInstance inferInstance (db.wk1 _)))
-  | base {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R da db → uniform R da db
-  | refl {Γ a A} : (da da' : Γ ⊢ a : A) → uniform R da da'
+        (da.let₁ hΓ (ds.iter (hΓc.cons (.right _))
+          (have _ := hΓc.left_copy; inferInstance)
+          (have _ := hΓc.left_del; inferInstance) (db.wk1 _)))
+  | base {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R.rel da db → uniform R _ _ _ _ da db
+  | refl {Γ a A} : (da da' : Γ ⊢ a : A) → uniform R _ _ _ _ da da'
   | trans {Γ a b c A} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} {dc : Γ ⊢ c : A}
-    : uniform R da db → uniform R db dc → uniform R da dc
+    : uniform R _ _ _ _ da db → uniform R _ _ _ _ db dc → uniform R _ _ _ _ da dc
 
 instance DRWS.uniform_coherent (R : DRWS φ α) : Coherent R.uniform where
   elim da da' db db' h := .trans (.refl da' da) (.trans h (.refl db db'))
 
--- TODO: DRWS.uniform friends
+theorem DRWS.uniform.mono {R R' : DRWS φ α} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
+  (h : R.uniform.rel da db) (hR : R ≤ R') : R'.uniform.rel da db := by induction h with
+  | base r => exact uniform.base (hR _ _ _ _ _ _ r)
+  | refl => apply uniform.refl
+  | trans => apply uniform.trans <;> assumption
+  | _ => constructor <;> assumption
 
--- TODO: DRWS ==> RWS
+theorem DRWS.uniform_mono {R R' : DRWS φ α} (hR : R ≤ R') : R.uniform ≤ R'.uniform
+  := λ _ _ _ _ _ _ h => h.mono hR
 
--- TODO: RWS ==> DRWS
+theorem DRWS.uniform_increasing (R : DRWS φ α) : R ≤ R.uniform := λ _ _ _ _ _ _ h => uniform.base h
 
--- TODO: DRWS.uniform ≅ RWS.uniform
+theorem DRWS.uniform_le_cohere (R : DRWS φ α) : R.cohere ≤ R.uniform
+  := λ _ _ _ _ da' db' ⟨da, db, h⟩ => Coherent.elim da da' db db' (uniform.base h)
+
+theorem DRWS.uniform.flatten {R : DRWS φ α} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
+  (h : R.uniform.uniform.rel da db) : R.uniform.rel da db
+  := by induction h with
+  | base h => exact h
+  | refl => apply uniform.refl
+  | trans => apply uniform.trans <;> assumption
+  | _ => constructor <;> assumption
+
+theorem DRWS.uniform_idem (R : DRWS φ α) : R.uniform.uniform = R.uniform
+  := le_antisymm (λ _ _ _ _ _ _ r => r.flatten) R.uniform.uniform_increasing
+
+theorem DRWS.uniform_cohere (R : DRWS φ α) : R.cohere.uniform = R.uniform
+  := le_antisymm
+    (R.uniform_idem ▸ (uniform_mono R.uniform_le_cohere))
+    (uniform_mono R.cohere_increasing)
+
+theorem DRWS.uniform_toDRWS_toDWS (R : DRWS φ α) : R.toRWS.toDRWS.uniform = R.uniform
+  := R.uniform_cohere
+
+theorem DRWS.uniform.toRWS {R : DRWS φ α} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
+  (h : R.uniform.rel da db) : R.toRWS.uniform Γ A a b
+  := by induction h with
+  | base h => apply RWS.uniform.base; exact ⟨_, _, h⟩; assumption; assumption
+  | refl => apply RWS.uniform.refl; assumption
+  | trans => apply RWS.uniform.trans <;> assumption
+  | _ => constructor <;> assumption
+
+theorem RWS.uniform.toDRWS {R : RWS φ α} {Γ A a b}
+  (h : R.uniform Γ A a b) (da : Γ ⊢ a : A) (db : Γ ⊢ b : A)
+  : R.toDRWS.uniform.rel da db := by
+  induction h with
+  | op hf ra Ia =>
+    have ⟨Da⟩ := ra.wt.left;
+    have ⟨Da'⟩ := ra.wt.right;
+    exact DRWS.coh ((Ia Da Da').op hf) _ _
+  | let₁ hΓ ra rb Ia Ib =>
+    have ⟨Da⟩ := ra.wt.left;
+    have ⟨Da'⟩ := ra.wt.right;
+    have ⟨Db⟩ := rb.wt.left;
+    have ⟨Db'⟩ := rb.wt.right;
+    exact DRWS.coh ((Ia Da Da').let₁ hΓ (Ib Db Db')) _ _
+  | let₂ hΓ ra rb Ia Ib =>
+    have ⟨Da⟩ := ra.wt.left;
+    have ⟨Da'⟩ := ra.wt.right;
+    have ⟨Db⟩ := rb.wt.left;
+    have ⟨Db'⟩ := rb.wt.right;
+    exact DRWS.coh ((Ia Da Da').let₂ hΓ (Ib Db Db')) _ _
+  | pair hΓ ra rb Ia Ib =>
+    have ⟨Da⟩ := ra.wt.left;
+    have ⟨Da'⟩ := ra.wt.right;
+    have ⟨Db⟩ := rb.wt.left;
+    have ⟨Db'⟩ := rb.wt.right;
+    exact DRWS.coh ((Ia Da Da').pair hΓ (Ib Db Db')) _ _
+  | inl ra Ia =>
+    have ⟨Da⟩ := ra.wt.left;
+    have ⟨Da'⟩ := ra.wt.right;
+    exact DRWS.coh ((Ia Da Da').inl) _ _
+  | inr rb Ib =>
+    have ⟨Db⟩ := rb.wt.left;
+    have ⟨Db'⟩ := rb.wt.right;
+    exact DRWS.coh ((Ib Db Db').inr) _ _
+  | abort ra Ia =>
+    have ⟨Da⟩ := ra.wt.left;
+    have ⟨Da'⟩ := ra.wt.right;
+    exact DRWS.coh ((Ia Da Da').abort) _ _
+  | case hΓ ra rb rc Ia Ib Ic =>
+    have ⟨Da⟩ := ra.wt.left;
+    have ⟨Da'⟩ := ra.wt.right;
+    have ⟨Db⟩ := rb.wt.left;
+    have ⟨Db'⟩ := rb.wt.right;
+    have ⟨Dc⟩ := rc.wt.left;
+    have ⟨Dc'⟩ := rc.wt.right;
+    exact DRWS.coh ((Ia Da Da').case hΓ (Ib Db Db') (Ic Dc Dc')) _ _
+  | iter hΓ hc hd ra rb Ia Ib =>
+    have ⟨Da⟩ := ra.wt.left;
+    have ⟨Da'⟩ := ra.wt.right;
+    have ⟨Db⟩ := rb.wt.left;
+    have ⟨Db'⟩ := rb.wt.right;
+    exact DRWS.coh ((Ia Da Da').iter hΓ hc hd (Ib Db Db')) _ _
+  | pos_unif hΓ hΓc =>
+    apply DRWS.coh
+    apply DRWS.uniform.pos_unif hΓ hΓc <;> apply_assumption
+  | neg_unif hΓ hΓc =>
+    apply DRWS.coh
+    apply DRWS.uniform.neg_unif hΓ hΓc <;> apply_assumption
+  | base h => exact DRWS.uniform.base h
+  | refl => exact DRWS.uniform.refl da db
+  | trans ra rb Ia Ib => have ⟨Db⟩ := ra.wt.right; apply DRWS.uniform.trans <;> apply_assumption
+
+theorem DRWS.toRWS_uniform (R : DRWS φ α) : toRWS R.uniform = R.toRWS.uniform := by
+  ext Γ A a b
+  constructor
+  · intro ⟨da, db, h⟩; exact h.toRWS
+  · intro h; have ⟨⟨da⟩, ⟨db⟩⟩ := h.wt; exact ⟨_, _, R.uniform_toDRWS_toDWS ▸ h.toDRWS da db⟩
+
+theorem RWS.toDRWS_uniform (R : RWS φ α) : toDRWS R.uniform = R.toDRWS.uniform := by
+  ext Γ A a b
+  constructor
+  · intro h; exact RWS.uniform.toDRWS h _ _
+  · intro h; have h' := DRWS.uniform.toRWS h; apply h'.mono; intro _ _ _ _ ⟨_, _, h⟩; exact h
 
 inductive DRWS.symm (R : DRWS φ α) : DRWS φ α
-  | fwd {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R da db → symm R da db
-  | bwd {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R da db → symm R db da
+  | fwd {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R.rel da db → symm R _ _ _ _ da db
+  | bwd {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R.rel da db → symm R _ _ _ _ db da
 
 inductive DRWS.swap (R : DRWS φ α) : DRWS φ α
-  | mk {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R da db → swap R db da
+  | mk {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R.rel da db → swap R _ _ _ _ db da
 
 inductive DRWS.iso (R : DRWS φ α) : DRWS φ α
-  | mk {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R da db → R db da → iso R da db
+  | mk {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R.rel da db → R.rel db da → iso R _ _ _ _ da db
