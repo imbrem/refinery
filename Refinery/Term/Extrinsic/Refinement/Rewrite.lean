@@ -85,32 +85,53 @@ theorem RWS.LetMove.wt {Γ A} {a b : Term φ (Ty α)} (h : LetMove Γ A a b)
     infer_instance
     apply Var?.Wk.top_le_one
 
-
--- inductive DRWS.LetMove : DRWS φ α
---   | let_op {Γ Γl Γr : Ctx? α} {f a A B b C}
---     (hΓ : Γ.SSplit Γl Γr) (hf : S.FnTy f A B) (Da : Γr ⊢ a : A) (Db : Γl.cons ⟨B, ⊤⟩ ⊢ b : C)
---     : LetMove Γ C (.let₁ (.op f a) B b) (.let₁ a A (.let₁ (.op f (.bv 0)) B (↑¹ b)))
---   | let_let₁ {a A b B c C}
---     (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
---     (Da : Γr ⊢ a : A) (Db : Γm.cons ⟨A, ⊤⟩ ⊢ b : B) (Dc : Γl.cons ⟨B, ⊤⟩ ⊢ c : C)
---     : LetMove Γ C (.let₁ (.let₁ a A b) B c) (.let₁ a A (.let₁ b B (↑¹ c)))
---   | let_let₂ {a A B b C c D}
---     (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
---     (Da : Γr ⊢ a : A.tensor B)
---     (Db : (Γm.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ b : C) (Dc : Γl.cons ⟨C, ⊤⟩ ⊢ c : D)
---     : LetMove Γ D (.let₁ (.let₂ a A B b) C c) (.let₂ a A B (.let₁ b C (↑¹ (↑¹ c))))
---   | let_case {a A B C b c D}
---     (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
---     (Da : Γr ⊢ a : A.coprod B) (Db : Γm.cons ⟨A, ⊤⟩ ⊢ b : C) (Dc : Γm.cons ⟨B, ⊤⟩ ⊢ c : C)
---     (Dd : Γl.cons ⟨C, ⊤⟩ ⊢ d : D)
---     : LetMove Γ D (.let₁ (.case a A B b c) C d) (.case a A B (.let₁ b C (↑¹ d)) (.let₁ c C (↑¹ d)))
---   | let_abort {a A b B}
---     (hΓ : Γ.SSplit Γl Γr) (Da : Γr ⊢ a : Ty.empty) (Db : Γl.cons ⟨A, ⊤⟩ ⊢ b : B)
---     : LetMove Γ B (.let₁ (.abort A a) A b) (.let₁ a Ty.empty (.let₁ (.abort A (.bv 0)) A (↑¹ b)))
---   | let_iter {a A B b C}
---     (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
---     (hc : Γm.copy) (hd : Γm.del)
---     (hcl : Γl.copy) (hdl : Γl.del)
---     (Da : Γr ⊢ a : A) (Db : Γm.cons ⟨A, ⊤⟩ ⊢ b : B.coprod A) (Dc : Γl.cons ⟨B, ⊤⟩ ⊢ c : C)
---     : LetMove Γ C (.let₁ (.iter a A B b) B c)
---                   (.iter a A C (.case b B A (.inl C A (↑¹ c)) (.inr C A (.bv 0))))
+inductive DRWS.LetMove : DRWS φ α
+  | let_op {f a A B b C}
+    (hΓ : Γ.SSplit Γl Γr) (hf : S.FnTy f A B) (Da : Γr ⊢ a : A) (Db : Γl.cons ⟨B, ⊤⟩ ⊢ b : C)
+    : LetMove Γ C (.let₁ (.op f a) B b) (.let₁ a A (.let₁ (.op f (.bv 0)) B (↑¹ b)))
+      ((Da.op hf).let₁ hΓ Db)
+      (Da.let₁ hΓ (.let₁ (Γl.erase_right.cons (.right _))
+                  (.op hf (.bv (.here inferInstance (by simp)))) (Db.wk1 _)))
+  | let_let₁ {a A b B c C}
+    (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
+    (Da : Γr ⊢ a : A) (Db : Γm.cons ⟨A, ⊤⟩ ⊢ b : B) (Dc : Γl.cons ⟨B, ⊤⟩ ⊢ c : C)
+    : LetMove Γ C (.let₁ (.let₁ a A b) B c) (.let₁ a A (.let₁ b B (↑¹ c)))
+      ((Da.let₁ hΓc Db).let₁ hΓ Dc)
+      (Da.let₁ (hΓ.s1_23_12_3 hΓc) (Db.let₁ ((hΓ.s1_23_12 hΓc).cons (.right _)) (Dc.wk1 _)))
+  | let_let₂ {a A B b C c D}
+    (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
+    (Da : Γr ⊢ a : A.tensor B)
+    (Db : (Γm.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ b : C) (Dc : Γl.cons ⟨C, ⊤⟩ ⊢ c : D)
+    : LetMove Γ D (.let₁ (.let₂ a A B b) C c) (.let₂ a A B (.let₁ b C (↑¹ (↑¹ c))))
+      ((Da.let₂ hΓc Db).let₁ hΓ Dc)
+      (Da.let₂ (hΓ.s1_23_12_3 hΓc)
+          (Db.let₁ (((hΓ.s1_23_12 hΓc).cons (.right _)).cons (.right _)) ((Dc.wk1 _).wk1 _)))
+  | let_case {a A B C b c D}
+    (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
+    (Da : Γr ⊢ a : A.coprod B) (Db : Γm.cons ⟨A, ⊤⟩ ⊢ b : C) (Dc : Γm.cons ⟨B, ⊤⟩ ⊢ c : C)
+    (Dd : Γl.cons ⟨C, ⊤⟩ ⊢ d : D)
+    : LetMove Γ D (.let₁ (.case a A B b c) C d) (.case a A B (.let₁ b C (↑¹ d)) (.let₁ c C (↑¹ d)))
+      ((Da.case hΓc Db Dc).let₁ hΓ Dd)
+      (Da.case (hΓ.s1_23_12_3 hΓc)
+      (Db.let₁ ((hΓ.s1_23_12 hΓc).cons (.right _)) (Dd.wk1 _))
+      (Dc.let₁ ((hΓ.s1_23_12 hΓc).cons (.right _)) (Dd.wk1 _)))
+  | let_abort {a A b B}
+    (hΓ : Γ.SSplit Γl Γr) (Da : Γr ⊢ a : Ty.empty) (Db : Γl.cons ⟨A, ⊤⟩ ⊢ b : B)
+    : LetMove Γ B (.let₁ (.abort A a) A b) (.let₁ a Ty.empty (.let₁ (.abort A (.bv 0)) A (↑¹ b)))
+      (Da.abort.let₁ hΓ Db)
+      (Da.let₁ hΓ (.let₁ (Γl.erase_right.cons (.right _))
+                  (.abort (.bv (.here inferInstance (by simp)))) (Db.wk1 _)))
+  | let_iter {Γ Γc Γl Γm Γr : Ctx? α} {a A B b C}
+    (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
+    (hc : Γm.copy) (hd : Γm.del)
+    (hcl : Γl.copy) (hdl : Γl.del)
+    (Da : Γr ⊢ a : A) (Db : Γm.cons ⟨A, ⊤⟩ ⊢ b : B.coprod A) (Dc : Γl.cons ⟨B, ⊤⟩ ⊢ c : C)
+    : LetMove Γ C (.let₁ (.iter a A B b) B c)
+                  (.iter a A C (.case b B A (.inl C A (↑¹ c)) (.inr C A (.bv 0))))
+      ((Da.iter hΓc hc hd Db).let₁ hΓ Dc)
+      (Da.iter (hΓ.s1_23_12_3 hΓc)
+              inferInstance
+              inferInstance
+              (Db.case ((hΓ.s1_23_12 hΓc).cons (.right _))
+              (Dc.wk1 ⟨A, 0⟩).inl
+              (.inr (.bv (.here inferInstance (by simp))))))
