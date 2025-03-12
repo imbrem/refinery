@@ -135,3 +135,57 @@ inductive DRWS.LetMove : DRWS φ α
               (Db.case ((hΓ.s1_23_12 hΓc).cons (.right _))
               (Dc.wk1 ⟨A, 0⟩).inl
               (.inr (.bv (.here inferInstance (by simp))))))
+
+-- Note: let_abort and let_op should be derivable from binding/substitution operators
+-- as well as let_inl, let_inr
+
+inductive DRWS.LetBind : DRWS φ α
+  | bind_op {f a A B}
+    (hf : S.FnTy f A B) (Da : Γ ⊢ a : A)
+    : LetBind Γ B _ _ (Da.op hf)
+      (Da.let₁ Γ.erase_left (.op hf (.bv (.here inferInstance (by simp)))))
+  | bind_let₂ {Γ Γl Γr : Ctx? α} {a A B b C}
+    (hΓ : Γ.SSplit Γl Γr) (Da : Γr ⊢ a : A.tensor B) (Db : (Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ b : C)
+    : LetBind Γ C _ _ (Da.let₂ hΓ Db)
+      (Da.let₁ hΓ
+        (.let₂ (Γl.erase_right.cons (.right _))
+          .bv0 (Db.wk2 _)))
+  | bind_case {Γ Γl Γr : Ctx? α} {a A B b c C}
+    (hΓ : Γ.SSplit Γl Γr) (Da : Γr ⊢ a : A.coprod B)
+    (Db : Γl.cons ⟨A, ⊤⟩ ⊢ b : C) (Dc : Γl.cons ⟨B, ⊤⟩ ⊢ c : C)
+    : LetBind Γ C _ _ (Da.case hΓ Db Dc)
+      (Da.let₁ hΓ (.case
+        (Γl.erase_right.cons (.right _))
+        .bv0 (Db.wk1 _) (Dc.wk1 _)))
+  | bind_iter {Γ Γl Γr : Ctx? α} {a A b B}
+    (hΓ : Γ.SSplit Γl Γr) (hc : Γl.copy) (hd : Γl.del) (Da : Γr ⊢ a : A)
+    (Db : Γl.cons ⟨A, ⊤⟩ ⊢ b : B.coprod A)
+    : LetBind Γ B _ _ (Da.iter hΓ hc hd Db)
+      (Da.let₁ hΓ (.iter
+        (Γl.erase_right.cons (.right _))
+        inferInstance
+        inferInstance
+        .bv0 (Db.wk1 _)))
+
+-- Note: bind_let₁, bind_abort, bind_inl, bind_inr should be derivable from motion/substitution
+-- operators
+
+inductive DRWS.Eta : DRWS φ α
+  | let₂_eta {Γ : Ctx? α} {a} {A B : Ty α}
+    (Da : Γ ⊢ a : A.tensor B) : Eta Γ (A.tensor B) _ _
+      (Da.let₂ Γ.erase_left (.pair (((Γ.erase.both).cons (.left _)).cons (.right _)) .bv1 .bv0)) Da
+  | case_eta {Γ : Ctx? α} {a} {A B : Ty α}
+    (Da : Γ ⊢ a : A.coprod B) : Eta Γ (A.coprod B) _ _
+      (Da.case Γ.erase_left (.inl .bv0) (.inr .bv0)) Da
+
+-- Note: let₁_eta should be derivable from substitution operator
+
+inductive DRWS.Beta : DRWS φ α
+  | let₂_beta {Γ Γc Γl Γm Γr : Ctx? α} {a A b B c C}
+    (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
+    (Da : Γm ⊢ a : A) (Db : Γr ⊢ b : B)
+    (Dc : (Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ c : C)
+    : Beta Γ C _ _
+      ((Da.pair hΓc Db).let₂ hΓ Dc)
+      (Da.let₁ (hΓ.s1_23_13_2 hΓc)
+              ((Db.wk0 _).let₁ ((hΓ.s1_23_13 hΓc).cons (.left _)) Dc))

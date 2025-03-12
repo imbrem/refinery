@@ -41,6 +41,12 @@ inductive Deriv : Ctx? α → Ty α → Term φ (Ty α) → Type _
 
 notation Γ "⊢" a ":" A => Deriv Γ A a
 
+def Deriv.bv0 {Γ : Ctx? α} [hΓ : Γ.del] {A : Ty α} {q : Quant}
+  : (Γ.cons ⟨A, q⟩ ⊢ .bv (φ := φ) 0 : A) := .bv (.here hΓ Var?.Wk.quant_le_one)
+
+def Deriv.bv1 {Γ : Ctx? α} [hΓ : Γ.del] {v : Var? α} [hv : v.del] {A : Ty α} {q : Quant}
+  : ((Γ.cons ⟨A, q⟩).cons v ⊢ .bv (φ := φ) 1 : A) := .bv (.there (.here hΓ Var?.Wk.quant_le_one) hv)
+
 def Deriv.cast {Γ Γ' : Ctx? α} {A A' : Ty α} {a a' : Term φ (Ty α)}
   (hΓ : Γ = Γ') (hA : A = A') (ha : a = a')
   (D : Γ ⊢ a : A) : (Γ' ⊢ a' : A') := hΓ ▸ hA ▸ ha ▸ D

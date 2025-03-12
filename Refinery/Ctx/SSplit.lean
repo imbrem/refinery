@@ -506,6 +506,18 @@ abbrev Ctx?.SSplit.s12_3_13 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
   : (h12_3.c12_3_13 h12).SSplit Γ₁ Γ₃
   := (h12_3.s12_3_31 h12).comm
 
+abbrev Ctx?.SSplit.c1_23_13 {Γ₁₂₃ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h1_23 : Γ₁₂₃.SSplit Γ₁ Γ₂₃) (h23 : Γ₂₃.SSplit Γ₂ Γ₃)
+  : Ctx? α := h1_23.comm.c12_3_23 h23
+
+abbrev Ctx?.SSplit.s1_23_13_2 {Γ₁₂₃ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h1_23 : Γ₁₂₃.SSplit Γ₁ Γ₂₃) (h23 : Γ₂₃.SSplit Γ₂ Γ₃)
+  : Γ₁₂₃.SSplit (h1_23.c1_23_13 h23) Γ₂ := (h1_23.comm.s12_3_1_23 h23).comm
+
+abbrev Ctx?.SSplit.s1_23_13 {Γ₁₂₃ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (h1_23 : Γ₁₂₃.SSplit Γ₁ Γ₂₃) (h23 : Γ₂₃.SSplit Γ₂ Γ₃)
+  : (h1_23.c1_23_13 h23).SSplit Γ₁ Γ₃ := (h1_23.comm.s12_3_23 h23).comm
+
 abbrev Ctx?.SSplit.c12_34_123 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₃ Γ₄ : Ctx? α}
   (h12_34 : Γ₁₂₃₄.SSplit Γ₁₂ Γ₃₄) (h34 : Γ₃₄.SSplit Γ₃ Γ₄)
   : Ctx? α := h12_34.c1_23_12 h34
