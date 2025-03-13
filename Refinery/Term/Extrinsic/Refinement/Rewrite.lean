@@ -170,22 +170,45 @@ inductive DRWS.LetBind : DRWS φ α
 -- Note: bind_let₁, bind_abort, bind_inl, bind_inr should be derivable from motion/substitution
 -- operators
 
-inductive DRWS.Eta : DRWS φ α
+inductive DRWS.Step : DRWS φ α
+  | terminal {Γ a} (Da : Γ ⊢ a : Ty.unit)
+    : Step Γ Ty.unit _ _ (Da.let₁ Γ.erase_left (.unit inferInstance)) Da
+  | initial {Γ Γl Γr : Ctx? α} {a b c B} (hΓ : Γ.SSplit Γl Γr)
+    (Da : Γr ⊢ a : Ty.empty)
+    (Db : Γl.cons ⟨Ty.empty, ⊤⟩ ⊢ b : B) (Dc : Γl.cons ⟨Ty.empty, ⊤⟩ ⊢ c : B)
+    : Step Γ B _ _ (Da.let₁ hΓ Db) (Da.let₁ hΓ Dc)
   | let₂_eta {Γ : Ctx? α} {a} {A B : Ty α}
-    (Da : Γ ⊢ a : A.tensor B) : Eta Γ (A.tensor B) _ _
+    (Da : Γ ⊢ a : A.tensor B) : Step Γ (A.tensor B) _ _
       (Da.let₂ Γ.erase_left (.pair (((Γ.erase.both).cons (.left _)).cons (.right _)) .bv1 .bv0)) Da
   | case_eta {Γ : Ctx? α} {a} {A B : Ty α}
-    (Da : Γ ⊢ a : A.coprod B) : Eta Γ (A.coprod B) _ _
+    (Da : Γ ⊢ a : A.coprod B) : Step Γ (A.coprod B) _ _
       (Da.case Γ.erase_left (.inl .bv0) (.inr .bv0)) Da
-
--- Note: let₁_eta should be derivable from substitution operator
-
-inductive DRWS.Beta : DRWS φ α
   | let₂_beta {Γ Γc Γl Γm Γr : Ctx? α} {a A b B c C}
     (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
     (Da : Γm ⊢ a : A) (Db : Γr ⊢ b : B)
     (Dc : (Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ c : C)
-    : Beta Γ C _ _
+    : Step Γ C _ _
       ((Da.pair hΓc Db).let₂ hΓ Dc)
       (Da.let₁ (hΓ.s1_23_13_2 hΓc)
               ((Db.wk0 _).let₁ ((hΓ.s1_23_13 hΓc).cons (.left _)) Dc))
+  | case_inl {Γ Γl Γr : Ctx? α} {a A B b C}
+    (hΓ : Γ.SSplit Γl Γr) (Da : Γr ⊢ a : A)
+    (Db : Γl.cons ⟨A, ⊤⟩ ⊢ b : C) (Dc : Γl.cons ⟨B, ⊤⟩ ⊢ c : C)
+    : Step Γ C _ _ (Da.inl.case hΓ Db Dc) (Da.let₁ hΓ Db)
+  | case_inr {Γ Γl Γr : Ctx? α} {a A B b C}
+    (hΓ : Γ.SSplit Γl Γr) (Da : Γr ⊢ a : B)
+    (Db : Γl.cons ⟨A, ⊤⟩ ⊢ b : C) (Dc : Γl.cons ⟨B, ⊤⟩ ⊢ c : C)
+    : Step Γ C _ _ (Da.inr.case hΓ Db Dc) (Da.let₁ hΓ Dc)
+  | fixpoint {Γ Γl Γr : Ctx? α} {a A b B}
+    (hΓ : Γ.SSplit Γl Γr) (hc : Γl.copy) (hd : Γl.del)
+    (Da : Γr ⊢ a : A) (Db : Γl.cons ⟨A, ⊤⟩ ⊢ b : B.coprod A)
+    : Step Γ B _ _ (Da.iter hΓ hc hd Db)
+      (Da.let₁ hΓ (.iter (Γl.erase_right.cons (.right _))
+                  inferInstance inferInstance .bv0 (Db.wk1 _)))
+  | codiag {Γ Γl Γr : Ctx? α} {a A b B}
+    (hΓ : Γ.SSplit Γl Γr) (hc : Γl.copy) (hd : Γl.del)
+    (Da : Γr ⊢ a : A) (Db : Γl.cons ⟨A, ⊤⟩ ⊢ b : (B.coprod A).coprod A)
+    : Step Γ B _ _
+      (Da.iter hΓ hc hd (Db.case (Γl.erase_left.cons (.right _)) .bv0 (.inr .bv0)))
+      (Da.iter hΓ hc hd
+        (.iter (Γl.erase_right.cons (.right _)) inferInstance inferInstance .bv0 (Db.wk1 _)))
