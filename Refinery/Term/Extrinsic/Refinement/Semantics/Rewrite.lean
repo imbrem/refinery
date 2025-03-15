@@ -520,6 +520,87 @@ theorem DRWS.LetBind.bivalid : BiValid (LetBind (S := S)) C where
         ]
         premonoidal
 
--- theorem DRWS.Step.bivalid : BiValid (Step (S := S)) C where
---   den_eq Dl Dr h := by cases h with
---   | _ => sorry
+theorem DRWS.Step.bivalid : BiValid (Step (S := S)) C where
+  den_eq Dl Dr h := by cases h with
+  | terminal =>
+    stop
+    simp only [Ty.den, Deriv.den, Ctx?.ety, Var?.ety, ety_var, M.drop_tensor, Model.drop_unit,
+      tensorHom_def, PremonoidalCategory.whiskerLeft_id,
+      Category.comp_id, Category.assoc, <-Central.left_exchange_assoc,
+      Ctx?.SSplit.den_drop_left_assoc, Ctx?.PWk.den_refl', Category.id_comp]
+    premonoidal
+  | initial =>
+    stop
+    simp only [Deriv.den]
+    congr 2
+    apply DistributiveCategory.fromTensorZero_unique
+  | let₂_eta =>
+    stop
+    rename_i Γ b A B
+    simp only [Ty.den, Deriv.den, Ctx?.SSplit.den, Ctx?.ety, Var?.SSplit.den_left,
+      Var?.SSplit.den_right, swap_inner_tensorUnit_right, Deriv.den_bv1,
+      Var?.del.den_unused, eqToHom_refl, PremonoidalCategory.whiskerLeft_id, Category.id_comp,
+      Category.assoc, Iso.inv_hom_id, Category.comp_id, Iso.inv_hom_id_assoc, Deriv.den_bv0,
+      EQuant.coe_top, M.drop_tensor, tensorHom_id, ltimes, Ctx?.den, Var?.ety, ety_var,
+      M.drop_unit, Ctx?.SSplit.den_both, tensorHom_def]
+    calc
+      _ = css⟦Γ.erase_left⟧
+        ≫ t⟦Γ.erase.ety⟧ ◁ Dr.den
+        ≫ (α_ t⟦Γ.erase.ety⟧ t⟦A⟧ t⟦B⟧).inv
+        ≫ (Δ_ Γ.erase.ety ▷ t⟦A⟧
+          ≫ _ ◁ (ρ_ t⟦A⟧).inv
+          ≫ (βi_ t⟦Γ.erase.ety⟧ t⟦Γ.erase.ety⟧ t⟦A⟧ (𝟙_ C)).hom
+          ≫ !_ Γ.erase.ety ▷ _ ▷ _
+          ≫ _ ◁ !_ Γ.erase.ety ▷ _
+          ≫ (λ_ t⟦A⟧).hom ▷ _
+        ) ▷ t⟦B⟧
+        ≫ (α_ _ _ _).hom
+        ≫ t⟦A⟧ ◁ ((λ_ (𝟙_ C)).hom ▷ t⟦B⟧ ≫ (λ_ t⟦B⟧).hom)
+            := by premonoidal
+      _ = css⟦Γ.erase_left⟧
+        ≫ t⟦Γ.erase.ety⟧ ◁ Dr.den
+        ≫ (α_ t⟦Γ.erase.ety⟧ t⟦A⟧ t⟦B⟧).inv
+        ≫ ((Δ_ Γ.erase.ety ≫ !_ Γ.erase.ety ▷ _ ≫ _ ◁ !_ Γ.erase.ety) ▷ t⟦A⟧
+          ≫ _ ◁ (ρ_ t⟦A⟧).inv
+          ≫ (ρ_ _).hom ▷ _
+          ≫ (α_ _ _ _).inv
+          ≫ _ ◁ (λ_ _).inv
+          ≫ (λ_ _).hom ▷ _
+        ) ▷ t⟦B⟧
+        ≫ (α_ _ _ _).hom
+        ≫ t⟦A⟧ ◁ ((λ_ (𝟙_ C)).hom ▷ t⟦B⟧ ≫ (λ_ t⟦B⟧).hom)
+            := by
+        rw [
+          <-swap_inner_naturality_outer_left_assoc, <-swap_inner_naturality_left_assoc,
+          swap_inner_tensorUnit_left
+        ]
+        premonoidal
+      _ = css⟦Γ.erase_left⟧
+        ≫ t⟦Γ.erase.ety⟧ ◁ Dr.den
+        ≫ !_ Γ.erase.ety ▷ _
+        ≫ (α_ _ t⟦A⟧ t⟦B⟧).inv
+        ≫ ((λ_ _).inv ▷ t⟦A⟧
+          ≫ _ ◁ (ρ_ t⟦A⟧).inv
+          ≫ (ρ_ _).hom ▷ _
+          ≫ (α_ _ _ _).inv
+          ≫ _ ◁ (λ_ _).inv
+          ≫ (λ_ _).hom ▷ _
+        ) ▷ t⟦B⟧
+        ≫ (α_ _ _ _).hom
+        ≫ t⟦A⟧ ◁ ((λ_ (𝟙_ C)).hom ▷ t⟦B⟧ ≫ (λ_ t⟦B⟧).hom)
+            := by
+            rw [M.copy_drop_left_assoc]
+            premonoidal
+      _ = _ := by
+        rw [<-Central.left_exchange_assoc, Ctx?.SSplit.den_drop_left_assoc, Ctx?.PWk.den_refl']
+        premonoidal
+  | case_eta =>
+    stop
+    simp only [Ty.den, Deriv.den, Deriv.den_bv0, EQuant.coe_top, Category.assoc]
+    rw [
+      <-addHom_desc, <-distl_inv_naturality_left_assoc, <-Central.left_exchange_assoc,
+      Ctx?.SSplit.den_drop_left_assoc, Ctx?.PWk.den_refl', Category.id_comp,
+      <-leftUnitor_inv_naturality_assoc, leftUnitor_inv_distl_assoc,
+    ]
+    simp [addHom_comp_addHom, addHom_id]
+  | _ => sorry
