@@ -479,6 +479,38 @@ theorem Ctx?.SSplit.den_drop_right {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ)
     simp
     infer_instance
 
+@[reassoc]
+theorem Var?.SSplit.den_drop_left {u v w : Var? α} (σ : u.SSplit v w)
+  [hΞ : v.del] : σ.den (C := C) ≫ !_ v.ety ▷ _ = σ.wk_left_del.den (C := C) ≫ (λ_ _).inv
+  := by cases σ <;> simp [MonoidalCategory'.unitors_inv_equal]; apply M.copy_drop_left (hA := _)
+
+@[reassoc]
+theorem Ctx?.SSplit.den_drop_left {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ)
+  [hΞ : Δ.del] : σ.den (C := C) ≫ !_ Δ.ety ▷ _ = σ.pwk_left_del.den (C := C) ≫ (λ_ _).inv
+  := by
+  generalize hΞ = hΞ
+  induction σ with
+  | nil => simp only [den, ety, Model.drop_unit, pwk_left_del, PWk.den]; premonoidal_coherence
+  | cons σΓ σv I =>
+    simp only [cons_del_iff] at hΞ
+    cases hΞ
+    simp only [Ctx?.den, ety, Ty.den, den, tensorHom_def, Category.assoc,
+      M.drop_tensor, id_whiskerLeft, Iso.inv_hom_id, Category.comp_id,
+      comp_whiskerRight, leftUnitor_whiskerRight, <-swap_inner_naturality_outer_left_assoc]
+    rw [
+      Central.left_exchange_assoc, <-PremonoidalCategory.comp_whiskerRight_assoc, I,
+      <-leftUnitor_naturality, <-associator_naturality_middle_assoc,
+      <-swap_inner_naturality_right_assoc, swap_inner_tensorUnit_right,
+      <-Central.left_exchange_assoc, <-PremonoidalCategory.whiskerLeft_comp_assoc,
+      Var?.SSplit.den_drop_left
+    ]
+    simp only [SSplit.pwk_left_del, PWk.den, tensorHom_def]
+    simp only [comp_whiskerRight, leftUnitor_inv_whiskerRight, PremonoidalCategory.whiskerLeft_comp,
+      tensor_whiskerLeft, id_whiskerLeft, Category.assoc, Iso.inv_hom_id_assoc, whiskerRight_tensor,
+      whiskerLeft_inv_hom_assoc]
+    congr 2
+    premonoidal_coherence
+
 end Braided
 
 section Symmetric

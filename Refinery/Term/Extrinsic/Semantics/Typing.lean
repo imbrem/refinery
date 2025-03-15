@@ -47,3 +47,14 @@ theorem Deriv.den_cast_term {Γ : Ctx? α} {A : Ty α} {a a' : Term φ (Ty α)}
   (ha : a = a') (D : Γ ⊢ a : A)
   : (D.cast_term ha).den (C := C) = D.den
   := by cases ha; rfl
+
+@[simp]
+theorem Deriv.den_bv0 {Γ : Ctx? α} [hΓ : Γ.del] {A : Ty α} {q : Quant}
+  : (Deriv.bv0 (Γ := Γ) (A := A) (q := q)).den (C := C) = !_ Γ.ety ▷ _ ≫ (λ_ _).hom
+  := by simp [bv0, den]
+
+@[simp]
+theorem Deriv.den_bv1 {Γ : Ctx? α} [hΓ : Γ.del] {v : Var? α} [hv : v.del] {A : Ty α} {q : Quant}
+  : (Deriv.bv1 (Γ := Γ) (A := A) (q := q) (v := v)).den (C := C)
+  = !_ Γ.ety ▷ _ ▷ _ ≫ (λ_ _).hom ▷ _ ≫ t⟦A⟧ ◁ !_ v.ety ≫ (ρ_ _).hom
+  := by simp [bv1, den, tensorHom_def]

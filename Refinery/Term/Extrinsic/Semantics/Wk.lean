@@ -95,6 +95,11 @@ theorem Deriv.den_wk1 {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
   : (D.wk1 x).den (C := C) = (_ ◁ !_ x.ety) ▷ _ ≫ (ρ_ _).hom ▷ _ ≫ D.den
   := by rw [wk1, den_cast_term, den_wk, <-Category.assoc]; simp
 
+theorem Deriv.den_wk2 {Γ : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
+  {l r : Var? α} (D : (Γ.cons l).cons r ⊢ a : A) (x : Var? α) [hv : x.del]
+  : (D.wk2 x).den (C := C) = (_ ◁ !_ x.ety) ▷ _ ▷ _ ≫ (ρ_ _).hom ▷ _ ▷ _ ≫ D.den
+  := by rw [wk2, den_cast_term, den_wk, <-Category.assoc]; simp; premonoidal
+
 theorem Deriv.den_pwk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} {a : Term φ (Ty α)} (D : Δ ⊢ a : A)
   : (D.pwk ρ).den (C := C) = ρ.den ≫ D.den := by rw [<-ρ.den_toWk, wk_den, pwk, den_cast_term]
 
