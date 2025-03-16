@@ -549,3 +549,9 @@ theorem Ctx?.Split.den_comm {Γ Δ Ξ : Ctx? α} (σ : Γ.Split Δ Ξ)
           Central.left_exchange_assoc, <-PremonoidalCategory.whiskerLeft_comp_assoc,
           Var?.Split.den_comm
         ]
+
+theorem Ctx?.SSplit.den_comm {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ)
+  : σ.den (C := C) ≫ (β'_ _ _).hom = σ.comm.den
+  := by
+  rw [<-Ctx?.SSplit.den_unstrict, Ctx?.Split.den_comm, <-Ctx?.SSplit.den_unstrict]
+  apply Ctx?.Split.coherence

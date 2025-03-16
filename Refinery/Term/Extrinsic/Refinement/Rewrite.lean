@@ -203,8 +203,13 @@ inductive DRWS.Step : DRWS φ α
     (hΓ : Γ.SSplit Γl Γr) (hc : Γl.copy) (hd : Γl.del)
     (Da : Γr ⊢ a : A) (Db : Γl.cons ⟨A, ⊤⟩ ⊢ b : B.coprod A)
     : Step Γ B _ _ (Da.iter hΓ hc hd Db)
-      (Da.let₁ hΓ (.iter (Γl.erase_right.cons (.right _))
-                  inferInstance inferInstance .bv0 (Db.wk1 _)))
+      (Da.let₁ hΓ (.case (Γl.both.cons (.right _)) Db .bv0
+        (.iter ((Γl.erase_right.cons (.right _)).cons (.right _))
+          inferInstance
+          inferInstance
+          .bv0
+          ((Db.wk1 _).wk1 _)
+        )))
   | codiag {Γ Γl Γr : Ctx? α} {a A b B}
     (hΓ : Γ.SSplit Γl Γr) (hc : Γl.copy) (hd : Γl.del)
     (Da : Γr ⊢ a : A) (Db : Γl.cons ⟨A, ⊤⟩ ⊢ b : (B.coprod A).coprod A)
