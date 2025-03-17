@@ -181,5 +181,212 @@ theorem DRWS.Step.bivalid : BiValid (Step (S := S)) C where
       congr 1
       calc
         (ρ_ _).inv ▷ _ = _ := by simp [Ctx?.SSplit.den_drop_right, Ctx?.PWk.den_refl']
-        (css⟦Γl.erase_right⟧ ≫ _ ◁ !_ Γl.erase.ety) ▷ 𝟙_ C ▷ _ = _ := by premonoidal
-  | _ => sorry
+        (css⟦Γl.erase_right⟧ ≫ _ ◁ !_ Γl.erase.ety) ▷ _ ▷ _ = _ := by premonoidal
+  | codiag hΓ hc hd Da Db =>
+    rename_i Γ B Γl Γr a A b
+    simp only [Deriv.den, Ty.den.eq_5, Ctx?.SSplit.den, Ty.den, Var?.SSplit.den_right,
+      swap_inner_tensorUnit_right, Deriv.den_bv0, Ctx?.ety, Ty.den.eq_3,
+      EQuant.coe_top, Category.assoc, PremonoidalCategory.whiskerLeft_comp, Deriv.den_wk1,
+      Var?.del.den_unused, eqToHom_refl, PremonoidalCategory.whiskerLeft_id, id_whiskerRight,
+      Category.id_comp, triangle_assoc_comp_left_inv,
+      triangle_assoc, comp_whiskerRight, Iso.hom_inv_id_assoc, Var?.ety, ety_var,
+      Ctx?.den, Ctx?.ety, M.drop_tensor, M.drop_unit, tensorHom_id, M.copy_tensor,
+      M.copy_unit, tensorHom_def]
+    congr 2
+    calc
+      -- _ = iterate (Δ_ Γl.ety ▷ _
+      --   ≫ (α_ _ _ _).hom
+      --   ≫ _ ◁ css⟦Γl.erase_left⟧ ▷ _
+      --   ≫ _ ◁ (α_ _ _ _).hom
+      --   ≫ _ ◁ (ρ_ _).inv ▷ _
+      --   ≫ _ ◁ (_ ◁ Db.den ≫ !_ Γl.erase.ety ▷ _ ▷ _)
+      --   ≫ _ ◁ (∂L _ _ _).inv
+      --   ≫ _ ◁ desc
+      --     ((λ_ _).hom ▷ _ ≫ (λ_ _).hom)
+      --     ((λ_ _).hom ▷ _ ≫ (λ_ _).hom ≫ ChosenFiniteCoproducts.inr _ _)
+      --   ≫ (∂L _ _ _).inv ≫ (!_ Γl.ety ▷ _ ≫ (λ_ _).hom ⊕ₕ 𝟙 _))
+      --   := by
+      --     stop
+      --     congr 1
+      --     rw [
+      --       <-addHom_desc, <-PremonoidalCategory.whiskerLeft_comp_assoc (f := (∂L _ _ _).inv),
+      --       <-distl_inv_naturality_left_assoc, PremonoidalCategory.whiskerLeft_comp_assoc,
+      --       PremonoidalCategory.whiskerLeft_comp_assoc,
+      --     ]
+      --     premonoidal
+      -- _ = iterate (Δ_ Γl.ety ▷ _
+      --   ≫ (α_ _ _ _).hom
+      --   ≫ _ ◁ (css⟦Γl.erase_left⟧ ≫ !_ Γl.erase.ety ▷ _) ▷ _
+      --   ≫ _ ◁ (α_ _ _ _).hom
+      --   ≫ _ ◁ (ρ_ _).inv ▷ _
+      --   ≫ _ ◁ _ ◁ Db.den
+      --   ≫ _ ◁ (∂L _ _ _).inv
+      --   ≫ _ ◁ desc
+      --     ((λ_ _).hom ▷ _ ≫ (λ_ _).hom)
+      --     ((λ_ _).hom ▷ _ ≫ (λ_ _).hom ≫ ChosenFiniteCoproducts.inr _ _)
+      --   ≫ (∂L _ _ _).inv ≫ (!_ Γl.ety ▷ _ ≫ (λ_ _).hom ⊕ₕ 𝟙 _))
+      --     := by
+      --       stop
+      --       congr 1
+      --       simp only [<-Central.left_exchange (f := !_ _ ▷ _)]
+      --       premonoidal
+      -- _ = iterate (Δ_ Γl.ety ▷ _
+      --   ≫ (α_ _ _ _).hom
+      --   ≫ _ ◁ Db.den
+      --   ≫ _ ◁ ((λ_ _).inv ≫ (λ_ _).inv ▷ _ ≫ (∂L _ _ _).inv ≫ desc
+      --     ((λ_ _).hom ▷ _ ≫ (λ_ _).hom)
+      --     ((λ_ _).hom ▷ _ ≫ (λ_ _).hom ≫ ChosenFiniteCoproducts.inr _ _))
+      --   ≫ (∂L _ _ _).inv ≫ (!_ Γl.ety ▷ _ ≫ (λ_ _).hom ⊕ₕ 𝟙 _))
+      --     := by
+      --     stop
+      --     congr 1
+      --     rw [Ctx?.SSplit.den_drop_left, Ctx?.PWk.den_refl']
+      --     premonoidal
+      -- _ = iterate (Δ_ Γl.ety ▷ _
+      --   ≫ (α_ _ _ _).hom
+      --   ≫ _ ◁ Db.den
+      --   ≫ _ ◁ desc (𝟙 _) (ChosenFiniteCoproducts.inr _ _)
+      --   ≫ (∂L _ _ _).inv ≫ (!_ Γl.ety ▷ _ ≫ (λ_ _).hom ⊕ₕ 𝟙 _))
+      --     := by
+      --     stop
+      --     congr 1
+      --     simp only [
+      --       Ty.den, distl_inv_naturality_left_assoc, leftUnitor_inv_distl_assoc, addHom_desc,
+      --       PremonoidalCategory.inv_hom_whiskerRight_assoc, Iso.inv_hom_id_assoc,
+      --       Iso.inv_hom_id
+      --     ]
+      -- _ = iterate ((Δ_ Γl.ety ▷ _
+      --     ≫ (α_ _ _ _).hom
+      --     ≫ _ ◁ Db.den
+      --     ≫ (∂L _ _ _).inv
+      --     ≫ (desc
+      --       ((∂L _ _ _).inv ≫ (!_ _ ▷ _ ≫ (λ_ _).hom ≫ ChosenFiniteCoproducts.inl _ _ ⊕ₕ 𝟙 _))
+      --       (ChosenFiniteCoproducts.inr _ _)))
+      --   ≫ desc (𝟙 _) (ChosenFiniteCoproducts.inr _ _))
+      --     := by
+      --     stop
+      --     simp only [Category.assoc]
+      --     congr 4
+      --     rw [<-cancel_epi (f := (∂L _ _ _).hom)]
+      --     ext
+      --     · simp only [Ty.den, inl_distl_assoc, desc_comp, Category.assoc, inr_desc,
+      --       Iso.hom_inv_id_assoc, inl_desc, <-PremonoidalCategory.whiskerLeft_comp_assoc,
+      --       PremonoidalCategory.whiskerLeft_id, Category.id_comp]
+      --       congr 1
+      --       ext <;> simp [addHom]
+      --     · simp only [Ty.den, inr_distl_assoc, desc_comp, Category.assoc, inr_desc,
+      --       Iso.hom_inv_id_assoc, inl_desc, <-PremonoidalCategory.whiskerLeft_comp_assoc,
+      --       PremonoidalCategory.whiskerLeft_id, Category.id_comp, inr_distl_inv_assoc]
+      --       simp [addHom]
+      _ = iterate (iterate (Δ_ Γl.ety ▷ _
+          ≫ (α_ _ _ _).hom
+          ≫ _ ◁ Db.den
+          ≫ (∂L _ _ _).inv
+          ≫ (desc
+            ((∂L _ _ _).inv ≫ (!_ _ ▷ _ ≫ (λ_ _).hom ≫ ChosenFiniteCoproducts.inl _ _ ⊕ₕ 𝟙 _))
+            (ChosenFiniteCoproducts.inr _ _))))
+          := by stop rw [E.codiagonal]
+      _ = _ := by
+        congr 1
+        rw [<-E.iterate_whiskerLeft, <-E.naturality]
+        simp only [<-Category.assoc]
+        apply Eq.symm
+        apply E.pure_uniform
+        simp only [Category.assoc, Var?.ety, ety_var]
+        calc
+        _ = Δ_ Γl.ety ▷ _
+          ≫ (α_ _ _ _).hom
+          ≫ _ ◁ (css⟦Γl.erase_right⟧ ≫ _ ◁ !_ Γl.erase.ety ≫ Δ_ Γl.ety ▷ _) ▷ _
+          ≫ _ ◁ ((ρ_ _).hom ▷ _)
+          ≫ _ ◁ (α_ _ _ _).hom
+          ≫ _ ◁ (_ ◁ Db.den)
+          ≫ _ ◁ ((ρ_ _).inv ▷ _ ≫ (∂L _ _ _).inv)
+          ≫ _ ◁ (!_ Γl.ety ▷ _ ▷ _ ≫ (λ_ _).hom ▷ _ ≫ (λ_ _).hom ⊕ₕ 𝟙 _)
+          ≫ (∂L _ _ _).inv
+          ≫ ((∂L _ _ _).inv
+              ≫ (!_ Γl.ety ▷ _
+            ≫ (λ_ _).hom ⊕ₕ 𝟙 _) ⊕ₕ 𝟙 _)
+          := by stop premonoidal
+        _ = (Δ_ Γl.ety ≫ Δ_ Γl.ety ▷ _ ≫ (α_ _ _ _).hom) ▷ _
+          ≫ (α_ _ _ _).hom
+          ≫ _ ◁ (α_ _ _ _).hom
+          ≫ _ ◁ (_ ◁ Db.den)
+          ≫ _ ◁ ((ρ_ _).inv ▷ _ ≫ (∂L _ _ _).inv)
+          ≫ _ ◁ (!_ Γl.ety ▷ _ ▷ _ ≫ (λ_ _).hom ▷ _ ≫ (λ_ _).hom ⊕ₕ 𝟙 _)
+          ≫ (∂L _ _ _).inv
+          ≫ ((∂L _ _ _).inv
+              ≫ (!_ Γl.ety ▷ _
+            ≫ (λ_ _).hom ⊕ₕ 𝟙 _) ⊕ₕ 𝟙 _)
+          := by
+          stop
+          rw [M.copy_assoc, Ctx?.SSplit.den_drop_right_assoc, Ctx?.PWk.den_refl']
+          premonoidal
+        _ = Δ_ Γl.ety ▷ _
+          ≫ Δ_ Γl.ety ▷ _ ▷ _
+          ≫ (α_ _ _ _).hom ▷ _
+          ≫ (α_ _ _ _).hom
+          ≫ _ ◁ (α_ _ _ _).hom
+          ≫ _ ◁ (_ ◁ Db.den)
+          ≫ _ ◁ (∂L _ _ _).inv
+          ≫ _ ◁ (((ρ_ _).inv ▷ _  ⊕ₕ (ρ_ _).inv ▷ _)
+            ≫ (!_ Γl.ety ▷ _ ▷ _ ≫ (λ_ _).hom ▷ _ ≫ (λ_ _).hom ⊕ₕ 𝟙 _))
+          ≫ (∂L _ _ _).inv
+          ≫ ((∂L _ _ _).inv
+              ≫ (!_ Γl.ety ▷ _
+            ≫ (λ_ _).hom ⊕ₕ 𝟙 _) ⊕ₕ 𝟙 _)
+          := by simp only [Ty.den, distl_inv_naturality_left]; premonoidal
+        _ = Δ_ Γl.ety ▷ _
+          ≫ (α_ _ _ _).hom
+          ≫ Δ_ Γl.ety ▷ _
+          ≫ _ ◁ Db.den
+          ≫ (∂L _ _ _).inv
+          ≫ ((α_ _ _ _).hom ≫
+                      _ ◁
+                          ((ρ_ _).inv ▷ _ ≫
+                            !_ Γl.ety ▷ 𝟙_ C ▷ _ ≫
+                              (λ_ _).hom ▷ _ ≫ (λ_ _).hom) ≫
+                        (∂L _ _ _).inv ≫ (!_ Γl.ety ▷ _ ≫ (λ_ _).hom ⊕ₕ 𝟙 _) ⊕ₕ
+                    (α_ _ _ _).hom ≫ _ ◁ (ρ_ _).inv ▷ _)
+          := by
+          simp only [
+            addHom_comp_addHom, Category.comp_id, distl_inv_naturality_right_assoc,
+            distl_inv_distl_inv_assoc
+          ]
+          premonoidal
+        _ = _ := by
+          rw [Central.left_exchange_assoc]
+          congr 3
+          simp only [Ty.den, distl_inv_naturality_left_assoc, addHom_comp_addHom, addHom_desc]
+          simp only [addHom, desc_comp, Category.assoc, inl_desc, inr_desc, Category.id_comp]
+          congr 1
+          stop
+          congr 2
+          · rw [<-cancel_epi (f := (∂L _ _ _).hom), Iso.hom_inv_id_assoc]
+            ext
+            · simp only [
+                inl_distl_assoc, inl_desc, <-Central.left_exchange_assoc,
+                associator_naturality_right_assoc, Category.id_comp
+              ]
+              simp only [
+                <-PremonoidalCategory.whiskerLeft_comp_assoc, <-Central.left_exchange_assoc,
+                leftUnitor_naturality
+              ]
+              simp only [
+                PremonoidalCategory.whiskerLeft_comp_assoc, inl_distl_inv_assoc, inl_desc
+              ]
+              conv => rhs; rw [<-M.copy_drop_both_leftUnitor, tensorHom_def_of_left]
+              premonoidal
+            · simp only [
+                inr_distl_assoc, inr_desc, <-Central.left_exchange_assoc,
+                associator_naturality_right_assoc, Category.id_comp
+              ]
+              simp only [
+                <-PremonoidalCategory.whiskerLeft_comp_assoc, <-Central.left_exchange_assoc,
+                leftUnitor_naturality
+              ]
+              simp only [
+                PremonoidalCategory.whiskerLeft_comp_assoc, inr_distl_inv_assoc, inr_desc
+              ]
+              congr 2
+              sorry
+          · sorry
