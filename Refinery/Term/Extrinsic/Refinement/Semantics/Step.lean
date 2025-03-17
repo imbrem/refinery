@@ -47,29 +47,29 @@ theorem DRWS.Step.bivalid : BiValid (Step (S := S)) C where
     calc
       _ = css⟦Γ.erase_left⟧
         ≫ t⟦Γ.erase.ety⟧ ◁ Dr.den
-        ≫ (α_ t⟦Γ.erase.ety⟧ t⟦A⟧ t⟦B⟧).inv
-        ≫ (Δ_ Γ.erase.ety ▷ t⟦A⟧
-          ≫ _ ◁ (ρ_ t⟦A⟧).inv
-          ≫ (βi_ t⟦Γ.erase.ety⟧ t⟦Γ.erase.ety⟧ t⟦A⟧ (𝟙_ C)).hom
+        ≫ (α_ t⟦Γ.erase.ety⟧ _ _).inv
+        ≫ (Δ_ Γ.erase.ety ▷ _
+          ≫ _ ◁ (ρ_ _).inv
+          ≫ (βi_ t⟦Γ.erase.ety⟧ t⟦Γ.erase.ety⟧ _ _).hom
           ≫ !_ Γ.erase.ety ▷ _ ▷ _
           ≫ _ ◁ !_ Γ.erase.ety ▷ _
-          ≫ (λ_ t⟦A⟧).hom ▷ _
-        ) ▷ t⟦B⟧
+          ≫ (λ_ _).hom ▷ _
+        ) ▷ _
         ≫ (α_ _ _ _).hom
-        ≫ t⟦A⟧ ◁ ((λ_ (𝟙_ C)).hom ▷ t⟦B⟧ ≫ (λ_ t⟦B⟧).hom)
+        ≫ _ ◁ ((λ_ _).hom ▷ _ ≫ (λ_ _).hom)
             := by premonoidal
       _ = css⟦Γ.erase_left⟧
         ≫ t⟦Γ.erase.ety⟧ ◁ Dr.den
-        ≫ (α_ t⟦Γ.erase.ety⟧ t⟦A⟧ t⟦B⟧).inv
-        ≫ ((Δ_ Γ.erase.ety ≫ !_ Γ.erase.ety ▷ _ ≫ _ ◁ !_ Γ.erase.ety) ▷ t⟦A⟧
-          ≫ _ ◁ (ρ_ t⟦A⟧).inv
+        ≫ (α_ t⟦Γ.erase.ety⟧ _ _).inv
+        ≫ ((Δ_ Γ.erase.ety ≫ !_ Γ.erase.ety ▷ _ ≫ _ ◁ !_ Γ.erase.ety) ▷ _
+          ≫ _ ◁ (ρ_ _).inv
           ≫ (ρ_ _).hom ▷ _
           ≫ (α_ _ _ _).inv
           ≫ _ ◁ (λ_ _).inv
           ≫ (λ_ _).hom ▷ _
-        ) ▷ t⟦B⟧
+        ) ▷ _
         ≫ (α_ _ _ _).hom
-        ≫ t⟦A⟧ ◁ ((λ_ (𝟙_ C)).hom ▷ t⟦B⟧ ≫ (λ_ t⟦B⟧).hom)
+        ≫ _ ◁ ((λ_ _).hom ▷ _ ≫ (λ_ _).hom)
             := by
         rw [
           <-swap_inner_naturality_outer_left_assoc, <-swap_inner_naturality_left_assoc,
@@ -79,16 +79,16 @@ theorem DRWS.Step.bivalid : BiValid (Step (S := S)) C where
       _ = css⟦Γ.erase_left⟧
         ≫ t⟦Γ.erase.ety⟧ ◁ Dr.den
         ≫ !_ Γ.erase.ety ▷ _
-        ≫ (α_ _ t⟦A⟧ t⟦B⟧).inv
-        ≫ ((λ_ _).inv ▷ t⟦A⟧
-          ≫ _ ◁ (ρ_ t⟦A⟧).inv
+        ≫ (α_ _ _ _).inv
+        ≫ ((λ_ _).inv ▷ _
+          ≫ _ ◁ (ρ_ _).inv
           ≫ (ρ_ _).hom ▷ _
           ≫ (α_ _ _ _).inv
           ≫ _ ◁ (λ_ _).inv
           ≫ (λ_ _).hom ▷ _
-        ) ▷ t⟦B⟧
+        ) ▷ _
         ≫ (α_ _ _ _).hom
-        ≫ t⟦A⟧ ◁ ((λ_ (𝟙_ C)).hom ▷ t⟦B⟧ ≫ (λ_ t⟦B⟧).hom)
+        ≫ _ ◁ ((λ_ _).hom ▷ _ ≫ (λ_ _).hom)
             := by
             rw [M.copy_drop_left_assoc]
             premonoidal
@@ -125,8 +125,61 @@ theorem DRWS.Step.bivalid : BiValid (Step (S := S)) C where
     rw [BraidedCategory'.braiding_naturality_right_assoc, SymmetricCategory'.symmetry_assoc]
   | case_inl => stop simp [Deriv.den, inl_distl_inv_assoc]
   | case_inr => stop simp [Deriv.den, inr_distl_inv_assoc]
-  | fixpoint =>
-    simp only [Deriv.den]
+  | fixpoint hc hd Da hΓ Db =>
+    stop
+    rename_i Γ B Γl Γr a A b
+    simp only [
+      Deriv.den, Deriv.den_bv0, Deriv.den_wk1, Ctx?.den, Ctx?.ety, Var?.ety, ety_var, Ty.den,
+      Var?.erase, M.drop_tensor, M.drop_unit, tensorHom_id, Ctx?.SSplit.den,
+      Ctx?.SSplit.den_both, Var?.SSplit.den, swap_inner_tensorUnit_right, M.copy_tensor,
+      M.copy_unit, PremonoidalCategory.whiskerLeft_id, Category.assoc, Category.id_comp,
+      tensorHom_def,
+    ]
     congr 2
-    sorry
+    rw [<-Iterate.fixpoint]
+    simp only [Category.assoc, associator_naturality_right_assoc, addHom_desc, Category.id_comp]
+    congr 2
+    rw [
+      Central.left_exchange_assoc, distl_inv_naturality_left_assoc, addHom_desc
+    ]
+    apply Eq.symm
+    rw [<-Category.assoc, <-Category.assoc]
+    congr 1; premonoidal
+    congr 2; premonoidal
+    rw [
+      <-Category.assoc, <-Category.assoc, <-Category.assoc, <-Category.assoc, <-Category.assoc,
+      <-Category.assoc
+    ]
+    apply E.pure_uniform
+    simp only [
+      PremonoidalCategory.whiskerLeft_comp_assoc,
+      PremonoidalCategory.whiskerLeft_comp,
+      PremonoidalCategory.comp_whiskerRight_assoc,
+      PremonoidalCategory.comp_whiskerRight,
+      addHom_comp_addHom, Category.id_comp, Category.assoc
+    ]
+    calc
+      _ = (css⟦Γl.erase_right⟧ ≫ _ ◁ !_ Γl.erase.ety ≫ (ρ_ _).hom ≫ Δ_ Γl.ety) ▷ _
+      ≫ (α_ _ _ _).hom
+      ≫ (ρ_ _).inv ▷ _
+      ≫ (ρ_ _).inv ▷ _
+      ≫ _ ◁ Db.den
+      ≫ (∂L _ _ _).inv
+      ≫ (!_ Γl.ety ▷ _ ▷ _ ▷ _
+      ≫ (λ_ _).hom ▷ _ ▷ _
+      ≫ (λ_ _).hom ▷ _ ≫ (λ_ _).hom ⊕ₕ 𝟙 _) := by premonoidal
+    _ = _ := by
+      rw [
+        Ctx?.SSplit.den_drop_right_assoc, Ctx?.PWk.den_refl', Category.id_comp,
+        Iso.inv_hom_id_assoc, Central.left_exchange_assoc, Central.left_exchange_assoc,
+      ]
+      congr 3
+      simp only [
+        Ty.den, distl_inv_naturality_left_assoc, addHom_comp_addHom, Category.comp_id
+      ]
+      congr 2; premonoidal
+      congr 1
+      calc
+        (ρ_ _).inv ▷ _ = _ := by simp [Ctx?.SSplit.den_drop_right, Ctx?.PWk.den_refl']
+        (css⟦Γl.erase_right⟧ ≫ _ ◁ !_ Γl.erase.ety) ▷ 𝟙_ C ▷ _ = _ := by premonoidal
   | _ => sorry
