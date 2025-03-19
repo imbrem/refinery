@@ -232,7 +232,7 @@ def SubstDS.at {Γ Δ : Ctx? α} {q : Quant}
 def Deriv?.bv0 (Γ : Ctx? α)
   : (v : Var? α) → Γ.erase.cons v ⊢? .bv (φ := φ) 0 : v
   | ⟨A, 0⟩ => .zero inferInstance _ _
-  | ⟨A, (q : Quant)⟩ => .valid _ _ (.bv (.here inferInstance ⟨rfl, by simp, by simp⟩)) (by simp)
+  | ⟨A, (q : Quant)⟩ => .valid _ _ .bv0 (by simp)
 
 def SubstDS.lift {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (v : Var? α)
   : SubstDS φ (Γ.cons v) (Δ.cons v)

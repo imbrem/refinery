@@ -17,7 +17,8 @@ variable {φ : Type _} {α : outParam (Type _)} {ε : outParam (Type _)} [S : Si
 
 namespace Term
 
-instance Deriv.instHasEff {e : ε} {Γ : Ctx? α} {a : Term φ (Ty α)} {A : Ty α}
+@[simp]
+instance Deriv.den_eff {e : ε} {Γ : Ctx? α} {a : Term φ (Ty α)} {A : Ty α}
   (D : Γ ⊢ a : A) [ha : HasEff e a] : E.HasEff e D.den := by
   generalize ha = ha
   induction D with

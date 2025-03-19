@@ -77,6 +77,8 @@ inductive SubstDS.IsValid : (e : ε) → {Γ Δ : Ctx? α} → (SubstDS φ Γ Δ
     (hl : el ≤ e) (hr : er ≤ e) (hcomm : el ⇌ er)
     : IsValid e (σ.cons hΓ da)
 
+attribute [class] SubstDS.IsValid
+
 theorem SubstDS.IsValid.mono
   {e e' : ε} (he : e ≤ e') {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (h : σ.IsValid e)
   : σ.IsValid e' := by
@@ -86,8 +88,8 @@ theorem SubstDS.IsValid.mono
     constructor; apply_assumption; assumption
     apply le_trans <;> assumption; apply le_trans <;> assumption; assumption
 
-theorem SubstDS.IsValid.has_eff
-  {e : ε} {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (h : σ.IsValid e)
+instance SubstDS.IsValid.has_eff
+  (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [h : σ.IsValid e]
   : σ.HasEff e := by induction h with
   | nil => constructor
   | cons hΓ σ da hσ ha hl hr hcomm Iσ => constructor; exact Iσ.mono hl; exact ha.mono hr
