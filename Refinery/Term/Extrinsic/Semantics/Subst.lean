@@ -16,7 +16,11 @@ open ChosenFiniteCoproducts
 
 open HasQuant
 
+open HasCommRel
+
 namespace Term
+
+section BraidedCategory
 
 variable {φ : Type _} {α : outParam (Type _)} {ε : outParam (Type _)} [S : Signature φ α ε]
          {C : Type _} [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
@@ -25,6 +29,17 @@ variable {φ : Type _} {α : outParam (Type _)} {ε : outParam (Type _)} [S : Si
 def Deriv?.den {Γ : Ctx? α} {v : Var? α} {a : Term φ (Ty α)} : (Γ ⊢? a : v) → ((g⟦Γ⟧ : C) ⟶ v⟦v⟧)
   | .valid _ _ D hΓ => D.den
   | .zero hΓ a A => !_ _
+
+@[simp]
+theorem Deriv?.den_valid {Γ : Ctx? α} {A : Ty α} {q : Quant} {a : Term φ (Ty α)} (D : Γ ⊢ a : A)
+  (hΓ : quant (Var?.mk A q) ≤ quant Γ)
+  : (Deriv?.valid A q D hΓ).den (C := C) = D.den
+  := rfl
+
+@[simp]
+theorem Deriv?.den_zero {Γ : Ctx? α} [hΓ : Γ.del] {a : Term φ (Ty α)} {A : Ty α}
+  : (Deriv?.zero hΓ a A).den (C := C) = !_ _
+  := rfl
 
 @[simp]
 instance Deriv?.den_eff (e : ε) {Γ : Ctx? α} {v : Var? α} {a : Term φ (Ty α)} (D : Γ ⊢? a : v)
@@ -75,6 +90,65 @@ theorem SubstDS.den_lift {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (v : Var? α)
         := by premonoidal
       _ = _
         := by rw [Ctx?.SSplit.den_drop_right_assoc, Ctx?.PWk.den_refl']; simp
+
+def SubstSSplit.den {Γ Δ Δl Δr : Ctx? α} (σ : SubstSSplit φ Γ Δ Δl Δr)
+  : (g⟦Γ⟧ : C) ⟶ g⟦Δl⟧ ⊗ g⟦Δr⟧
+  := σ.ssplitIn.den ≫ (σ.substLeft.den ⊗ σ.substRight.den)
+
+theorem SubstSSplit.den_eq_ltimes {Γ Δ Δl Δr : Ctx? α} (σ : SubstSSplit φ Γ Δ Δl Δr)
+  : σ.den (C := C) = σ.ssplitIn.den ≫ σ.substLeft.den ▷ _ ≫ _ ◁ σ.substRight.den
+  := by simp [den, tensorHom_def]
+
+end BraidedCategory
+
+section SymmetricCategory
+
+variable {φ : Type _} {α : outParam (Type _)} {ε : outParam (Type _)} [S : Signature φ α ε]
+         {C : Type _} [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
+        [SymmetricCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
+
+--TODO: need validity here to commute `da` with the subst components...
+theorem SubstDS.den_ssplit {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) {e : ε} [hσ : σ.IsValid e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
+  : (σ.ssplit hΔ).den (C := C) = σ.den ≫ hΔ.den
+  := by induction hσ generalizing Δl Δr with
+  | nil =>
+    cases hΔ
+    simp [
+      ssplit, SubstSSplit.erase_left, SubstSSplit.den, den, tensorHom_def,
+      Ctx?.SSplit.den_drop_left_assoc, Ctx?.PWk.den_refl'
+    ]
+    rw [leftUnitor_inv_naturality]; rfl
+  | cons hΓ σ da hσ ha hl hr hcomm Iσ => cases hΔ with
+  | cons hΔ hlr =>
+  simp only [den, tensorHom_def, Category.assoc, Ctx?.SSplit.den]
+  rw [<-Central.left_exchange_assoc, <-comp_whiskerRight_assoc, <-Iσ]
+  cases hlr with
+  | left =>
+    simp only [ssplit, ge_iff_le, Deriv?.unused, den, Ctx?.SSplit.den, Ty.den, Var?.SSplit.den_left,
+      Category.assoc]
+    split
+    case isTrue h =>
+      simp only [SubstSSplit.den, den, tensorHom_def, Ty.den, comp_whiskerRight,
+        PremonoidalCategory.whiskerLeft_comp, Category.assoc, <-Ctx?.SSplit.den_comm,
+        <-BraidedCategory'.braiding_naturality_right_assoc
+      ]
+      rw [
+        <-Ctx?.SSplit.assoc_coherence_assoc (σ123_12_3 := hΓ) (σ12 := (σ.ssplit hΔ).ssplitIn.comm)
+      ]
+      congr 1
+      simp only [← Ctx?.SSplit.den_comm, comp_whiskerRight,
+        BraidedCategory'.braiding_naturality_right_assoc, BraidedCategory'.braiding_tensor_right,
+        Category.assoc, Iso.inv_hom_id_assoc, Deriv?.den_zero, Iso.hom_inv_id_assoc,
+        associator_inv_naturality_middle_assoc]
+      rw [Central.right_exchange_assoc, (E.eff_comm hcomm).left_exchange_assoc]
+      sorry
+      sorry
+      sorry
+    case isFalse h =>
+      sorry
+  | right => sorry
+  | sboth => sorry
 
 -- TODO: den_bv0
 
