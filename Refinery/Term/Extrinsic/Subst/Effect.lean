@@ -5,9 +5,7 @@ namespace Refinery
 
 namespace Term
 
-open HasQuant
-
-open HasCommRel
+open HasQuant HasPQuant HasCommRel
 
 variable {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε]
 
@@ -139,27 +137,74 @@ instance SubstDS.HasEff.ssplit_substRight
   {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [hσ : σ.HasEff e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
   : (σ.ssplit hΔ).substRight.HasEff e := (HasEff.ssplit σ hΔ).right
 
-inductive SubstDS.IsValid : (e : ε) → {Γ Δ : Ctx? α} → (SubstDS φ Γ Δ) → Prop
-  | nil {e : ε} {Γ : Ctx? α} (hΓ : Γ.del) : IsValid e (.nil hΓ)
+inductive SubstDS.Pos : (e : ε) → {Γ Δ : Ctx? α} → (SubstDS φ Γ Δ) → Prop
+  | nil {e : ε} {Γ : Ctx? α} (hΓ : Γ.del) : Pos e (.nil hΓ)
   | cons {e el er} {Γ Γl Γr Δ : Ctx? α}
     (hΓ : Γ.SSplit Γl Γr) (σ : SubstDS φ Γl Δ) (da : Γr ⊢? a : v)
-    (hσ : σ.IsValid el) (ha : da.HasEff er)
-    (hl : el ≤ e) (hr : er ≤ e) (hcomm : el ⇌ er)
-    : IsValid e (σ.cons hΓ da)
+    (hσ : σ.Pos el) (ha : da.HasEff er)
+    (hl : el ≤ e) (hr : er ≤ e) (hcomm : el ⇌ er) (hq: quant v ≤ (pquant er).pos)
+    : Pos e (σ.cons hΓ da)
 
-attribute [class] SubstDS.IsValid
+attribute [class] SubstDS.Pos
 
-theorem SubstDS.IsValid.mono
-  {e e' : ε} (he : e ≤ e') {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (h : σ.IsValid e)
-  : σ.IsValid e' := by
+theorem SubstDS.Pos.mono
+  {e e' : ε} (he : e ≤ e') {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (h : σ.Pos e)
+  : σ.Pos e' := by
   induction h with
   | nil => constructor
-  | cons hΓ σ da hσ ha hl hr hcomm =>
+  | cons hΓ σ da hσ ha hl hr hcomm hq =>
     constructor; apply_assumption; assumption
     apply le_trans <;> assumption; apply le_trans <;> assumption; assumption
+    assumption
 
-instance SubstDS.IsValid.has_eff
-  (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [h : σ.IsValid e]
+instance SubstDS.Pos.has_eff
+  (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [h : σ.Pos e]
   : σ.HasEff e := by induction h with
   | nil => constructor
-  | cons hΓ σ da hσ ha hl hr hcomm Iσ => constructor; exact Iσ.mono hl; exact ha.mono hr
+  | cons hΓ σ da hσ ha hl hr hcomm hq Iσ => constructor; exact Iσ.mono hl; exact ha.mono hr
+
+inductive SubstDS.Neg : (e : ε) → {Γ Δ : Ctx? α} → (SubstDS φ Γ Δ) → Prop
+  | nil {e : ε} {Γ : Ctx? α} (hΓ : Γ.del) : Neg e (.nil hΓ)
+  | cons {e el er} {Γ Γl Γr Δ : Ctx? α}
+    (hΓ : Γ.SSplit Γl Γr) (σ : SubstDS φ Γl Δ) (da : Γr ⊢? a : v)
+    (hσ : σ.Neg el) (ha : da.HasEff er)
+    (hl : el ≤ e) (hr : er ≤ e) (hcomm : el ⇌ er) (hq: quant v ≤ (pquant er).neg)
+    : Neg e (σ.cons hΓ da)
+
+attribute [class] SubstDS.Neg
+
+theorem SubstDS.Neg.mono
+  {e e' : ε} (he : e ≤ e') {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (h : σ.Neg e)
+  : σ.Neg e' := by
+  induction h with
+  | nil => constructor
+  | cons hΓ σ da hσ ha hl hr hcomm hq =>
+    constructor; apply_assumption; assumption
+    apply le_trans <;> assumption; apply le_trans <;> assumption; assumption
+    assumption
+
+instance SubstDS.Neg.has_eff
+  (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [h : σ.Neg e]
+  : σ.HasEff e := by induction h with
+  | nil => constructor
+  | cons hΓ σ da hσ ha hl hr hcomm hq Iσ => constructor; exact Iσ.mono hl; exact ha.mono hr
+
+inductive SubstDS.Bidir : (e : ε) → {Γ Δ : Ctx? α} → (SubstDS φ Γ Δ) → Prop
+  | nil {e : ε} {Γ : Ctx? α} (hΓ : Γ.del) : Bidir e (.nil hΓ)
+  | cons {e el er} {Γ Γl Γr Δ : Ctx? α}
+    (hΓ : Γ.SSplit Γl Γr) (σ : SubstDS φ Γl Δ) (da : Γr ⊢? a : v)
+    (hσ : σ.Pos el) (ha : da.HasEff er)
+    (hl : el ≤ e) (hr : er ≤ e) (hcomm : el ⇌ er) (hq: quant v ≤ pquant er)
+    : Bidir e (σ.cons hΓ da)
+
+attribute [class] SubstDS.Bidir
+
+theorem SubstDS.Bidir.mono
+  {e e' : ε} (he : e ≤ e') {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (h : σ.Bidir e)
+  : σ.Bidir e' := by
+  induction h with
+  | nil => constructor
+  | cons hΓ σ da hσ ha hl hr hcomm hq =>
+    constructor; apply_assumption; assumption
+    apply le_trans <;> assumption; apply le_trans <;> assumption; assumption
+    assumption

@@ -239,6 +239,7 @@ theorem Ctx?.Split.den_wkOutR {Γ Δ Ξ Ξ' : Ctx? α} (σ : Γ.Split Δ Ξ) (ρ
       Var?.Split.den_wkOutR
     ]
 
+@[reassoc]
 theorem Ctx?.Split.den_wkOut {Γ Δ Δ' Ξ Ξ' : Ctx? α}
   (σ : Γ.Split Δ Ξ) (ρΞ : Ξ.PWk Ξ') (ρΔ : Δ.PWk Δ')
   : σ.den (C := C) ≫ (ρΔ.den ⊗ ρΞ.den) = (σ.wkOut ρΔ ρΞ).den

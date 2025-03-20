@@ -285,5 +285,10 @@ theorem Ctx?.SSplit.wk_den'_assoc {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ 
   = (σ.wk' ρ).den ≫ ((σ.leftWk' ρ).den (C := C) ⊗ (σ.rightWk' ρ).den) ≫ f
   := by rw [<-Category.assoc, Ctx?.SSplit.wk_den', Category.assoc]
 
+@[reassoc]
+theorem Ctx?.SSplit.pwk_den {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.PWk Γ) (σ : Γ.SSplit Δ Ξ)
+  : ρ.den ≫ σ.den (C := C)
+  = (σ.wk ρ.toWk).den ≫ ((σ.leftPWk ρ).den (C := C) ⊗ (σ.rightPWk ρ).den (C := C))
+  := by simp [<-Ctx?.PWk.den_toWk, wk_den, leftPWk, rightPWk]
 
 end RightBias
