@@ -111,7 +111,7 @@ theorem DRWS.Step.bivalid : BiValid (Step (S := S)) C where
       Ctx?.SSplit.assoc_inv_coherence_assoc (σ23 := hΓc.comm),
     ]
     congr 1
-    rw [<-Ctx?.SSplit.den_comm]
+    rw [<-Ctx?.SSplit.den_braiding]
     simp only [PremonoidalCategory.whiskerLeft_comp, tensor_whiskerLeft,
       whiskerLeft_rightUnitor_inv, swap_inner, assoc_inner, PremonoidalCategory.whiskerRight_id,
       whiskerLeft_rightUnitor, Category.assoc, pentagon_hom_hom_inv_inv_hom, Iso.inv_hom_id_assoc,

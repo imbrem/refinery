@@ -8,15 +8,10 @@ namespace Refinery
 
 open CategoryTheory
 
-open MonoidalCategory' PremonoidalCategory DistributiveCategory
+open MonoidalCategory' PremonoidalCategory DistributiveCategory ChosenFiniteCoproducts
+      HasQuant HasCommRel EffectfulCategory
 
 open scoped MonoidalCategory
-
-open ChosenFiniteCoproducts
-
-open HasQuant
-
-open HasCommRel
 
 namespace Term
 
@@ -36,10 +31,14 @@ theorem Deriv?.den_valid {Γ : Ctx? α} {A : Ty α} {q : Quant} {a : Term φ (Ty
   : (Deriv?.valid A q D hΓ).den (C := C) = D.den
   := rfl
 
-@[simp]
 theorem Deriv?.den_zero {Γ : Ctx? α} [hΓ : Γ.del] {a : Term φ (Ty α)} {A : Ty α}
   : (Deriv?.zero hΓ a A).den (C := C) = !_ _
   := rfl
+
+@[simp]
+theorem Deriv?.den_zero' {Γ : Ctx? α} {a : Term φ (Ty α)} {A : Ty α}
+  (da : Γ ⊢? a : ⟨A, 0⟩) : da.den (C := C) = haveI _ : Γ.del := da.del_of_unused (by simp); !_ _
+  := by cases da; rfl
 
 @[simp]
 instance Deriv?.den_eff (e : ε) {Γ : Ctx? α} {v : Var? α} {a : Term φ (Ty α)} (D : Γ ⊢? a : v)
@@ -119,73 +118,103 @@ theorem SubstDS.den_ssplit {Γ Δ : Ctx? α}
       Ctx?.SSplit.den_drop_left_assoc, Ctx?.PWk.den_refl'
     ]
     rw [leftUnitor_inv_naturality]; rfl
-  | cons hΓ σ da hσ ha hl hr hcomm Iσ => cases hΔ with
+  | cons hΓ σ da hσ ha hl hr hcomm Iσ => rename Var? _ => v; cases hΔ with
   | cons hΔ hlr =>
   simp only [den, tensorHom_def, Category.assoc, Ctx?.SSplit.den]
   rw [<-Central.left_exchange_assoc, <-comp_whiskerRight_assoc, <-Iσ]
   cases hlr with
   | left =>
-    simp only [ssplit, ge_iff_le, Deriv?.unused, den, Ctx?.SSplit.den, Ty.den, Var?.SSplit.den_left,
+    stop
+    simp only [ssplit, den, Ctx?.SSplit.den, Ty.den, Var?.SSplit.den_left,
       Category.assoc]
     split
     case isTrue h =>
-      stop
       simp only [SubstSSplit.den, den, tensorHom_def, Ty.den, comp_whiskerRight,
-        PremonoidalCategory.whiskerLeft_comp, Category.assoc, <-Ctx?.SSplit.den_comm,
+        PremonoidalCategory.whiskerLeft_comp, Category.assoc, <-Ctx?.SSplit.den_braiding,
         <-BraidedCategory'.braiding_naturality_right_assoc
       ]
       rw [
         <-Ctx?.SSplit.assoc_coherence_assoc (σ123_12_3 := hΓ) (σ12 := (σ.ssplit hΔ).ssplitIn.comm)
       ]
       congr 1
-      simp only [← Ctx?.SSplit.den_comm, comp_whiskerRight,
+      simp only [← Ctx?.SSplit.den_braiding, comp_whiskerRight,
         BraidedCategory'.braiding_naturality_right_assoc, BraidedCategory'.braiding_tensor_right,
         Category.assoc, Iso.inv_hom_id_assoc, Deriv?.den_zero, Iso.hom_inv_id_assoc,
         associator_inv_naturality_middle_assoc]
-      rw [Central.right_exchange_assoc, (E.eff_comm hcomm).left_exchange_assoc]
-      · {
-        calc
-          _ = css⟦(σ.ssplit hΔ).ssplitIn⟧ ▷ _
-            ≫ ((β'_ _ _).hom
-              ≫ (_ ◁ (σ.ssplit hΔ).substLeft.den)
-              ≫ (β'_ _ _).hom) ▷ _
-            ≫ (α_ _ _ _).hom
-            ≫ _ ◁ (β'_ _ _).hom
-            ≫ (α_ _ _ _).inv
-            ≫ _ ◁ (css⟦(σ.ssplit hΔ).inRight.erase_right⟧
-              ≫ _ ◁ !_ (σ.ssplit hΔ).inRight.erase.ety)
-            ≫ _ ◁ (σ.ssplit hΔ).substRight.den (C := C) ▷ _
-            ≫ (_ ◁ da.den) ▷ _ := by
-              rw [right_exchange (g := _ ◁ !_ _)]
-              simp only [<-PremonoidalCategory.whiskerLeft_comp_assoc, Category.assoc]
-              rw [<-right_exchange (g := !_ _)]
-              premonoidal
-          _ = css⟦(σ.ssplit hΔ).ssplitIn⟧ ▷ _
-            ≫ (σ.ssplit hΔ).substLeft.den ▷ _ ▷ _
-            ≫ (α_ _ _ _).hom
-            ≫ _ ◁ ((β'_ _ _).hom ≫ _ ◁ (σ.ssplit hΔ).substRight.den (C := C) ≫ da.den ▷ _)
-            ≫ (α_ _ _ _).inv
-            ≫ _ ◁ (ρ_ _).inv := by
-              simp only [
-                BraidedCategory'.braiding_naturality_right, SymmetricCategory'.symmetry_assoc,
-                Ctx?.SSplit.den_drop_right, Ctx?.PWk.den_refl', Category.id_comp
-              ]
-              premonoidal
-          _ = _ := by
-            congr 2
-            rw [
-              <-BraidedCategory'.braiding_naturality_left_assoc,
-              <-BraidedCategory'.braiding_naturality_right,
-            ]
-            simp only [swap_inner, assoc_inner]
+      rw [Central.right_exchange_assoc, E.eff_comm_exchange_assoc hcomm.symm]
+      calc
+        _ = css⟦(σ.ssplit hΔ).ssplitIn⟧ ▷ _
+          ≫ ((β'_ _ _).hom
+            ≫ (_ ◁ (σ.ssplit hΔ).substLeft.den)
+            ≫ (β'_ _ _).hom) ▷ _
+          ≫ (α_ _ _ _).hom
+          ≫ _ ◁ (β'_ _ _).hom
+          ≫ (α_ _ _ _).inv
+          ≫ _ ◁ (css⟦(σ.ssplit hΔ).inRight.erase_right⟧
+            ≫ _ ◁ !_ (σ.ssplit hΔ).inRight.erase.ety)
+          ≫ _ ◁ (σ.ssplit hΔ).substRight.den (C := C) ▷ _
+          ≫ (_ ◁ da.den) ▷ _ := by
+            rw [right_exchange (g := _ ◁ !_ _)]
+            simp only [<-PremonoidalCategory.whiskerLeft_comp_assoc, Category.assoc]
+            rw [<-right_exchange (g := !_ _)]
             premonoidal
-      }
-      · sorry
-      · sorry
+        _ = css⟦(σ.ssplit hΔ).ssplitIn⟧ ▷ _
+          ≫ (σ.ssplit hΔ).substLeft.den ▷ _ ▷ _
+          ≫ (α_ _ _ _).hom
+          ≫ _ ◁ ((β'_ _ _).hom ≫ _ ◁ (σ.ssplit hΔ).substRight.den (C := C) ≫ da.den ▷ _)
+          ≫ (α_ _ _ _).inv
+          ≫ _ ◁ (ρ_ _).inv := by
+            simp only [
+              BraidedCategory'.braiding_naturality_right, SymmetricCategory'.symmetry_assoc,
+              Ctx?.SSplit.den_drop_right, Ctx?.PWk.den_refl', Category.id_comp
+            ]
+            premonoidal
+        _ = _ := by
+          congr 2
+          rw [
+            <-BraidedCategory'.braiding_naturality_left_assoc,
+            <-BraidedCategory'.braiding_naturality_right,
+          ]
+          simp only [swap_inner, assoc_inner]
+          premonoidal
+    case isFalse h => cases v using Var?.casesZero with
+    | zero =>
+      simp only [
+        SubstSSplit.den, den, tensorHom_def, Ty.den, Deriv?.unused, Deriv?.den_zero',
+        right_exchange (g := !_ _), Ctx?.SSplit.den_drop_right_assoc, Ctx?.PWk.den_refl',
+        Category.id_comp, Ctx?.den, Ctx?.ety, swap_inner_tensorUnit_right
+      ]
+      simp only [PremonoidalCategory.whiskerLeft_comp, comp_whiskerRight_assoc]
+      rw [
+        right_exchange_assoc, right_exchange_assoc,
+        <-Ctx?.SSplit.assoc_coherence_assoc (σ123_12_3 := hΓ) (σ12 := (σ.ssplit hΔ).ssplitIn)
+      ]
+      premonoidal
+    | rest => simp at h
+  | right =>
+    stop
+    simp only [ssplit, den, Ctx?.SSplit.den, Ty.den, Var?.SSplit.den_right,
+      Category.assoc, swap_inner_tensorUnit_right, SubstSSplit.den, Deriv?.den_zero,
+      tensorHom_def_of_right, Ctx?.SSplit.den_drop_right_assoc, Ctx?.PWk.den_refl',
+      Category.id_comp, tensor_comp_of_right
+    ]
+    rw [
+      <-Ctx?.SSplit.assoc_coherence_assoc (σ123_12_3 := hΓ) (σ12 := (σ.ssplit hΔ).ssplitIn),
+    ]
+    simp only [tensorHom_def]
+    premonoidal
+  | sboth =>
+    simp only [ssplit, den, Ctx?.SSplit.den, Ty.den, Var?.SSplit.den_sboth,
+      Category.assoc]
+    split
+    case isTrue h =>
+      simp only [SubstSSplit.den, den, Ty.den, comp_whiskerRight,
+        PremonoidalCategory.whiskerLeft_comp, Category.assoc,
+      ]
+      rw [tensor_comp_of_right]
+      sorry
     case isFalse h =>
       sorry
-  | right => sorry
-  | sboth => sorry
 
 -- TODO: den_bv0
 

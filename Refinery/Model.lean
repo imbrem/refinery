@@ -118,6 +118,10 @@ attribute [reassoc] Model.copy_swap Model.copy_assoc Model.drop_tensor Model.cop
 
 variable [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
 
+theorem Model.copy_swap_inv {A : Ty α} [hA : IsRel A]
+  : Δ_ A ≫ (β'_ _ _).inv = M.copy A
+  := by rw [<-cancel_mono (f := (β'_ _ _).hom)]; simp; rw [M.copy_swap]
+
 @[reassoc]
 theorem Model.drop_aff {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
     [hA : IsAff A] [hB : IsAff B] [hf : IsAff e] : f ≫ !_ _ = !_ _

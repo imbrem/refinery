@@ -113,7 +113,7 @@ theorem Var?.Split.den_both_quant {u : Var? α} {X Y : Ty α} {qX qY : Quant}
   := by cases σ; rfl
 
 @[reassoc]
-theorem Var?.Split.den_comm {u v w : Var? α} (σ : u.Split v w)
+theorem Var?.Split.den_braiding {u v w : Var? α} (σ : u.Split v w)
   : σ.den (C := C) ≫ (β'_ _ _).hom = σ.comm.den
   := by cases σ with
   | sboth =>
@@ -125,9 +125,22 @@ theorem Var?.Split.den_comm {u v w : Var? α} (σ : u.Split v w)
   | _ => simp [MonoidalCategory'.unitors_inv_equal]
 
 @[reassoc]
-theorem Var?.Split.den_comm_self {u : Var? α} (σ : u.Split u u)
+theorem Var?.Split.den_braiding_self {u : Var? α} (σ : u.Split u u)
   : σ.den (C := C) ≫ (β'_ _ _).hom = σ.den
-  := by rw [den_comm]; apply coherence
+  := by rw [den_braiding]; apply coherence
+
+@[reassoc]
+theorem Var?.Split.den_braiding_inv {u v w : Var? α} (σ : u.Split v w)
+  : σ.den (C := C) ≫ (β'_ _ _).inv = σ.comm.den
+  := by
+  rw [<-cancel_mono (f := (β'_ _ _).hom), den_braiding]
+  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  apply coherence
+
+@[reassoc]
+theorem Var?.Split.den_braiding_inv_self {u : Var? α} (σ : u.Split u u)
+  : σ.den (C := C) ≫ (β'_ _ _).inv = σ.den
+  := by rw [den_braiding_inv]; apply coherence
 
 @[reassoc]
 theorem Var?.Split.den_wkIn {u' u v w : Var? α} (ρ : u'.Wk u) (σ : u.Split v w)
@@ -511,6 +524,21 @@ theorem Ctx?.SSplit.den_drop_left {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ)
     congr 2
     premonoidal_coherence
 
+
+@[reassoc]
+theorem Ctx?.SSplit.den_s12_3_1_23 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (σ12_3 : Γ₁₂₃.SSplit Γ₁₂ Γ₃) (σ12 : Γ₁₂.SSplit Γ₁ Γ₂)
+  : (σ12_3.s12_3_1_23 σ12).den (C := C) ≫ _ ◁ (σ12_3.s12_3_23 σ12).den
+  = σ12_3.den (C := C) ≫ σ12.den ▷ _ ≫ (α_ _ _ _).hom
+  := by rw [assoc_coherence]
+
+@[reassoc]
+theorem Ctx?.SSplit.den_s1_23_12_3 {Γ₁₂₃ Γ₂₃ Γ₁ Γ₂ Γ₃ : Ctx? α}
+  (σ1_23 : Γ₁₂₃.SSplit Γ₁ Γ₂₃) (σ23 : Γ₂₃.SSplit Γ₂ Γ₃)
+  : (σ1_23.s1_23_12_3 σ23).den (C := C) ≫ (σ1_23.s1_23_12 σ23).den ▷ _
+  = σ1_23.den (C := C) ≫ _ ◁ σ23.den ≫ (α_ _ _ _).inv
+  := by rw [assoc_inv_coherence]
+
 end Braided
 
 section Symmetric
@@ -520,7 +548,7 @@ variable {φ : Type _} {α : Type _} {ε : Type _} [Signature φ α ε]
          [SymmetricCategory' C] [Iterate C] [E : Elgot2 C ε]
          [M : Model φ α ε C]
 
-theorem Ctx?.Split.den_comm {Γ Δ Ξ : Ctx? α} (σ : Γ.Split Δ Ξ)
+theorem Ctx?.Split.den_braiding {Γ Δ Ξ : Ctx? α} (σ : Γ.Split Δ Ξ)
   : σ.den (C := C) ≫ (β'_ _ _).hom = σ.comm.den
   := by induction σ with
   | nil => simp [Ctx?.den]; premonoidal_coherence
@@ -547,11 +575,39 @@ theorem Ctx?.Split.den_comm {Γ Δ Ξ : Ctx? α} (σ : Γ.Split Δ Ξ)
         ]
         rw [
           Central.left_exchange_assoc, <-PremonoidalCategory.whiskerLeft_comp_assoc,
-          Var?.Split.den_comm
+          Var?.Split.den_braiding
         ]
 
-theorem Ctx?.SSplit.den_comm {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ)
+theorem Ctx?.SSplit.den_braiding {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ)
   : σ.den (C := C) ≫ (β'_ _ _).hom = σ.comm.den
   := by
-  rw [<-Ctx?.SSplit.den_unstrict, Ctx?.Split.den_comm, <-Ctx?.SSplit.den_unstrict]
+  rw [<-Ctx?.SSplit.den_unstrict, Ctx?.Split.den_braiding, <-Ctx?.SSplit.den_unstrict]
   apply Ctx?.Split.coherence
+
+theorem Ctx?.SSplit.den_comm {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ)
+  : σ.comm.den (C := C) = σ.den ≫ (β'_ _ _).hom
+  := by rw [den_braiding]
+
+@[reassoc]
+theorem Ctx?.SSplit.den_s12_34_13_24 {Γ₁₂₃₄ Γ₁₂ Γ₃₄ Γ₁ Γ₂ Γ₃ Γ₄ : Ctx? α}
+  (σ12_34 : Γ₁₂₃₄.SSplit Γ₁₂ Γ₃₄) (σ12 : Γ₁₂.SSplit Γ₁ Γ₂) (σ34 : Γ₃₄.SSplit Γ₃ Γ₄)
+  : (σ12_34.s12_34_13_24 σ12 σ34).den (C := C)
+    ≫ ((σ12_34.s12_34_13 σ12 σ34).den ⊗ (σ12_34.s12_34_24 σ12 σ34).den)
+  = σ12_34.den ≫ (σ12.den (C := C) ⊗ σ34.den) ≫ (βi_ _ _ _ _).hom
+  := by
+  rw [tensorHom_def, tensorHom_def_of_left]
+  simp only [
+    s12_34_13_24, s12_34_13, s12_34_24, s12_34_12_3, s12_34_123_4, s12_3_31,
+    Category.assoc, den_comm, s12_34_13_2, s1_23_13_2
+  ]
+  rw [
+    left_exchange, den_s12_3_1_23_assoc, s12_3_13_2, <-associator_naturality_left,
+    <-comp_whiskerRight_assoc (Z := g⟦Γ₄⟧), comp_whiskerRight (Z := g⟦Γ₂⟧),
+    den_s1_23_12_3_assoc, den_comm, comp_whiskerRight_assoc, comp_whiskerRight_assoc,
+    den_s1_23_12_3_assoc, <-comp_whiskerRight_assoc (Z := g⟦Γ₄⟧),
+    <-BraidedCategory'.braiding_naturality_left_assoc, BraidedCategory'.braiding_tensor_left_assoc,
+    Iso.hom_inv_id_assoc, <-comp_whiskerRight (Z := g⟦Γ₂⟧), SymmetricCategory'.symmetry,
+    id_whiskerRight, Category.comp_id
+  ]
+  simp only [swap_inner, assoc_inner]
+  premonoidal
