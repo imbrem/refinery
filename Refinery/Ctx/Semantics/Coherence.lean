@@ -494,20 +494,31 @@ theorem Ctx?.SSplit.den_drop_right {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ)
     infer_instance
 
 @[reassoc]
+theorem Ctx?.SSplit.den_pwk_right_del {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ)
+  [hΞ : Ξ.del] : σ.pwk_right_del.den (C := C) = σ.den ≫ _ ◁ !_ Ξ.ety ≫ (ρ_ _).hom
+  := by rw [<-cancel_mono (f := (ρ_ _).inv)]; simp [den_drop_right]
+
+@[reassoc]
+theorem Ctx?.SSplit.den_drop_tensor_right {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) {X : C} (f : g⟦Δ⟧ ⟶ X)
+  [hΞ : Ξ.del]
+  : σ.den (C := C) ≫ (f ⊗ !_ Ξ.ety) = σ.pwk_right_del.den (C := C) ≫ f ≫ (ρ_ _).inv
+  := by rw [den_pwk_right_del, tensorHom_def_of_right]; premonoidal
+
+@[reassoc]
 theorem Var?.SSplit.den_drop_left {u v w : Var? α} (σ : u.SSplit v w)
   [hΞ : v.del] : σ.den (C := C) ≫ !_ v.ety ▷ _ = σ.wk_left_del.den (C := C) ≫ (λ_ _).inv
   := by cases σ <;> simp [MonoidalCategory'.unitors_inv_equal]; apply M.copy_drop_left (hA := _)
 
 @[reassoc]
 theorem Ctx?.SSplit.den_drop_left {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ)
-  [hΞ : Δ.del] : σ.den (C := C) ≫ !_ Δ.ety ▷ _ = σ.pwk_left_del.den (C := C) ≫ (λ_ _).inv
+  [hΔ : Δ.del] : σ.den (C := C) ≫ !_ Δ.ety ▷ _ = σ.pwk_left_del.den (C := C) ≫ (λ_ _).inv
   := by
-  generalize hΞ = hΞ
+  generalize hΔ = hΔ
   induction σ with
   | nil => simp only [den, ety, Model.drop_unit, pwk_left_del, PWk.den]; premonoidal_coherence
   | cons σΓ σv I =>
-    simp only [cons_del_iff] at hΞ
-    cases hΞ
+    simp only [cons_del_iff] at hΔ
+    cases hΔ
     simp only [Ctx?.den, ety, Ty.den, den, tensorHom_def, Category.assoc,
       M.drop_tensor, id_whiskerLeft, Iso.inv_hom_id, Category.comp_id,
       comp_whiskerRight, leftUnitor_whiskerRight, <-swap_inner_naturality_outer_left_assoc]
@@ -525,6 +536,16 @@ theorem Ctx?.SSplit.den_drop_left {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ)
     congr 2
     premonoidal_coherence
 
+@[reassoc]
+theorem Ctx?.SSplit.den_pwk_left_del {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ)
+  [hΔ : Δ.del] : σ.pwk_left_del.den (C := C) = σ.den ≫ !_ Δ.ety ▷ _ ≫ (λ_ _).hom
+  := by rw [<-cancel_mono (f := (λ_ _).inv)]; simp [den_drop_left]
+
+@[reassoc]
+theorem Ctx?.SSplit.den_drop_tensor_left {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) {X : C} (f : g⟦Ξ⟧ ⟶ X)
+  [hΔ : Δ.del]
+  : σ.den (C := C) ≫ (!_ Δ.ety ⊗ f) = σ.pwk_left_del.den (C := C) ≫ f ≫ (λ_ _).inv
+  := by rw [den_pwk_left_del, tensorHom_def]; premonoidal
 
 @[reassoc]
 theorem Ctx?.SSplit.den_s12_3_1_23 {Γ₁₂₃ Γ₁₂ Γ₁ Γ₂ Γ₃ : Ctx? α}

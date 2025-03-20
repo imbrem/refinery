@@ -224,7 +224,7 @@ theorem SubstDS.del {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [hΔ : Δ.del] : �
     apply hΓ.in_del
 
 def SubstDS.at {Γ Δ : Ctx? α} {q : Quant}
-  : (σ : SubstDS φ Γ Δ) →  (hv : Δ.At ⟨A, q⟩ n) → Γ ⊢ σ n : A
+  : (σ : SubstDS φ Γ Δ) → (hv : Δ.At ⟨A, q⟩ n) → Γ ⊢ σ n : A
   | .cons hΓ σ (.valid _ _ da _), .here d hvw
     => (da.pwk (hΓ.pwk_left_del (hΔ := σ.del))).cast_ty hvw.ty
   | .cons hΓ σ da, .there x hv => (σ.at x).pwk (hΓ.pwk_right_del (hΞ := da.del hv))
