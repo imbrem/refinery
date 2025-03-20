@@ -129,6 +129,7 @@ theorem SubstDS.den_ssplit {Γ Δ : Ctx? α}
       Category.assoc]
     split
     case isTrue h =>
+      stop
       simp only [SubstSSplit.den, den, tensorHom_def, Ty.den, comp_whiskerRight,
         PremonoidalCategory.whiskerLeft_comp, Category.assoc, <-Ctx?.SSplit.den_comm,
         <-BraidedCategory'.braiding_naturality_right_assoc
@@ -142,9 +143,45 @@ theorem SubstDS.den_ssplit {Γ Δ : Ctx? α}
         Category.assoc, Iso.inv_hom_id_assoc, Deriv?.den_zero, Iso.hom_inv_id_assoc,
         associator_inv_naturality_middle_assoc]
       rw [Central.right_exchange_assoc, (E.eff_comm hcomm).left_exchange_assoc]
-      sorry
-      sorry
-      sorry
+      · {
+        calc
+          _ = css⟦(σ.ssplit hΔ).ssplitIn⟧ ▷ _
+            ≫ ((β'_ _ _).hom
+              ≫ (_ ◁ (σ.ssplit hΔ).substLeft.den)
+              ≫ (β'_ _ _).hom) ▷ _
+            ≫ (α_ _ _ _).hom
+            ≫ _ ◁ (β'_ _ _).hom
+            ≫ (α_ _ _ _).inv
+            ≫ _ ◁ (css⟦(σ.ssplit hΔ).inRight.erase_right⟧
+              ≫ _ ◁ !_ (σ.ssplit hΔ).inRight.erase.ety)
+            ≫ _ ◁ (σ.ssplit hΔ).substRight.den (C := C) ▷ _
+            ≫ (_ ◁ da.den) ▷ _ := by
+              rw [right_exchange (g := _ ◁ !_ _)]
+              simp only [<-PremonoidalCategory.whiskerLeft_comp_assoc, Category.assoc]
+              rw [<-right_exchange (g := !_ _)]
+              premonoidal
+          _ = css⟦(σ.ssplit hΔ).ssplitIn⟧ ▷ _
+            ≫ (σ.ssplit hΔ).substLeft.den ▷ _ ▷ _
+            ≫ (α_ _ _ _).hom
+            ≫ _ ◁ ((β'_ _ _).hom ≫ _ ◁ (σ.ssplit hΔ).substRight.den (C := C) ≫ da.den ▷ _)
+            ≫ (α_ _ _ _).inv
+            ≫ _ ◁ (ρ_ _).inv := by
+              simp only [
+                BraidedCategory'.braiding_naturality_right, SymmetricCategory'.symmetry_assoc,
+                Ctx?.SSplit.den_drop_right, Ctx?.PWk.den_refl', Category.id_comp
+              ]
+              premonoidal
+          _ = _ := by
+            congr 2
+            rw [
+              <-BraidedCategory'.braiding_naturality_left_assoc,
+              <-BraidedCategory'.braiding_naturality_right,
+            ]
+            simp only [swap_inner, assoc_inner]
+            premonoidal
+      }
+      · sorry
+      · sorry
     case isFalse h =>
       sorry
   | right => sorry
