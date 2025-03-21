@@ -98,6 +98,65 @@ theorem SubstSSplit.den_eq_ltimes {Γ Δ Δl Δr : Ctx? α} (σ : SubstSSplit φ
   : σ.den (C := C) = σ.ssplitIn.den ≫ σ.substLeft.den ▷ _ ≫ _ ◁ σ.substRight.den
   := by simp [den, tensorHom_def]
 
+def SubstSSplit.den' {Γ Δ Δl Δr : Ctx? α} (σ : SubstSSplit φ Γ Δ Δl Δr)
+  : (g⟦Γ⟧ : C) ⟶ g⟦Δl⟧ ⊗ g⟦Δr⟧
+  := σ.ssplitIn.den ≫ _ ◁ σ.substRight.den ≫ σ.substLeft.den ▷ _
+
+def SubstSSplit.den_left {Γ Δ Δl Δr : Ctx? α} (σ : SubstSSplit φ Γ Δ Δl Δr)
+  := σ.substLeft.den (C := C) ▷ _ ≫ _ ◁ σ.substRight.den
+
+def SubstSSplit.den_right {Γ Δ Δl Δr : Ctx? α} (σ : SubstSSplit φ Γ Δ Δl Δr)
+  := _ ◁ σ.substRight.den (C := C) ≫ σ.substLeft.den ▷ _
+
+theorem SubstSSplit.den_split_comm_eff (e : ε) {Γ Δ Δl Δr : Ctx? α} (σ : SubstDS φ Γ Δ)
+  [hσ : σ.CommEff e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
+  : (σ.ssplit hΔ).den_left (C := C) = (σ.ssplit hΔ).den_right (C := C)
+  := by induction hσ generalizing Δl Δr with
+  | nil =>
+    cases hΔ; simp [SubstDS.ssplit, den_left, den_right, SubstDS.den, erase_left, left_exchange]
+  | cons hΓ σ da hσ ha hl hr hcomm Iσ =>
+    rename_i v a e el er Γ Γl Γr Δ
+    cases hΔ with | cons hΔ hlr => cases hlr with
+    | left =>
+      stop
+      simp only [SubstDS.ssplit]
+      if hv : v.used then
+        rw [dite_cond_eq_true (by simp [hv]), den_left, den_right]
+        simp only [
+          SubstDS.den, Deriv?.den_zero, Ctx?.SSplit.den_drop_tensor_right, Ctx?.PWk.den_refl',
+          Category.id_comp
+        ]
+        simp only [
+          comp_whiskerRight, PremonoidalCategory.whiskerLeft_comp, Category.assoc, tensorHom_def,
+          <-left_exchange_assoc, Ty.den, Ctx?.den, Ctx?.ety,
+        ]
+        congr 1
+        rw [whiskerLeft_swap_of_swap_assoc, right_exchange]
+        simp only [<-Category.assoc]
+        congr 1
+        simp only [Category.assoc]
+        rw [<-right_exchange, whiskerRight_swap_of_swap_assoc]
+        apply Iσ
+        rw [E.eff_comm_exchange hcomm.symm]
+      else
+        rw [dite_cond_eq_false (by simp [hv]), den_left, den_right]
+        cases v using Var?.casesZero with
+        | zero =>
+          simp only [Deriv?.unused, SubstDS.den, Ty.den, Deriv?.den_zero', tensorHom_def,
+            comp_whiskerRight, PremonoidalCategory.whiskerLeft_comp, Category.assoc,
+            <-left_exchange_assoc, <-right_exchange_assoc, Ty.den, Ctx?.den, Ctx?.ety,
+          ]
+          congr 1
+          simp only [left_exchange_assoc, left_exchange]
+          rw [right_exchange_assoc]
+          congr 1
+          rw [whiskerRight_swap_of_swap_assoc]
+          rw [swap_whiskerRight_of_swap]
+          apply Iσ
+        | rest => simp at hv
+    | right => sorry
+    | sboth => sorry
+
 end BraidedCategory
 
 section SymmetricCategory
@@ -107,8 +166,8 @@ variable {φ : Type _} {α : outParam (Type _)} {ε : outParam (Type _)} [S : Si
         [SymmetricCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
 
 --TODO: need validity here to commute `da` with the subst components...
-theorem SubstDS.den_ssplit_pos {Γ Δ : Ctx? α}
-  (σ : SubstDS φ Γ Δ) {e : ε} [hσ : σ.Pos e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
+theorem SubstDS.den_ssplit_pos (e : ε) {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) [hσ : σ.Pos e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
   : σ.den ≫ hΔ.den ↠ (σ.ssplit hΔ).den (C := C)
   := by induction hσ generalizing Δl Δr with
   | nil =>
@@ -275,8 +334,8 @@ theorem SubstDS.den_ssplit_pos {Γ Δ : Ctx? α}
       premonoidal
     | rest => simp at h
 
-theorem SubstDS.den_ssplit_neg {Γ Δ : Ctx? α}
-  (σ : SubstDS φ Γ Δ) {e : ε} [hσ : σ.Neg e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
+theorem SubstDS.den_ssplit_neg (e : ε) {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) [hσ : σ.Neg e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
   : σ.den ≫ hΔ.den ↞ (σ.ssplit hΔ).den (C := C)
   := by induction hσ generalizing Δl Δr with
   | nil =>
@@ -442,6 +501,30 @@ theorem SubstDS.den_ssplit_neg {Γ Δ : Ctx? α}
       apply Ctx?.Split.coherence
       premonoidal
     | rest => simp at h
+
+theorem SubstDS.den_ssplit_pos_tensor (e : ε) {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) [hσ : σ.Pos e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
+  : σ.den ≫ hΔ.den
+  ↠ (σ.ssplitIn hΔ).den (C := C) ≫ ((σ.substLeft hΔ).den ⊗ (σ.substRight hΔ).den)
+  := σ.den_ssplit_pos e hΔ
+
+theorem SubstDS.den_ssplit_neg_tensor (e : ε) {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) [hσ : σ.Neg e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
+  : σ.den ≫ hΔ.den
+  ↞ (σ.ssplitIn hΔ).den (C := C) ≫ ((σ.substLeft hΔ).den ⊗ (σ.substRight hΔ).den)
+  := σ.den_ssplit_neg e hΔ
+
+theorem SubstDS.den_ssplit_pos_left (e : ε) {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) [hσ : σ.Pos e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
+  : σ.den ≫ hΔ.den
+  ↠ (σ.ssplitIn hΔ).den (C := C) ≫ (σ.substLeft hΔ).den ▷ _ ≫ _ ◁ (σ.substRight hΔ).den
+  := by convert σ.den_ssplit_pos_tensor e hΔ; simp only [tensorHom_def]
+
+theorem SubstDS.den_ssplit_neg_left (e : ε) {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) [hσ : σ.Neg e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
+  : σ.den ≫ hΔ.den
+  ↞ (σ.ssplitIn hΔ).den (C := C) ≫ (σ.substLeft hΔ).den ▷ _ ≫ _ ◁ (σ.substRight hΔ).den
+  := by convert σ.den_ssplit_neg_tensor e hΔ; simp only [tensorHom_def]
 
 theorem SubstDS.den_drop_pos (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [hσ : σ.Pos e] [hΔ : Δ.del]
   : σ.den (C := C) ≫ !_ Δ.ety ↠ (haveI _ : Γ.del := σ.del; !_ Γ.ety)

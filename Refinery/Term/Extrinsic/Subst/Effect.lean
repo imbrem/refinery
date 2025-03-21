@@ -137,6 +137,31 @@ instance SubstDS.HasEff.ssplit_substRight
   {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [hσ : σ.HasEff e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
   : (σ.ssplit hΔ).substRight.HasEff e := (HasEff.ssplit σ hΔ).right
 
+inductive SubstDS.CommEff : (e : ε) → {Γ Δ : Ctx? α} → (SubstDS φ Γ Δ) → Prop
+  | nil {e : ε} {Γ : Ctx? α} (hΓ : Γ.del) : CommEff e (.nil hΓ)
+  | cons {e el er} {Γ Γl Γr Δ : Ctx? α}
+    (hΓ : Γ.SSplit Γl Γr) (σ : SubstDS φ Γl Δ) (da : Γr ⊢? a : v)
+    (hσ : σ.CommEff el) (ha : da.HasEff er)
+    (hl : el ≤ e) (hr : er ≤ e) (hcomm : el ⇌ er)
+    : CommEff e (σ.cons hΓ da)
+
+attribute [class] SubstDS.CommEff
+
+theorem SubstDS.CommEff.mono
+  {e e' : ε} (he : e ≤ e') {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (h : σ.CommEff e)
+  : σ.CommEff e' := by
+  induction h with
+  | nil => constructor
+  | cons hΓ σ da hσ ha hl hr hcomm hq =>
+    constructor; apply_assumption; assumption
+    apply le_trans <;> assumption; apply le_trans <;> assumption; assumption
+
+instance SubstDS.CommEff.has_eff
+  (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [h : σ.CommEff e]
+  : σ.HasEff e := by induction h with
+  | nil => constructor
+  | cons hΓ σ da hσ ha hl hr hcomm Iσ => constructor; exact Iσ.mono hl; exact ha.mono hr
+
 inductive SubstDS.Pos : (e : ε) → {Γ Δ : Ctx? α} → (SubstDS φ Γ Δ) → Prop
   | nil {e : ε} {Γ : Ctx? α} (hΓ : Γ.del) : Pos e (.nil hΓ)
   | cons {e el er} {Γ Γl Γr Δ : Ctx? α}
@@ -157,11 +182,14 @@ theorem SubstDS.Pos.mono
     apply le_trans <;> assumption; apply le_trans <;> assumption; assumption
     assumption
 
-instance SubstDS.Pos.has_eff
-  (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [h : σ.Pos e]
-  : σ.HasEff e := by induction h with
+instance SubstDS.Pos.comm_eff (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [h : σ.Pos e]
+  : σ.CommEff e := by induction h with
   | nil => constructor
-  | cons hΓ σ da hσ ha hl hr hcomm hq Iσ => constructor; exact Iσ.mono hl; exact ha.mono hr
+  | cons hΓ σ da hσ ha hl hr hcomm hq Iσ => constructor <;> assumption
+
+theorem SubstDS.Pos.has_eff
+  (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [h : σ.Pos e]
+  : σ.HasEff e := inferInstance
 
 inductive SubstDS.Neg : (e : ε) → {Γ Δ : Ctx? α} → (SubstDS φ Γ Δ) → Prop
   | nil {e : ε} {Γ : Ctx? α} (hΓ : Γ.del) : Neg e (.nil hΓ)
@@ -183,11 +211,14 @@ theorem SubstDS.Neg.mono
     apply le_trans <;> assumption; apply le_trans <;> assumption; assumption
     assumption
 
+instance SubstDS.Neg.comm_eff (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [h : σ.Neg e]
+  : σ.CommEff e := by induction h with
+  | nil => constructor
+  | cons hΓ σ da hσ ha hl hr hcomm hq Iσ => constructor <;> assumption
+
 instance SubstDS.Neg.has_eff
   (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [h : σ.Neg e]
-  : σ.HasEff e := by induction h with
-  | nil => constructor
-  | cons hΓ σ da hσ ha hl hr hcomm hq Iσ => constructor; exact Iσ.mono hl; exact ha.mono hr
+  : σ.HasEff e := inferInstance
 
 inductive SubstDS.Bidir : (e : ε) → {Γ Δ : Ctx? α} → (SubstDS φ Γ Δ) → Prop
   | nil {e : ε} {Γ : Ctx? α} (hΓ : Γ.del) : Bidir e (.nil hΓ)
