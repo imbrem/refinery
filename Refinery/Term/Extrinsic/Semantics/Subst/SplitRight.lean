@@ -92,10 +92,7 @@ theorem SubstDS.den_ssplit_pos' (e : ε) {Γ Δ : Ctx? α}
       simp only [
         PremonoidalCategory.whiskerLeft_comp_assoc, comp_whiskerRight_assoc, comp_whiskerRight
       ]
-      rw [
-        <-Ctx?.SSplit.assoc_coherence_assoc (σ123_12_3 := hΓ) (σ12 := (σ.ssplit hΔ).ssplitIn),
-        <-right_exchange_assoc, <-right_exchange
-      ]
+      rw [Ctx?.SSplit.den_s12_3_1_23_assoc, <-right_exchange_assoc, <-right_exchange]
       premonoidal
     | rest => simp at h
   | right =>
@@ -104,34 +101,39 @@ theorem SubstDS.den_ssplit_pos' (e : ε) {Γ Δ : Ctx? α}
     simp only [ssplit, den, Ctx?.SSplit.den, Ty.den, Var?.SSplit.den_right,
       Category.assoc, swap_inner_tensorUnit_right, SubstSSplit.den', Deriv?.den_zero,
       tensorHom_def_of_right, Ctx?.SSplit.den_drop_right_assoc, Ctx?.PWk.den_refl',
-      Category.id_comp, tensor_comp_of_right
+      Category.id_comp, tensor_comp_of_right, PremonoidalCategory.whiskerLeft_comp_assoc,
+      Category.assoc, Ctx?.den, Ctx?.ety
     ]
-    stop
     rw [
-      <-Ctx?.SSplit.assoc_coherence_assoc (σ123_12_3 := hΓ) (σ12 := (σ.ssplit hΔ).ssplitIn),
+      Ctx?.SSplit.den_s12_3_1_23_assoc, tensorHom_def,
+      PremonoidalCategory.whiskerLeft_comp_assoc,
+      <-swap_whiskerLeft_of_swap (g := da.den)
     ]
-    simp only [tensorHom_def]
     premonoidal
+    rw [<-E.eff_comm_exchange hcomm]
   | sboth hv =>
-    stop
     simp only [ssplit, den, Ctx?.SSplit.den, Ty.den, Var?.SSplit.den_sboth,
       Category.assoc]
     split
     case isTrue hv' =>
       have hv : v.copy := hv.copy
       have hΓ : Γr.copy := da.copy hv' hv
-      stop
-      simp only [SubstSSplit.den', den, Ty.den, comp_whiskerRight,
+      simp only [
+        SubstSSplit.den', den, Ty.den, comp_whiskerRight,
         PremonoidalCategory.whiskerLeft_comp, Category.assoc,
       ]
-      rw [tensor_comp_of_right, Ctx?.SSplit.den_s12_34_13_24_assoc, tensorHom_def_assoc]
+      rw [
+        <-left_exchange_assoc, <-tensorHom_def_of_right_assoc, Ctx?.SSplit.den_s12_34_13_24_assoc,
+        tensorHom_def_assoc
+      ]
       apply refines_comp; rfl
       apply refines_comp; rfl
       simp only [
         tensorHom_def, comp_whiskerRight, Category.assoc, PremonoidalCategory.whiskerLeft_comp,
         Iso.inv_hom_id_assoc, Ctx?.den, Ty.den, Ctx?.ety, Ctx?.SSplit.den_both,
         <-swap_inner_naturality_outer_left_assoc, <-swap_inner_naturality_right_assoc,
-        <-swap_inner_naturality_left_assoc, <-swap_inner_naturality_outer_right
+        <-swap_inner_naturality_left_assoc, <-swap_inner_naturality_outer_right,
+        <-swap_inner_naturality_outer_right_assoc, <-swap_inner_naturality_right,
       ]
       rw [<-Central.right_exchange_assoc]
       apply refines_comp; rfl
@@ -149,10 +151,11 @@ theorem SubstDS.den_ssplit_pos' (e : ε) {Γ Δ : Ctx? α}
       apply refines_comp _ (by rfl)
       apply refines_whiskerLeft
       apply refines_trans
-      apply M.copy_dup_ltimes er _ (hf := IsDup.of_copy_le_pos (le_trans hv.copy_le_quant hq))
+      apply M.copy_dup_rtimes er _ (hf := IsDup.of_copy_le_pos (le_trans hv.copy_le_quant hq))
       apply refines_of_eq
       simp [ltimes]
     case isFalse h =>
+    stop
     cases v using Var?.casesZero with
     | zero =>
       apply refines_of_eq
