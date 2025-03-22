@@ -99,18 +99,18 @@ class Model
     [IsAff A] [IsAff B] [hf : IsRem e] : f ≫ drop _ ↠ drop _
   copy_drop_left_rem {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
     [IsRel A] [IsAff B] [hf : IsRem e] : copy _ ≫ (f ≫ drop _) ▷ t⟦ A ⟧ ↠ (λ_ _).inv
+  copy_dup_ltimes_eq_rtimes {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
+    [IsRel A] [IsRel B] [hf : IsDup e] : copy _ ≫ (f ⋉ f) = copy _ ≫ (f ⋊ f)
   copy_dup_ltimes {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
     [IsRel A] [IsRel B] [hf : IsDup e] : f ≫ copy _ ↠ copy _ ≫ (f ⋉ f)
-  copy_dup_rtimes {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
-    [IsRel A] [IsRel B] [hf : IsDup e] : f ≫ copy _ ↠ copy _ ≫ (f ⋊ f)
   drop_add {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
     [IsAff A] [IsAff B] [hf : IsAdd e] : f ≫ drop _ ↞ drop _
   copy_drop_left_add {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
     [IsRel A] [IsAff B] [hf : IsAdd e] : copy _ ≫ (f ≫ drop _) ▷ t⟦ A ⟧ ↞ (λ_ _).inv
+  copy_fuse_ltimes_eq_rtimes {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
+    [IsRel A] [IsRel B] [hf : IsFuse e] : copy _ ≫ (f ⋉ f) = copy _ ≫ (f ⋊ f)
   copy_fuse_ltimes {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
     [IsRel A] [IsRel B] [hf : IsFuse e] : f ≫ copy _ ↞ copy _ ≫ (f ⋉ f)
-  copy_fuse_rtimes {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
-    [IsRel A] [IsRel B] [hf : IsFuse e] : f ≫ copy _ ↞ copy _ ≫ (f ⋊ f)
 
 attribute [simp] Model.drop_unit Model.copy_unit
 
@@ -121,6 +121,14 @@ variable [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
 theorem Model.copy_swap_inv {A : Ty α} [hA : IsRel A]
   : Δ_ A ≫ (β'_ _ _).inv = M.copy A
   := by rw [<-cancel_mono (f := (β'_ _ _).hom)]; simp; rw [M.copy_swap]
+
+theorem Model.copy_dup_rtimes {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
+  [hA : IsRel A] [hB : IsRel B] [hf : IsDup e] : f ≫ Δ_ _ ↠ Δ_ _ ≫ (f ⋊ f)
+  := by rw [<-M.copy_dup_ltimes_eq_rtimes e f]; exact M.copy_dup_ltimes e f
+
+theorem Model.copy_fuse_rtimes {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
+  [hA : IsRel A] [hB : IsRel B] [hf : IsFuse e] : f ≫ Δ_ _ ↞ Δ_ _ ≫ (f ⋊ f)
+  := by rw [<-M.copy_fuse_ltimes_eq_rtimes e f]; exact M.copy_fuse_ltimes e f
 
 @[reassoc]
 theorem Model.drop_aff {A B : Ty α} (e : ε) (f : t⟦ A ⟧ ⟶ t⟦ B ⟧) [h : E.HasEff e f]
