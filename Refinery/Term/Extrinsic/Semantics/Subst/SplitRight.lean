@@ -43,12 +43,12 @@ theorem SubstDS.den_ssplit_pos' (e : ε) {Γ Δ : Ctx? α}
   apply refines_trans Iσ'
   cases hlr with
   | left =>
+    stop
     apply refines_of_eq; apply Eq.symm
     simp only [ssplit, den, Ctx?.SSplit.den, Ty.den, Var?.SSplit.den_left,
       Category.assoc]
     split
     case isTrue h =>
-      stop
       simp only [
         SubstSSplit.den', SubstDS.den, Deriv?.den_zero, Ctx?.SSplit.den_drop_tensor_right,
         Ctx?.PWk.den_refl', Category.id_comp, Ctx?.SSplit.den_comm, Category.assoc,
@@ -84,16 +84,17 @@ theorem SubstDS.den_ssplit_pos' (e : ε) {Γ Δ : Ctx? α}
       _ = _ := by simp only [symmetry, swap_inner, assoc_inner]; premonoidal
     case isFalse h => cases v using Var?.casesZero with
     | zero =>
-      stop
       simp only [
-        SubstSSplit.den, den, tensorHom_def, Ty.den, Deriv?.unused, Deriv?.den_zero',
+        SubstSSplit.den', den, tensorHom_def, Ty.den, Deriv?.unused, Deriv?.den_zero',
         right_exchange (g := !_ _), Ctx?.SSplit.den_drop_right_assoc, Ctx?.PWk.den_refl',
-        Category.id_comp, Ctx?.den, Ctx?.ety, swap_inner_tensorUnit_right
+        Category.id_comp, Ctx?.den, Ctx?.ety, swap_inner_tensorUnit_right, Category.assoc
       ]
-      simp only [PremonoidalCategory.whiskerLeft_comp, comp_whiskerRight_assoc]
+      simp only [
+        PremonoidalCategory.whiskerLeft_comp_assoc, comp_whiskerRight_assoc, comp_whiskerRight
+      ]
       rw [
-        right_exchange_assoc, right_exchange_assoc,
-        <-Ctx?.SSplit.assoc_coherence_assoc (σ123_12_3 := hΓ) (σ12 := (σ.ssplit hΔ).ssplitIn)
+        <-Ctx?.SSplit.assoc_coherence_assoc (σ123_12_3 := hΓ) (σ12 := (σ.ssplit hΔ).ssplitIn),
+        <-right_exchange_assoc, <-right_exchange
       ]
       premonoidal
     | rest => simp at h
