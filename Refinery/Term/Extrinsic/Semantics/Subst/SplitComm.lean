@@ -12,18 +12,56 @@ open scoped MonoidalCategory
 namespace Term
 
 variable {φ : Type _} {α : outParam (Type _)} {ε : outParam (Type _)} [S : Signature φ α ε]
-         {C : Type _} [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
+
+
+inductive SubstDS.CommEff
+  (C : Type _) [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
+  [SymmetricCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
+  : (e : ε) → {Γ Δ : Ctx? α} → (SubstDS φ Γ Δ) → Prop
+  | nil {e : ε} {Γ : Ctx? α} (hΓ : Γ.del) : CommEff C e (.nil hΓ)
+  | cons {e el er} {Γ Γl Γr Δ : Ctx? α}
+    (hΓ : Γ.SSplit Γl Γr) (σ : SubstDS φ Γl Δ) (da : Γr ⊢? a : v)
+    (hσ : σ.CommEff C el) (ha : da.HasEff er)
+    (hl : el ≤ e) (hr : er ≤ e) (hcomm : el ⇌ er)
+    (hcopy : v.copy ->
+      ∀{A B : Ty α} [IsRel A],
+      ∀f : (t⟦A⟧ : C) ⟶ t⟦B⟧, [E.HasEff er f] → Δ_ A ≫ f ⋉ f = Δ_ A ≫ f ⋊ f
+    )
+    : CommEff C e (σ.cons hΓ da)
+
+variable {C : Type _} [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
         [SymmetricCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
 
-theorem SubstSSplit.den_split_comm_eff (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ)
-  [hσ : σ.CommEff e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
+theorem SubstDS.CommEff.mono
+  {e e' : ε} (he : e ≤ e') {Γ Δ : Ctx? α} {σ : SubstDS φ Γ Δ} (h : σ.CommEff C e)
+  : σ.CommEff C e' := by
+  induction h with
+  | nil => constructor
+  | cons hΓ σ da hσ ha hl hr hcomm hq =>
+    constructor; apply_assumption; assumption
+    apply le_trans <;> assumption; apply le_trans <;> assumption; assumption
+    assumption
+
+theorem SubstDS.CommEff.has_eff
+  (e : ε) {Γ Δ : Ctx? α} {σ : SubstDS φ Γ Δ} (h : σ.CommEff C e)
+  : σ.HasEff e := by induction h with
+  | nil => constructor
+  | cons hΓ σ da hσ ha hl hr hcomm hq Iσ => constructor; exact Iσ.mono hl; exact ha.mono hr
+
+
+theorem SubstDS.CommEff.den_eq_den'_split (e : ε) {Γ Δ : Ctx? α} {σ : SubstDS φ Γ Δ}
+  (hσ : σ.CommEff C e) {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
   : (σ.ssplit hΔ).den (C := C) = (σ.ssplit hΔ).den' (C := C)
   := by induction hσ generalizing Δl Δr with
   | nil =>
-    cases hΔ; simp [SubstDS.ssplit, den_eq_ltimes, den', SubstDS.den, erase_left, left_exchange]
+    cases hΔ
+    simp [
+      SubstDS.ssplit, SubstSSplit.den_eq_ltimes, SubstSSplit.den', SubstDS.den,
+      SubstSSplit.erase_left, left_exchange]
   | cons hΓ σ da hσ ha hl hr hcomm hq Iσ =>
+    have hσ' := hσ.has_eff;
     rename_i v a e el er Γ Γl Γr Δ
-    simp only [den, den'] at Iσ
+    simp only [SubstSSplit.den, SubstSSplit.den'] at Iσ
     have Iσ_assoc : ∀ {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
       {Y : C} {f : ((g⟦Δl⟧ : C) ⊗ g⟦Δr⟧) ⟶ Y},
       css⟦(σ.ssplit hΔ).ssplitIn⟧
@@ -37,7 +75,7 @@ theorem SubstSSplit.den_split_comm_eff (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS 
           simp only [Category.assoc]
     cases hΔ with | cons hΔ hlr => cases hlr with
     | left =>
-      simp only [SubstDS.ssplit, den_eq_ltimes, den']
+      simp only [SubstDS.ssplit, SubstSSplit.den_eq_ltimes, SubstSSplit.den']
       if hv : v.used then
         rw [dite_cond_eq_true (by simp [hv])]
         simp only [
@@ -130,8 +168,8 @@ theorem SubstSSplit.den_split_comm_eff (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS 
         | rest => simp at hv
     | right =>
       simp only [
-        SubstDS.ssplit, Ctx?.den, Ctx?.ety, Ty.den, den, den', SubstDS.den, Deriv?.den_zero',
-        Ctx?.SSplit.den_drop_tensor_right, Ctx?.PWk.den_refl', Category.id_comp,
+        SubstDS.ssplit, Ctx?.den, Ctx?.ety, Ty.den, SubstSSplit.den, SubstSSplit.den', SubstDS.den,
+        Deriv?.den_zero', Ctx?.SSplit.den_drop_tensor_right, Ctx?.PWk.den_refl', Category.id_comp,
       ]
       simp only [
         PremonoidalCategory.whiskerLeft_comp, Category.assoc, tensorHom_def,
@@ -156,7 +194,7 @@ theorem SubstSSplit.den_split_comm_eff (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS 
     | sboth hvc =>
       simp only [SubstDS.ssplit]
       if hv : v.used then
-        rw [dite_cond_eq_true (by simp [hv]), den, den']
+        rw [dite_cond_eq_true (by simp [hv]), SubstSSplit.den, SubstSSplit.den']
         simp only [SubstDS.den, tensor_comp_of_right]
         rw [Ctx?.SSplit.den_s12_34_13_24_assoc, comp_whiskerRight]
         simp only [<-left_exchange_assoc]
@@ -180,14 +218,12 @@ theorem SubstSSplit.den_split_comm_eff (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS 
         congr 2
         simp only [<-PremonoidalCategory.whiskerLeft_comp_assoc]
         rw [<-ltimes, <-rtimes]
-        have hvc : v.copy := hvc.copy;
-        cases hq hvc with
-        | inl d => rw [M.copy_dup_ltimes_eq_rtimes er]
-        | inr d => rw [M.copy_fuse_ltimes_eq_rtimes er]
+        have _ : Γr.copy := da.copy hv hvc.copy;
+        rw [hq hvc.copy]
       else
         cases v using Var?.casesZero with
         | zero =>
-          rw [dite_cond_eq_false (by simp [hv]), den, den']
+          rw [dite_cond_eq_false (by simp [hv]), SubstSSplit.den, SubstSSplit.den']
           simp only [Deriv?.unused, SubstDS.den, Ty.den, Deriv?.den_zero',
             Ctx?.SSplit.den_drop_tensor_right, Ctx?.PWk.den_refl', Category.id_comp,
             PremonoidalCategory.whiskerLeft_comp, comp_whiskerRight, Category.assoc
