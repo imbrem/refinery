@@ -15,7 +15,6 @@ variable {φ : Type _} {α : outParam (Type _)} {ε : outParam (Type _)} [S : Si
          {C : Type _} [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
         [SymmetricCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
 
---TODO: need validity here to commute `da` with the subst components...
 theorem SubstDS.den_ssplit_pos (e : ε) {Γ Δ : Ctx? α}
   (σ : SubstDS φ Γ Δ) [hσ : σ.Pos e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
   : σ.den ≫ hΔ.den ↠ (σ.ssplit hΔ).den (C := C)
