@@ -633,6 +633,7 @@ theorem SubstSSplit.den_split_comm_eff (e : ε) {Γ Δ Δl Δr : Ctx? α} (σ : 
           simp only [Category.assoc]
     cases hΔ with | cons hΔ hlr => cases hlr with
     | left =>
+      stop
       simp only [SubstDS.ssplit, den_eq_ltimes, den']
       if hv : v.used then
         rw [dite_cond_eq_true (by simp [hv])]
@@ -726,38 +727,56 @@ theorem SubstSSplit.den_split_comm_eff (e : ε) {Γ Δ Δl Δr : Ctx? α} (σ : 
         | rest => simp at hv
     | right =>
       stop
-      simp only [SubstDS.ssplit, Ctx?.den, Ctx?.ety, Ty.den, den_left, SubstDS.den,
-        Deriv?.den_zero', tensorHom_def, comp_whiskerRight,
-        PremonoidalCategory.whiskerLeft_comp, id_whiskerLeft, Category.assoc,
-        den_right, <-left_exchange_assoc]
-      congr 1
-      rw [<-swap_whiskerLeft_of_swap_assoc, right_exchange_assoc, right_exchange_assoc]
-      congr 1
-      rw [left_exchange_assoc, left_exchange]
-      rw [whiskerRight_swap_of_swap_assoc]
-      rw [swap_whiskerRight_of_swap]
-      apply Iσ
-      rw [E.eff_comm_exchange hcomm]
+      simp only [
+        SubstDS.ssplit, Ctx?.den, Ctx?.ety, Ty.den, den, den', SubstDS.den, Deriv?.den_zero',
+        Ctx?.SSplit.den_drop_tensor_right, Ctx?.PWk.den_refl', Category.id_comp,
+      ]
+      simp only [
+        PremonoidalCategory.whiskerLeft_comp, Category.assoc, tensorHom_def,
+        right_exchange_assoc, <-right_exchange, Category.assoc,
+      ]
+      simp only [
+        Ctx?.SSplit.den_s12_3_1_23_assoc,
+        <-associator_naturality_middle_assoc, <-associator_naturality_left_assoc,
+        <-associator_naturality_right_assoc, <-comp_whiskerRight_assoc,
+      ]
+      rw [
+        comp_whiskerRight_assoc (g := (ρ_ _).inv), left_exchange, <-tensorHom_def_assoc,
+        Iσ_assoc
+      ]
+      simp only [
+        PremonoidalCategory.whiskerLeft_comp, PremonoidalCategory.whiskerLeft_comp_assoc,
+        comp_whiskerRight, comp_whiskerRight_assoc,
+        <-associator_naturality_left_assoc,
+      ]
+      rw [<-E.eff_comm_exchange_assoc hcomm (f := _) (g := da.den)]
+      premonoidal
     | sboth =>
-      stop
       simp only [SubstDS.ssplit]
       if hv : v.used then
-        rw [dite_cond_eq_true (by simp [hv]), den_left, den_right]
-        simp only [
-          SubstDS.den, tensorHom_def, Category.assoc, PremonoidalCategory.whiskerLeft_comp_assoc,
-          comp_whiskerRight_assoc, PremonoidalCategory.whiskerLeft_comp, comp_whiskerRight,
-          <-left_exchange_assoc, Ctx?.den, Ty.den, Ctx?.ety
-        ]
-        rw [right_exchange_assoc, right_exchange_assoc]
-        congr 1
-        congr 1
+        rw [dite_cond_eq_true (by simp [hv]), den, den']
+        simp only [SubstDS.den, tensor_comp_of_right]
+        rw [Ctx?.SSplit.den_s12_34_13_24_assoc, comp_whiskerRight]
+        simp only [<-left_exchange_assoc]
         rw [
-          whiskerLeft_swap_of_swap_assoc, <-swap_whiskerLeft_of_swap_assoc,
-          <-whiskerRight_swap_of_swap_assoc
+          PremonoidalCategory.whiskerLeft_comp_assoc, <-tensorHom_def_assoc,
+          Ctx?.SSplit.den_s12_34_13_24_assoc
         ]
-        sorry
-        sorry
-        sorry
+        simp only [tensorHom_def, comp_whiskerRight, Category.assoc,
+          PremonoidalCategory.whiskerLeft_comp, <-swap_inner_naturality_outer_left_assoc,
+          <-swap_inner_naturality_right_assoc, <-swap_inner_naturality_left_assoc, Ctx?.den,
+          Ty.den, Ctx?.ety, <-swap_inner_naturality_outer_right_assoc,
+          <-swap_inner_naturality_right, <-swap_inner_naturality_outer_right,
+          Ctx?.SSplit.den_both]
+        rw [
+          <-E.eff_comm_exchange_assoc hcomm (f := _) (g := da.den ▷ _),
+          <-E.eff_comm_exchange_assoc hcomm (f := _) (g := _ ◁ da.den),
+        ]
+        simp only [<-right_exchange_assoc]
+        simp only [<-comp_whiskerRight_assoc]
+        rw [<-tensorHom_def, Iσ]
+        congr 2
+        simp only [<-PremonoidalCategory.whiskerLeft_comp_assoc]
         sorry
       else
         sorry
