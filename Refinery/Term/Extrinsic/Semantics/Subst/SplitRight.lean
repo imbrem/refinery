@@ -20,7 +20,6 @@ theorem SubstDS.den_ssplit_pos' (e : ε) {Γ Δ : Ctx? α}
   : σ.den ≫ hΔ.den ↠ (σ.ssplit hΔ).den' (C := C)
   := by induction hσ generalizing Δl Δr with
   | nil =>
-    stop
     cases hΔ
     simp [
       ssplit, SubstSSplit.erase_left, SubstSSplit.den', den, <-tensorHom_def_of_right,
@@ -43,7 +42,6 @@ theorem SubstDS.den_ssplit_pos' (e : ε) {Γ Δ : Ctx? α}
   apply refines_trans Iσ'
   cases hlr with
   | left =>
-    stop
     apply refines_of_eq; apply Eq.symm
     simp only [ssplit, den, Ctx?.SSplit.den, Ty.den, Var?.SSplit.den_left,
       Category.assoc]
@@ -96,7 +94,6 @@ theorem SubstDS.den_ssplit_pos' (e : ε) {Γ Δ : Ctx? α}
       premonoidal
     | rest => simp at h
   | right =>
-    stop
     apply refines_of_eq
     simp only [ssplit, den, Ctx?.SSplit.den, Ty.den, Var?.SSplit.den_right,
       Category.assoc, swap_inner_tensorUnit_right, SubstSSplit.den', Deriv?.den_zero,
@@ -155,26 +152,20 @@ theorem SubstDS.den_ssplit_pos' (e : ε) {Γ Δ : Ctx? α}
       apply refines_of_eq
       simp [ltimes]
     case isFalse h =>
-    stop
     cases v using Var?.casesZero with
     | zero =>
       apply refines_of_eq
       have hΓr : Γr.del := da.del (by simp)
       simp only [
-        SubstSSplit.den, Deriv?.den_zero', den, Var?.ety, ety_var, M.copy_unit, Ty.den,
-        swap_inner_tensorUnit_right, Category.assoc, Ctx?.den, Ctx?.ety, Var?.ety, ety_var
+        SubstSSplit.den', Deriv?.den_zero', den, Var?.ety, ety_var, M.copy_unit, Ty.den,
+        swap_inner_tensorUnit_right, Category.assoc, Ctx?.den, Ctx?.ety, Var?.ety, ety_var,
       ]
       rw [
-        tensorHom_def_of_right (g := !_ _), Ctx?.SSplit.den_drop_right_assoc, Ctx?.PWk.den_refl',
-        Category.id_comp, tensorHom_def_of_right (g := !_ _), Ctx?.SSplit.den_drop_right_assoc,
-        right_exchange_assoc, Ctx?.SSplit.den_drop_right_assoc, <-rightUnitor_inv_naturality_assoc,
-        Category.assoc, Ctx?.SSplit.pwk_den_assoc, tensorHom_def (f := _ ≫ _),
-        PremonoidalCategory.whiskerLeft_comp, right_exchange_assoc,
-        <-Ctx?.SSplit.den_unstrict, Ctx?.Split.den_wkOut_assoc, <-Ctx?.SSplit.den_unstrict,
-        Ctx?.Split.den_wkOutR_assoc, tensorHom_def
+        Ctx?.SSplit.den_drop_tensor_right (σ := Ctx?.erase_right _), Ctx?.PWk.den_refl',
+        Category.id_comp, PremonoidalCategory.whiskerLeft_comp_assoc,
+        Ctx?.SSplit.den_s12_3_1_23_assoc, tensorHom_def, PremonoidalCategory.whiskerLeft_comp_assoc,
+        <-right_exchange (g := _ ◁ !_ Γr.ety)
       ]
-      congr 1
-      apply Ctx?.Split.coherence
       premonoidal
     | rest => simp at h
 
