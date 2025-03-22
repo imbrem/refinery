@@ -611,13 +611,13 @@ theorem SubstDS.den_at_neg
     apply M.drop_add er (f := da.den) (hf := IsAdd.of_del_le_neg (le_trans hd.del_le_quant hq))
     rfl
 
-theorem SubstSSplit.den_split_comm_eff (e : ε) {Γ Δ Δl Δr : Ctx? α} (σ : SubstDS φ Γ Δ)
+theorem SubstSSplit.den_split_comm_eff (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ)
   [hσ : σ.CommEff e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
   : (σ.ssplit hΔ).den (C := C) = (σ.ssplit hΔ).den' (C := C)
   := by induction hσ generalizing Δl Δr with
   | nil =>
     cases hΔ; simp [SubstDS.ssplit, den_eq_ltimes, den', SubstDS.den, erase_left, left_exchange]
-  | cons hΓ σ da hσ ha hl hr hcomm Iσ =>
+  | cons hΓ σ da hσ ha hl hr hcomm hq Iσ =>
     rename_i v a e el er Γ Γl Γr Δ
     simp only [den, den'] at Iσ
     have Iσ_assoc : ∀ {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
@@ -725,7 +725,6 @@ theorem SubstSSplit.den_split_comm_eff (e : ε) {Γ Δ Δl Δr : Ctx? α} (σ : 
           premonoidal
         | rest => simp at hv
     | right =>
-      stop
       simp only [
         SubstDS.ssplit, Ctx?.den, Ctx?.ety, Ty.den, den, den', SubstDS.den, Deriv?.den_zero',
         Ctx?.SSplit.den_drop_tensor_right, Ctx?.PWk.den_refl', Category.id_comp,
@@ -750,10 +749,9 @@ theorem SubstSSplit.den_split_comm_eff (e : ε) {Γ Δ Δl Δr : Ctx? α} (σ : 
       ]
       rw [<-E.eff_comm_exchange_assoc hcomm (f := _) (g := da.den)]
       premonoidal
-    | sboth =>
+    | sboth hvc =>
       simp only [SubstDS.ssplit]
       if hv : v.used then
-        stop
         rw [dite_cond_eq_true (by simp [hv]), den, den']
         simp only [SubstDS.den, tensor_comp_of_right]
         rw [Ctx?.SSplit.den_s12_34_13_24_assoc, comp_whiskerRight]
@@ -778,9 +776,11 @@ theorem SubstSSplit.den_split_comm_eff (e : ε) {Γ Δ Δl Δr : Ctx? α} (σ : 
         congr 2
         simp only [<-PremonoidalCategory.whiskerLeft_comp_assoc]
         rw [<-ltimes, <-rtimes]
-        sorry
+        have hvc : v.copy := hvc.copy;
+        cases hq hvc with
+        | inl d => rw [M.copy_dup_ltimes_eq_rtimes er]
+        | inr d => rw [M.copy_fuse_ltimes_eq_rtimes er]
       else
-        stop
         cases v using Var?.casesZero with
         | zero =>
           rw [dite_cond_eq_false (by simp [hv]), den, den']

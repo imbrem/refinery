@@ -143,6 +143,7 @@ inductive SubstDS.CommEff : (e : ε) → {Γ Δ : Ctx? α} → (SubstDS φ Γ Δ
     (hΓ : Γ.SSplit Γl Γr) (σ : SubstDS φ Γl Δ) (da : Γr ⊢? a : v)
     (hσ : σ.CommEff el) (ha : da.HasEff er)
     (hl : el ≤ e) (hr : er ≤ e) (hcomm : el ⇌ er)
+    (hcopy : v.copy -> (IsDup er) ∨ (IsFuse er))
     : CommEff e (σ.cons hΓ da)
 
 attribute [class] SubstDS.CommEff
@@ -155,12 +156,13 @@ theorem SubstDS.CommEff.mono
   | cons hΓ σ da hσ ha hl hr hcomm hq =>
     constructor; apply_assumption; assumption
     apply le_trans <;> assumption; apply le_trans <;> assumption; assumption
+    assumption
 
 instance SubstDS.CommEff.has_eff
   (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [h : σ.CommEff e]
   : σ.HasEff e := by induction h with
   | nil => constructor
-  | cons hΓ σ da hσ ha hl hr hcomm Iσ => constructor; exact Iσ.mono hl; exact ha.mono hr
+  | cons hΓ σ da hσ ha hl hr hcomm hq Iσ => constructor; exact Iσ.mono hl; exact ha.mono hr
 
 inductive SubstDS.Pos : (e : ε) → {Γ Δ : Ctx? α} → (SubstDS φ Γ Δ) → Prop
   | nil {e : ε} {Γ : Ctx? α} (hΓ : Γ.del) : Pos e (.nil hΓ)
@@ -185,7 +187,9 @@ theorem SubstDS.Pos.mono
 instance SubstDS.Pos.comm_eff (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [h : σ.Pos e]
   : σ.CommEff e := by induction h with
   | nil => constructor
-  | cons hΓ σ da hσ ha hl hr hcomm hq Iσ => constructor <;> assumption
+  | cons hΓ σ da hσ ha hl hr hcomm hq Iσ =>
+    constructor <;> (try assumption)
+    exact λhv => Or.inl ⟨le_trans hv.copy_le_quant hq, bot_le⟩
 
 theorem SubstDS.Pos.has_eff
   (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [h : σ.Pos e]
@@ -214,7 +218,9 @@ theorem SubstDS.Neg.mono
 instance SubstDS.Neg.comm_eff (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [h : σ.Neg e]
   : σ.CommEff e := by induction h with
   | nil => constructor
-  | cons hΓ σ da hσ ha hl hr hcomm hq Iσ => constructor <;> assumption
+  | cons hΓ σ da hσ ha hl hr hcomm hq Iσ =>
+    constructor <;> (try assumption)
+    exact λhv => Or.inr ⟨bot_le, le_trans hv.copy_le_quant hq⟩
 
 instance SubstDS.Neg.has_eff
   (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [h : σ.Neg e]
