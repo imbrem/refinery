@@ -310,7 +310,7 @@ theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform 
     apply refines_whiskerLeft
     exact Ib Dbx Dby
     rfl
-  | pos_unif hΓ hΓc hc hd hei he Dra ha Dms hs Dlb hb Dcb' hb' rs Ia =>
+  | pos_unif hΓ hΓc hc hd hei he Dra ha Dms hs Dlb hb Dcb' rs Ia =>
     rename_i s Γ Γc Γl Γm Γr e e' A B X a b b'
     have hΓl_copy := hΓc.left_copy
     have hΓl_del := hΓc.left_del
@@ -333,7 +333,6 @@ theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform 
     rfl
     rw [<-Category.assoc (f := css⟦_⟧)]
     apply (Elgot2.right_mover_right_uniform he).right_uniform
-    apply EffectfulCategory.HasEff.has_eff
     apply EffectfulCategory.HasEff.has_eff
     apply EffectfulCategory.HasEff.has_eff
     let hIa_left : (t⟦Γc.ety⟧ ⊗ t⟦A⟧ : C) ⟶ t⟦B.coprod X⟧ :=
@@ -383,7 +382,7 @@ theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform 
     · simp only [Deriv.den, Deriv.den_wk1, Deriv.den_pwk, Ctx?.At.den, Var?.Wk.den, eqToHom_refl]
       apply uniformRightIndHelper
     rfl
-  | neg_unif hΓ hΓc hc hd hei he Dra ha Dms hs Dlb hb Dcb' hb' rs Ia =>
+  | neg_unif hΓ hΓc hc hd hei he Dra ha Dms hs Dlb hb Dcb' rs Ia =>
     rename_i s Γ Γc Γl Γm Γr e e' A B X a b b'
     have hΓl_copy := hΓc.left_copy
     have hΓl_del := hΓc.left_del
@@ -407,7 +406,6 @@ theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform 
     rfl
     rw [<-Category.assoc (f := css⟦_⟧)]
     apply (Elgot2.left_mover_left_uniform he).left_uniform
-    apply EffectfulCategory.HasEff.has_eff
     apply EffectfulCategory.HasEff.has_eff
     apply EffectfulCategory.HasEff.has_eff
     let hIa_left : (t⟦Γc.ety⟧ ⊗ t⟦A⟧ : C) ⟶ t⟦B.coprod X⟧ :=

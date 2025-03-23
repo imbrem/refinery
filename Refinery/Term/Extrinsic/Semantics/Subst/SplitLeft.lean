@@ -15,7 +15,7 @@ variable {φ : Type _} {α : outParam (Type _)} {ε : outParam (Type _)} [S : Si
          {C : Type _} [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
         [SymmetricCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
 
-theorem SubstDS.den_ssplit_pos (e : ε) {Γ Δ : Ctx? α}
+theorem SubstDS.den_ssplit_pos_eff (e : ε) {Γ Δ : Ctx? α}
   (σ : SubstDS φ Γ Δ) [hσ : σ.Pos e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
   : σ.den ≫ hΔ.den ↠ (σ.ssplit hΔ).den (C := C)
   := by induction hσ generalizing Δl Δr with
@@ -183,7 +183,7 @@ theorem SubstDS.den_ssplit_pos (e : ε) {Γ Δ : Ctx? α}
       premonoidal
     | rest => simp at h
 
-theorem SubstDS.den_ssplit_neg (e : ε) {Γ Δ : Ctx? α}
+theorem SubstDS.den_ssplit_neg_eff (e : ε) {Γ Δ : Ctx? α}
   (σ : SubstDS φ Γ Δ) [hσ : σ.Neg e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
   : σ.den ≫ hΔ.den ↞ (σ.ssplit hΔ).den (C := C)
   := by induction hσ generalizing Δl Δr with
@@ -351,26 +351,78 @@ theorem SubstDS.den_ssplit_neg (e : ε) {Γ Δ : Ctx? α}
       premonoidal
     | rest => simp at h
 
-theorem SubstDS.den_ssplit_pos_tensor (e : ε) {Γ Δ : Ctx? α}
+theorem SubstDS.den_ssplit_pos_eff_tensor (e : ε) {Γ Δ : Ctx? α}
   (σ : SubstDS φ Γ Δ) [hσ : σ.Pos e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
   : σ.den ≫ hΔ.den
   ↠ (σ.ssplitIn hΔ).den (C := C) ≫ ((σ.substLeft hΔ).den ⊗ (σ.substRight hΔ).den)
-  := σ.den_ssplit_pos e hΔ
+  := σ.den_ssplit_pos_eff e hΔ
 
-theorem SubstDS.den_ssplit_neg_tensor (e : ε) {Γ Δ : Ctx? α}
+theorem SubstDS.den_ssplit_neg_eff_tensor (e : ε) {Γ Δ : Ctx? α}
   (σ : SubstDS φ Γ Δ) [hσ : σ.Neg e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
   : σ.den ≫ hΔ.den
   ↞ (σ.ssplitIn hΔ).den (C := C) ≫ ((σ.substLeft hΔ).den ⊗ (σ.substRight hΔ).den)
-  := σ.den_ssplit_neg e hΔ
+  := σ.den_ssplit_neg_eff e hΔ
 
-theorem SubstDS.den_ssplit_pos_left (e : ε) {Γ Δ : Ctx? α}
+theorem SubstDS.den_ssplit_pos_eff_left (e : ε) {Γ Δ : Ctx? α}
   (σ : SubstDS φ Γ Δ) [hσ : σ.Pos e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
   : σ.den ≫ hΔ.den
   ↠ (σ.ssplitIn hΔ).den (C := C) ≫ (σ.substLeft hΔ).den ▷ _ ≫ _ ◁ (σ.substRight hΔ).den
-  := by convert σ.den_ssplit_pos_tensor e hΔ; simp only [tensorHom_def]
+  := by convert σ.den_ssplit_pos_eff_tensor e hΔ; simp only [tensorHom_def]
 
-theorem SubstDS.den_ssplit_neg_left (e : ε) {Γ Δ : Ctx? α}
+theorem SubstDS.den_ssplit_neg_eff_left (e : ε) {Γ Δ : Ctx? α}
   (σ : SubstDS φ Γ Δ) [hσ : σ.Neg e] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
   : σ.den ≫ hΔ.den
   ↞ (σ.ssplitIn hΔ).den (C := C) ≫ (σ.substLeft hΔ).den ▷ _ ≫ _ ◁ (σ.substRight hΔ).den
-  := by convert σ.den_ssplit_neg_tensor e hΔ; simp only [tensorHom_def]
+  := by convert σ.den_ssplit_neg_eff_tensor e hΔ; simp only [tensorHom_def]
+
+theorem SubstDS.den_ssplit_pos {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) [hσ : σ.HasPos] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
+  : σ.den ≫ hΔ.den ↠ (σ.ssplit hΔ).den (C := C)
+  := have ⟨⟨e, _⟩⟩ := hσ; σ.den_ssplit_pos_eff e hΔ
+
+theorem SubstDS.den_ssplit_neg {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) [hσ : σ.HasNeg] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
+  : σ.den ≫ hΔ.den ↞ (σ.ssplit hΔ).den (C := C)
+  := have ⟨⟨e, _⟩⟩ := hσ; σ.den_ssplit_neg_eff e hΔ
+
+theorem SubstDS.den_ssplit_pos_tensor {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) [hσ : σ.HasPos] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
+  : σ.den ≫ hΔ.den
+  ↠ (σ.ssplitIn hΔ).den (C := C) ≫ ((σ.substLeft hΔ).den ⊗ (σ.substRight hΔ).den)
+  := have ⟨⟨e, _⟩⟩ := hσ; σ.den_ssplit_pos_eff_tensor e hΔ
+
+theorem SubstDS.den_ssplit_neg_tensor {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) [hσ : σ.HasNeg] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
+  : σ.den ≫ hΔ.den
+  ↞ (σ.ssplitIn hΔ).den (C := C) ≫ ((σ.substLeft hΔ).den ⊗ (σ.substRight hΔ).den)
+  := have ⟨⟨e, _⟩⟩ := hσ; σ.den_ssplit_neg_eff_tensor e hΔ
+
+theorem SubstDS.den_ssplit_pos_left {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) [hσ : σ.HasPos] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
+  : σ.den ≫ hΔ.den
+  ↠ (σ.ssplitIn hΔ).den (C := C) ≫ (σ.substLeft hΔ).den ▷ _ ≫ _ ◁ (σ.substRight hΔ).den
+  := have ⟨⟨e, _⟩⟩ := hσ; σ.den_ssplit_pos_eff_left e hΔ
+
+theorem SubstDS.den_ssplit_neg_left {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) [hσ : σ.HasNeg] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
+  : σ.den ≫ hΔ.den
+  ↞ (σ.ssplitIn hΔ).den (C := C) ≫ (σ.substLeft hΔ).den ▷ _ ≫ _ ◁ (σ.substRight hΔ).den
+  := have ⟨⟨e, _⟩⟩ := hσ; σ.den_ssplit_neg_eff_left e hΔ
+
+theorem SubstDS.den_ssplit_bivalid {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) [hσ : σ.Bivalid] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
+  : (σ.ssplit hΔ).den (C := C) = σ.den ≫ hΔ.den
+  := refines_antisymm (σ.den_ssplit_neg hΔ) (σ.den_ssplit_pos hΔ)
+
+theorem SubstDS.den_ssplit_bivalid_tensor {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) [hσ : σ.Bivalid] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
+  : σ.den ≫ hΔ.den
+  = (σ.ssplitIn hΔ).den (C := C)
+  ≫ (tensorHom (σ.substLeft hΔ).den (σ.substRight hΔ).den)
+  := by rw [<-den_ssplit_bivalid]; rfl
+
+theorem SubstDS.den_ssplit_bivalid_left {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) [hσ : σ.Bivalid] {Δl Δr : Ctx? α} (hΔ : Δ.SSplit Δl Δr)
+  : σ.den ≫ hΔ.den
+  = (σ.ssplitIn hΔ).den (C := C) ≫ (σ.substLeft hΔ).den ▷ _ ≫ _ ◁ (σ.substRight hΔ).den
+  := by rw [den_ssplit_bivalid_tensor, tensorHom_def]

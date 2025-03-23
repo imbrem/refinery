@@ -15,8 +15,8 @@ variable {φ : Type _} {α : outParam (Type _)} {ε : outParam (Type _)} [S : Si
          {C : Type _} [Category C] [PC : PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
         [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
 
-theorem SubstDS.den_drop_pos (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [hσ : σ.Pos e] [hΔ : Δ.del]
-  : σ.den (C := C) ≫ !_ Δ.ety ↠ (haveI _ : Γ.del := σ.del; !_ Γ.ety)
+theorem SubstDS.den_drop_pos_eff (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ)
+  [hσ : σ.Pos e] [hΔ : Δ.del] : σ.den (C := C) ≫ !_ Δ.ety ↠ (haveI _ : Γ.del := σ.del; !_ Γ.ety)
   := by
   generalize hΔ = hΔ
   induction hσ with
@@ -41,8 +41,8 @@ theorem SubstDS.den_drop_pos (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) 
     apply M.drop_rem er (f := da.den) (hf := IsRem.of_del_le_pos (le_trans hv.del_le_quant hq))
     rfl
 
-theorem SubstDS.den_drop_neg (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [hσ : σ.Neg e] [hΔ : Δ.del]
-  : σ.den (C := C) ≫ !_ Δ.ety ↞ (haveI _ : Γ.del := σ.del; !_ Γ.ety)
+theorem SubstDS.den_drop_neg_eff (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ)
+  [hσ : σ.Neg e] [hΔ : Δ.del] : σ.den (C := C) ≫ !_ Δ.ety ↞ (haveI _ : Γ.del := σ.del; !_ Γ.ety)
   := by
   generalize hΔ = hΔ
   induction hσ with
@@ -67,7 +67,7 @@ theorem SubstDS.den_drop_neg (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) 
     apply M.drop_add er (f := da.den) (hf := IsAdd.of_del_le_neg (le_trans hv.del_le_quant hq))
     rfl
 
-theorem SubstDS.den_at_pos
+theorem SubstDS.den_at_pos_eff
   (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [hσ : σ.Pos e] {A} {q : Quant} (hv : Δ.At ⟨A, q⟩ n)
   : σ.den ≫ hv.den ↠ (σ.at hv).den (C := C) := by induction hσ generalizing n with
   | nil => cases hv
@@ -93,7 +93,7 @@ theorem SubstDS.den_at_pos
       rfl
       apply refines_comp
       apply refines_whiskerRight
-      apply σ.den_drop_pos el
+      apply σ.den_drop_pos_eff el
       rfl
   | there hv hd =>
     have hΓr := da.del hd
@@ -108,7 +108,7 @@ theorem SubstDS.den_at_pos
     apply M.drop_rem er (f := da.den) (hf := IsRem.of_del_le_pos (le_trans hd.del_le_quant hq))
     rfl
 
-theorem SubstDS.den_at_neg
+theorem SubstDS.den_at_neg_eff
   (e : ε) {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [hσ : σ.Neg e] {A} {q : Quant} (hv : Δ.At ⟨A, q⟩ n)
   : σ.den ≫ hv.den ↞ (σ.at hv).den (C := C) := by induction hσ generalizing n with
   | nil => cases hv
@@ -134,7 +134,7 @@ theorem SubstDS.den_at_neg
       rfl
       apply refines_comp
       apply refines_whiskerRight
-      apply σ.den_drop_neg el
+      apply σ.den_drop_neg_eff el
       rfl
   | there hv hd =>
     have hΓr := da.del hd
@@ -148,3 +148,19 @@ theorem SubstDS.den_at_neg
     apply Iσ
     apply M.drop_add er (f := da.den) (hf := IsAdd.of_del_le_neg (le_trans hd.del_le_quant hq))
     rfl
+
+theorem SubstDS.den_drop_pos {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ)
+  [hσ : σ.HasPos] [hΔ : Δ.del] : σ.den (C := C) ≫ !_ Δ.ety ↠ (haveI _ : Γ.del := σ.del; !_ Γ.ety)
+  := have ⟨⟨e, _⟩⟩ := hσ; σ.den_drop_pos_eff e
+
+theorem SubstDS.den_drop_neg {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ)
+  [hσ : σ.HasNeg] [hΔ : Δ.del] : σ.den (C := C) ≫ !_ Δ.ety ↞ (haveI _ : Γ.del := σ.del; !_ Γ.ety)
+  := have ⟨⟨e, _⟩⟩ := hσ; σ.den_drop_neg_eff e
+
+theorem SubstDS.den_at_pos
+  {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [hσ : σ.HasPos] {A} {q : Quant} (hv : Δ.At ⟨A, q⟩ n)
+  : σ.den ≫ hv.den ↠ (σ.at hv).den (C := C) := have ⟨⟨e, _⟩⟩ := hσ; σ.den_at_pos_eff e hv
+
+theorem SubstDS.den_at_neg
+  {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [hσ : σ.HasNeg] {A} {q : Quant} (hv : Δ.At ⟨A, q⟩ n)
+  : σ.den ≫ hv.den ↞ (σ.at hv).den (C := C) := have ⟨⟨e, _⟩⟩ := hσ; σ.den_at_neg_eff e hv

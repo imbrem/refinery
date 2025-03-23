@@ -120,7 +120,7 @@ inductive RWS.isoUniform (R : RWS φ α) : RWS φ α
     Γ.SSplit Γc Γr → Γc.SSplit Γl Γm → Γc.copy → Γc.del → e ∈ S.iterative → e' ⇌ e →
     (Γr ⊢ a : A) → a.HasEff e → ((Γm.cons ⟨A, ⊤⟩) ⊢ s : X) → s.HasEff e' →
     ((Γl.cons ⟨X, ⊤⟩) ⊢ b : B.coprod X) → b.HasEff e →
-    ((Γc.cons ⟨A, ⊤⟩) ⊢ b' : B.coprod A) → b'.HasEff e →
+    ((Γc.cons ⟨A, ⊤⟩) ⊢ b' : B.coprod A) →
     isoUniform R (Γc.cons ⟨A, ⊤⟩) (.coprod B X)
       (.let₁ s X (↑¹ b))
       (.case b' B A (.inl B X (.bv 0)) (.inr B X (↑¹ s))) →
@@ -129,7 +129,7 @@ inductive RWS.isoUniform (R : RWS φ α) : RWS φ α
     Γ.SSplit Γc Γr → Γc.SSplit Γl Γm → Γc.copy → Γc.del → e ∈ S.iterative → e' ⇌ e →
     (Γr ⊢ a : A) → a.HasEff e → ((Γm.cons ⟨A, ⊤⟩) ⊢ s : X) → s.HasEff e' →
     ((Γl.cons ⟨X, ⊤⟩) ⊢ b : B.coprod X) → b.HasEff e →
-    ((Γc.cons ⟨A, ⊤⟩) ⊢ b' : B.coprod A) → b'.HasEff e →
+    ((Γc.cons ⟨A, ⊤⟩) ⊢ b' : B.coprod A) →
     isoUniform R (Γc.cons ⟨A, ⊤⟩) (.coprod B X)
       (.case b' B A (.inl B X (.bv 0)) (.inr B X (↑¹ s)))
       (.let₁ s X (↑¹ b)) →
@@ -171,7 +171,7 @@ inductive RWS.uniform (R : RWS φ α) : RWS φ α
     Γ.SSplit Γc Γr → Γc.SSplit Γl Γm → Γc.copy → Γc.del → e ∈ S.iterative → e' ⇀ e →
     (Γr ⊢ a : A) → a.HasEff e → ((Γm.cons ⟨A, ⊤⟩) ⊢ s : X) → s.HasEff e' →
     ((Γl.cons ⟨X, ⊤⟩) ⊢ b : B.coprod X) → b.HasEff e →
-    ((Γc.cons ⟨A, ⊤⟩) ⊢ b' : B.coprod A) → b'.HasEff e →
+    ((Γc.cons ⟨A, ⊤⟩) ⊢ b' : B.coprod A) →
     uniform R (Γc.cons ⟨A, ⊤⟩) (.coprod B X)
       (.let₁ s X (↑¹ b))
       (.case b' B A (.inl B X (.bv 0)) (.inr B X (↑¹ s))) →
@@ -180,7 +180,7 @@ inductive RWS.uniform (R : RWS φ α) : RWS φ α
     Γ.SSplit Γc Γr → Γc.SSplit Γl Γm → Γc.copy → Γc.del → e ∈ S.iterative → e' ↽ e →
     (Γr ⊢ a : A) → a.HasEff e → ((Γm.cons ⟨A, ⊤⟩) ⊢ s : X) → s.HasEff e' →
     ((Γl.cons ⟨X, ⊤⟩) ⊢ b : B.coprod X) → b.HasEff e →
-    ((Γc.cons ⟨A, ⊤⟩) ⊢ b' : B.coprod A) → b'.HasEff e →
+    ((Γc.cons ⟨A, ⊤⟩) ⊢ b' : B.coprod A) →
     uniform R (Γc.cons ⟨A, ⊤⟩) (.coprod B X)
       (.case b' B A (.inl B X (.bv 0)) (.inr B X (↑¹ s)))
       (.let₁ s X (↑¹ b)) →
@@ -192,7 +192,7 @@ inductive RWS.uniform (R : RWS φ α) : RWS φ α
 theorem RWS.uniform.wt {R : RWS φ α} {Γ A a a'} (h : uniform R Γ A a a')
   : Term.IsWt Γ A a ∧ Term.IsWt Γ A a' := by induction h with
   | base | refl => constructor <;> constructor <;> assumption
-  | pos_unif hΓ hΓc hc hd he hcomm da hae ds hse db hbe db' hbe' hrw I =>
+  | pos_unif hΓ hΓc hc hd he hcomm da hae ds hse db hbe db' hrw I =>
     rename_i s Γ Γc Γl Γm Γr e e' A B X a b b'
     constructor <;> constructor
     · apply Deriv.let₁ hΓ da
@@ -200,7 +200,7 @@ theorem RWS.uniform.wt {R : RWS φ α} {Γ A a a'} (h : uniform R Γ A a a')
       have _ := hΓc.left_del
       apply Deriv.iter (hΓc.cons (.right _)) inferInstance inferInstance ds (db.wk1 ⟨A, 0⟩)
     · apply Deriv.iter hΓ inferInstance inferInstance da db'
-  | neg_unif hΓ hΓc hc hd he hcomm da hae ds hse db hbe db' hbe' hrw I =>
+  | neg_unif hΓ hΓc hc hd he hcomm da hae ds hse db hbe db' hrw I =>
     rename_i s Γ Γc Γl Γm Γr e e' A B X a b b'
     constructor <;> constructor
     · apply Deriv.iter hΓ inferInstance inferInstance da db'
@@ -498,7 +498,7 @@ inductive DRWS.uniform (R : DRWS φ α) : DRWS φ α
     {db : Γl.cons ⟨X, ⊤⟩ ⊢ b : B.coprod X} {db' : Γc.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
     (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
     (hc : Γc.copy) (hd : Γc.del)
-    : a.HasEff e → s.HasEff e' → b.HasEff e → b'.HasEff e → e ∈ S.iterative → e' ⇀ e
+    : a.HasEff e → s.HasEff e' → b.HasEff e → e ∈ S.iterative → e' ⇀ e
       → uniform R _ _ _ _
           (ds.let₁ (hΓc.cons (.right _)) (db.wk1 _))
           (db'.case (Γc.both.cons (.right _))
@@ -514,7 +514,7 @@ inductive DRWS.uniform (R : DRWS φ α) : DRWS φ α
     {db : Γl.cons ⟨X, ⊤⟩ ⊢ b : B.coprod X} {db' : Γc.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
     (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
     (hc : Γc.copy) (hd : Γc.del)
-    : a.HasEff e → s.HasEff e' → b.HasEff e → b'.HasEff e → e ∈ S.iterative → e' ↽ e
+    : a.HasEff e → s.HasEff e' → b.HasEff e → e ∈ S.iterative → e' ↽ e
       → uniform R _ _ _ _
           (db'.case (Γc.both.cons (.right _))
             (Deriv.bv (.here inferInstance Var?.Wk.top_le_quant)).inl
