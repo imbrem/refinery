@@ -4,6 +4,7 @@ import Refinery.Term.Extrinsic.Semantics.Subst.SplitLeft
 import Refinery.Term.Extrinsic.Semantics.Subst.SplitRight
 --TODO: eventually, split comm is not necessary, via split right?
 import Refinery.Term.Extrinsic.Semantics.Subst.SplitComm
+import Refinery.Term.Extrinsic.Semantics.Subst.DupFuse
 
 namespace Refinery
 
@@ -28,13 +29,11 @@ theorem Deriv.den_substD_pos {eσ ea : ε} (he : eσ ⇀ ea)
   := by
   generalize ha = ha
   induction D generalizing Γ with
-  | bv => stop simp [substD, den, SubstDS.den_at_pos_eff eσ]
+  | bv => simp [substD, den, SubstDS.den_at_pos_eff eσ]
   | op | inl | inr | abort =>
-    stop
     cases ha
     simp only [den, substD]; rw [<-Category.assoc]; apply refines_comp; apply_assumption; rfl
   | let₁ hΓ da db Ia Ib =>
-    stop
     cases ha with | let₁ ha hb =>
     rename_i Γ Γl Γr A B a b
     simp only [den, substD]
@@ -54,9 +53,8 @@ theorem Deriv.den_substD_pos {eσ ea : ε} (he : eσ ⇀ ea)
     apply Ia _ ha
     convert Ib ((σ.substLeft hΓ).lift _) hb
     rw [SubstDS.den_lift]
-  | unit => stop simp [substD, den, SubstDS.den_drop_pos_eff eσ]
+  | unit => simp [substD, den, SubstDS.den_drop_pos_eff eσ]
   | pair hΓ da db Ia Ib  =>
-    stop
     cases ha with | pair ha hb =>
     rename_i Γ Γl Γr A B a b
     simp only [den, substD, ltimes]
@@ -77,7 +75,6 @@ theorem Deriv.den_substD_pos {eσ ea : ε} (he : eσ ⇀ ea)
     apply refines_whiskerLeft
     apply Ib _ hb
   | let₂ hΓ da db Ia Ib =>
-    stop
     cases ha with | let₂ ha hb =>
     rename_i Γ Γl Γr A B C a b
     simp only [den, substD]
@@ -100,7 +97,6 @@ theorem Deriv.den_substD_pos {eσ ea : ε} (he : eσ ⇀ ea)
     convert Ib (((σ.substLeft hΓ).lift _).lift _) hb
     simp only [SubstDS.den_lift]
   | case hΓ da db dc Ia Ib Ic =>
-    stop
     cases ha with | case ha hb hc =>
     rename_i Γ Γl Γr A B C a b c
     simp only [den, substD]
@@ -152,7 +148,7 @@ theorem Deriv.den_substD_pos {eσ ea : ε} (he : eσ ⇀ ea)
     apply refines_trans
     apply refines_comp
     apply refines_whiskerRight
-    apply M.copy_dup_rtimes eσ _ (hf := sorry)
+    apply SubstDS.den_dup_right_eff eσ
     rfl
     simp only [
       rtimes, comp_whiskerRight, Category.assoc, associator_naturality_left_assoc,
