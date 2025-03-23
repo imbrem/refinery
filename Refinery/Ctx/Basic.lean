@@ -884,6 +884,9 @@ def Ctx?.At.ix {Γ : Ctx? α} {v n} : Γ.At v n → v.Ix Γ
 theorem Ctx?.At.ix_ix {Γ : Ctx? α} {v n} (h : Γ.At v n) : h.ix.ix = n
   := by induction h <;> simp [ix, wkIn]; assumption
 
+theorem Ctx?.At.length_lt {Γ : Ctx? α} {v n} (h : Γ.At v n) : n < Γ.length
+  := by induction h <;> simp [*]
+
 def Var?.Ix.at {Γ : Ctx? α} {v} : (x : Ix Γ v) → Γ.At v x.ix
   | .cons ρ hvw => .here ρ.drop_del hvw
   | .skip ρ hv => .there (Ix.at ρ) hv

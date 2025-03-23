@@ -91,6 +91,7 @@ def subst (σ : Subst φ α) : Term φ α → Term φ α
   | .abort A a => .abort A (subst σ a)
   | .iter a A B b => .iter (subst σ a) A B (subst (↑ˢ σ) b)
   | .invalid => .invalid
+  --TODO: metavariables?
 
 instance instSMul : SMul (Subst φ α) (Term φ α) where
   smul := subst
