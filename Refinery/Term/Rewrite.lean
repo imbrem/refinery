@@ -1,4 +1,4 @@
-import Refinery.Term.Syntax
+import Refinery.Term.Syntax.Basic
 import Refinery.Signature
 
 namespace Refinery

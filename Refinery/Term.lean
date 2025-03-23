@@ -1,1 +1,1 @@
-import Refinery.Term.Syntax
+import Refinery.Term.Syntax.Basic

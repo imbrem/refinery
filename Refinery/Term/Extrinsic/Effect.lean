@@ -1,5 +1,5 @@
 import Refinery.Signature
-import Refinery.Term.Syntax
+import Refinery.Term.Syntax.Basic
 
 namespace Refinery
 

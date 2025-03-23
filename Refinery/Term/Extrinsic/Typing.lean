@@ -1,7 +1,7 @@
 import Refinery.Ctx.Basic
 import Refinery.Ctx.SSplit
 import Refinery.Signature
-import Refinery.Term.Syntax
+import Refinery.Term.Syntax.Basic
 
 namespace Refinery
 

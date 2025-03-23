@@ -334,3 +334,13 @@ theorem Deriv.den_substD_neg {eσ ea : ε} (he : eσ ↽ ea)
     apply SubstDS.den_drop_neg_eff eσ
     rfl
     simp
+
+theorem Deriv.den_subst_pos {eσ ea : ε} (he : eσ ⇀ ea)
+  {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [hσ : σ.Pos eσ] {A : Ty α} {a : Term φ (Ty α)}
+  (D : Δ ⊢ a : A) [ha : a.HasEff ea] : σ.den ≫ D.den ↠ (D.subst σ).den (C := C)
+  := by simp [subst, Deriv.den_substD_pos he]
+
+theorem Deriv.den_subst_neg {eσ ea : ε} (he : eσ ↽ ea)
+  {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [hσ : σ.Neg eσ] {A : Ty α} {a : Term φ (Ty α)}
+  (D : Δ ⊢ a : A) [ha : a.HasEff ea] : σ.den ≫ D.den ↞ (D.subst σ).den (C := C)
+  := by simp [subst, Deriv.den_substD_neg he]

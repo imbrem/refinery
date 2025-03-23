@@ -3,11 +3,11 @@ import Refinery.Term.Extrinsic.Wk
 
 namespace Refinery
 
+variable {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε]
+
 namespace Term
 
 open HasQuant
-
-variable {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε]
 
 inductive Deriv? : Ctx? α → Var? α → Term φ (Ty α) → Type _
   | valid {Γ : Ctx? α} {a : Term φ (Ty α)} (A : Ty α) (q : Quant) (D : Γ ⊢ a : A)
@@ -70,10 +70,22 @@ def SubstDS.toSubst {Γ Δ} : SubstDS φ Γ Δ → Subst φ (Ty α)
   | .cons (a := a) .., 0 => a
   | .cons _ σ _, i + 1 => σ.toSubst i
 
-instance SubstDS.coeSubst : CoeOut (SubstDS φ Γ Δ) (Subst φ (Ty α)) where
-  coe := SubstDS.toSubst
+abbrev SubstDS.get {Γ Δ} (σ : SubstDS φ Γ Δ) (i : ℕ) : Term φ (Ty α) := σ.toSubst.get i
 
-instance SubstDS.coeFun : CoeFun (SubstDS φ Γ Δ) (λ _ => Subst φ (Ty α)) where
+@[simp]
+theorem SubstDS.get_nil {Γ} (σ : SubstDS φ Γ .nil) : σ.toSubst.get i = .invalid := by cases σ; rfl
+
+@[simp]
+theorem SubstDS.get_cons_zero {Γ Γl Γr Δ : Ctx? α} {v} {a : Term φ _} (hΓ : Γ.SSplit Γl Γr)
+  (σ : SubstDS φ Γl Δ) (da : Γr ⊢? a : v)
+  : (σ.cons hΓ da).toSubst.get 0 = a := by rfl
+
+@[simp]
+theorem SubstDS.get_cons_succ {Γ Γl Γr Δ : Ctx? α} {v} {a : Term φ _} (hΓ : Γ.SSplit Γl Γr)
+  (σ : SubstDS φ Γl Δ) (da : Γr ⊢? a : v) (i : ℕ)
+  : (σ.cons hΓ da).toSubst.get (i + 1) = σ.toSubst.get i := by rfl
+
+instance SubstDS.coeSubst : CoeOut (SubstDS φ Γ Δ) (Subst φ (Ty α)) where
   coe := SubstDS.toSubst
 
 def SubstDS.tailCtx {Γ Δ} : SubstDS φ Γ Δ → Ctx? α
@@ -92,7 +104,7 @@ def SubstDS.head {Γ Δ} : SubstDS φ Γ Δ → Var? α
   | .nil _ => ⟨.unit, 0⟩
   | .cons (v := v) .. => v
 
-def SubstDS.headD {Γ Δ} : (σ : SubstDS φ Γ Δ) → σ.headCtx ⊢? σ 0 : σ.head
+def SubstDS.headD {Γ Δ} : (σ : SubstDS φ Γ Δ) → σ.headCtx ⊢? σ.get 0 : σ.head
   | .nil hΓ => .zero (by simp [headCtx]) _ _
   | .cons _ _ da => da
 
@@ -224,7 +236,7 @@ theorem SubstDS.del {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [hΔ : Δ.del] : �
     apply hΓ.in_del
 
 def SubstDS.at {Γ Δ : Ctx? α} {q : Quant}
-  : (σ : SubstDS φ Γ Δ) → (hv : Δ.At ⟨A, q⟩ n) → Γ ⊢ σ n : A
+  : (σ : SubstDS φ Γ Δ) → (hv : Δ.At ⟨A, q⟩ n) → Γ ⊢ σ.get n : A
   | .cons hΓ σ (.valid _ _ da _), .here d hvw
     => (da.pwk (hΓ.pwk_left_del (hΔ := σ.del))).cast_ty hvw.ty
   | .cons hΓ σ da, .there x hv => (σ.at x).pwk (hΓ.pwk_right_del (hΞ := da.del hv))
@@ -243,7 +255,7 @@ def SubstDS.lift {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (v : Var? α)
 
 def Deriv.substTerm {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A : Ty α} {a : Term φ (Ty α)}
   : (Δ ⊢ a : A) → Term φ (Ty α)
-  | .bv (n := n) hv => σ.toSubst n
+  | .bv (n := n) hv => σ.get n
   | .op (f := f) hf da => .op f (da.substTerm σ)
   | .let₁ (A := A) (B := B) hΔ da db =>
     let s := σ.ssplit hΔ;
@@ -291,3 +303,70 @@ def Deriv.substD {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A : Ty α} {a : Term
     let s := σ.ssplit hΔ;
     .iter s.ssplitIn (σ.split_copy_left hΔ) (σ.split_del_left hΔ)
                         (da.substD s.substRight) (db.substD (s.substLeft.lift _))
+
+theorem SubstDS.ssubst_toSubst {Γ Δl Δr : Ctx? α} (σ : SubstDS φ Γ Δ) (hΔ : Δ.SSplit Δl Δr)
+  : (σ.ssplit hΔ).substLeft.toSubst = σ.toSubst ∧ (σ.ssplit hΔ).substRight.toSubst = σ.toSubst := by
+  induction σ generalizing Δl Δr with
+  | nil => cases hΔ; simp [substLeft, substRight, ssplit, toSubst, SubstSSplit.erase_left]
+  | cons hΓ _ da I =>
+  rename Var? α => v
+  cases hΔ with
+  | cons hΔ hlr => cases hlr with
+  | right => constructor <;> ext i <;> cases i <;> simp [ssplit, (I _).left, (I _).right]
+  | left | sboth =>
+    if hv : v.used then
+      simp only [ssplit]
+      rw [dite_cond_eq_true (by simp [hv])]
+      constructor <;> ext i <;> cases i <;> simp [(I _).left, (I _).right]
+    else
+      simp only [ssplit]
+      rw [dite_cond_eq_false (by simp [hv])]
+      constructor <;> ext i <;> cases i <;> simp [(I _).left, (I _).right]
+
+@[simp]
+theorem SubstDS.ssubst_substLeft_toSubst {Γ Δl Δr : Ctx? α} (σ : SubstDS φ Γ Δ)
+  (hΔ : Δ.SSplit Δl Δr) : (σ.ssplit hΔ).substLeft.toSubst = σ.toSubst := (σ.ssubst_toSubst hΔ).left
+
+@[simp]
+theorem SubstDS.ssubst_substRight_toSubst {Γ Δl Δr : Ctx? α} (σ : SubstDS φ Γ Δ)
+  (hΔ : Δ.SSplit Δl Δr) : (σ.ssplit hΔ).substRight.toSubst = σ.toSubst := (σ.ssubst_toSubst hΔ).right
+
+@[simp]
+theorem SubstDS.substLeft_toSubst {Γ Δl Δr : Ctx? α} (σ : SubstDS φ Γ Δ) (hΔ : Δ.SSplit Δl Δr)
+  : (σ.substLeft hΔ).toSubst = σ.toSubst := (σ.ssubst_toSubst hΔ).left
+
+@[simp]
+theorem SubstDS.substRight_toSubst {Γ Δl Δr : Ctx? α} (σ : SubstDS φ Γ Δ) (hΔ : Δ.SSplit Δl Δr)
+  : (σ.substRight hΔ).toSubst = σ.toSubst := (σ.ssubst_toSubst hΔ).right
+
+@[simp]
+theorem SubstDS.wkIn_toSubst {Γ' Γ Δ : Ctx? α} (ρ : Γ'.Wk Γ) (σ : SubstDS φ Γ Δ)
+  : (σ.wkIn ρ).toSubst = σ.toSubst.renOut ρ := by
+  induction σ generalizing Γ' with
+  | nil => rfl
+  | cons hΓ σ da I =>
+    ext i
+    cases i <;> simp [wkIn, Subst.renOut, *]
+
+@[simp]
+theorem SubstDS.lift_toSubst {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (v : Var? α)
+  : (σ.lift v).toSubst = σ.toSubst.lift := by
+  ext i; cases i <;> simp [SubstDS.lift, Ctx?.wk0, Nat.stepWk]
+
+theorem Deriv.substTerm_eq {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A : Ty α} {a : Term φ (Ty α)}
+  (D : Δ ⊢ a : A) : D.substTerm σ = a.subst σ := by induction D generalizing Γ with
+  | bv | unit => rfl
+  | _ => simp only [substTerm, subst]; congr <;> simp [*]
+
+def Deriv.subst {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A : Ty α} {a : Term φ (Ty α)}
+  (D : Δ ⊢ a : A) : Γ ⊢ a.subst σ : A
+  := (D.substD σ).cast_term (D.substTerm_eq σ)
+
+def SubstDS.refl : (Γ : Ctx? α) → SubstDS φ Γ Γ
+  | .nil => .nil inferInstance
+  | .cons Γ v => (refl Γ).lift v
+
+theorem SubstDS.lift_refl {Γ : Ctx? α} (v : Var? α)
+  : (SubstDS.refl Γ).lift v = SubstDS.refl (S := S) (Γ.cons v) := rfl
+
+end Term
