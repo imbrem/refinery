@@ -88,6 +88,10 @@ theorem SubstDS.den_lift {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (v : Var? α)
       _ = _
         := by rw [Ctx?.SSplit.den_drop_right_assoc, Ctx?.PWk.den_refl']; simp
 
+@[simp]
+theorem SubstDS.den_refl (Γ : Ctx? α) : (SubstDS.refl Γ).den (S := S) (C := C) = 𝟙 _
+  := by induction Γ <;> simp [refl, den, den_lift, *] <;> rfl
+
 def SubstSSplit.den {Γ Δ Δl Δr : Ctx? α} (σ : SubstSSplit φ Γ Δ Δl Δr)
   : (g⟦Γ⟧ : C) ⟶ g⟦Δl⟧ ⊗ g⟦Δr⟧
   := σ.ssplitIn.den ≫ (σ.substLeft.den ⊗ σ.substRight.den)

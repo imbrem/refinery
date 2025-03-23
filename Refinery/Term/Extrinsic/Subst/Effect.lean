@@ -291,6 +291,9 @@ instance SubstDS.Pos.lift
     apply commutes_bot_right
     rw [OrderedPQuant.pquant_bot]; apply le_top
 
+instance SubstDS.Pos.refl {Γ : Ctx? α} : Pos (S := S) e (SubstDS.refl Γ)
+  := by induction Γ <;> simp only [SubstDS.refl] <;> infer_instance
+
 inductive SubstDS.Neg : (e : ε) → {Γ Δ : Ctx? α} → (SubstDS φ Γ Δ) → Prop
   | nil {e : ε} {Γ : Ctx? α} (hΓ : Γ.del) : Neg e (.nil hΓ)
   | cons {e el er} {Γ Γl Γr Δ : Ctx? α}
@@ -422,6 +425,9 @@ instance SubstDS.Neg.lift
   apply bot_le
   apply commutes_bot_right
   rw [OrderedPQuant.pquant_bot]; apply le_top
+
+instance SubstDS.Neg.refl {Γ : Ctx? α} : Neg (S := S) e (SubstDS.refl Γ)
+  := by induction Γ <;> simp only [SubstDS.refl] <;> infer_instance
 
 class SubstDS.HasPos {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) : Prop where
   pos : ∃e, σ.Pos e
