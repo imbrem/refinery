@@ -17,7 +17,7 @@ variable {φ : Type _} {α : Type _} {ε : Type _} [S : Signature φ α ε]
          {C : Type _} [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
         [SymmetricCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
 
-theorem DRWS.Beta.Valid : Valid (Beta (S := S)) C where
+instance DRWS.Beta.Valid : Valid (Beta (S := S)) C where
   den_ref da db h := by cases h with
   | beta_pos hΓ da q hq db ha hb he heq =>
     simp only [Ctx?.den, Deriv.den, Deriv.den_pwk, Ctx?.ety, Var?.ety, ety_var, Ty.den.eq_3,

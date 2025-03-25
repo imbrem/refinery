@@ -21,7 +21,7 @@ variable {φ : Type _} {α : Type _} {ε : Type _} [S : Signature φ α ε]
          {C : Type _} [Category C] [PremonoidalCategory C] [CC : ChosenFiniteCoproducts C]
         [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
 
-theorem DRWS.LetBind.bivalid : BiValid (LetBind (S := S)) C where
+instance DRWS.LetBind.bivalid : BiValid (LetBind (S := S)) C where
   den_eq Dl Dr h := by cases h with
   | bind_op => simp only [Deriv.den, Ctx?.At.den, ge_iff_le, le_refl, Var?.Wk.den_used,
     eqToHom_refl, tensorHom_id, Category.assoc, ← Central.left_exchange_assoc, id_whiskerLeft,

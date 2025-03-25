@@ -217,3 +217,13 @@ inductive DRWS.Step : DRWS φ α
       (Da.iter hΓ hc hd (Db.case (Γl.erase_left.cons (.right _)) .bv0 (.inr .bv0)))
       (Da.iter hΓ hc hd
         (.iter (Γl.erase_right.cons (.right _)) inferInstance inferInstance .bv0 (Db.wk1 _)))
+
+inductive DRWS.EquivFwdStep : DRWS φ α
+  | let_move {Γ A} {a b : Term φ (Ty α)} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
+    : LetMove Γ A a b da db → EquivFwdStep Γ A a b da db
+  | let_bind {Γ A} {a b : Term φ (Ty α)} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
+    : LetBind Γ A a b da db → EquivFwdStep Γ A a b da db
+  | step {Γ A} {a b : Term φ (Ty α)} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
+    : Step Γ A a b da db → EquivFwdStep Γ A a b da db
+
+def DRWS.EquivStep : DRWS φ α := EquivFwdStep.symm

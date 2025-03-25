@@ -97,4 +97,9 @@ instance RWS.toDRWS_valid (R : RWS φ α) [V : R.Valid C] : R.toDRWS.Valid C whe
 instance DRWS.toRWS_valid (R : DRWS φ α) [V : R.Valid C] : R.toRWS.Valid C where
   den_ref | ⟨da, db, h⟩, Da, Db => by convert V.den_ref da db h using 1 <;> apply Deriv.coherence
 
+instance DRWS.symm_bivalid (R : DRWS φ α) [V : R.BiValid C] : R.symm.BiValid C where
+  den_eq Da Db h := by cases h with
+    | fwd h => exact V.den_eq Da Db h
+    | bwd h => exact (V.den_eq Db Da h).symm
+
 --TODO: swap, iso, symm lemmas

@@ -22,7 +22,7 @@ variable {φ : Type _} {α : Type _} {ε : Type _} [S : Signature φ α ε]
         [SymmetricCategory' C] [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
 
 set_option maxHeartbeats 10000000000 in
-theorem DRWS.Step.bivalid : BiValid (Step (S := S)) C where
+instance DRWS.Step.bivalid : BiValid (Step (S := S)) C where
   den_eq Dl Dr h := by cases h with
   | terminal =>
     simp only [Ty.den, Deriv.den, Ctx?.ety, Var?.ety, ety_var, M.drop_tensor, Model.drop_unit,
