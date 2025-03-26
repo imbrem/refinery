@@ -864,6 +864,14 @@ theorem Ctx?.SSplit.rightWk_applied' {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (
   : (σ.rightWk' ρ) i = ρ i := by simp
 
 @[simp]
+theorem Ctx?.SSplit.length_wkRight' {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ : Γ.SSplit Δ Ξ)
+  : (σ.wkRight' ρ).length = Γ'.length := by induction ρ generalizing Δ Ξ <;> cases σ <;> simp [*]
+
+@[simp]
+theorem Ctx?.SSplit.length_wkLeft' {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ : Γ.SSplit Δ Ξ)
+  : (σ.wkLeft' ρ).length = Γ'.length := by induction ρ generalizing Δ Ξ <;> cases σ <;> simp [*]
+
+@[simp]
 def Ctx?.SSplit.wk' {Γ' Γ Δ Ξ : Ctx? α}
   : (ρ : Γ'.Wk Γ) → (σ : Γ.SSplit Δ Ξ) → Γ'.SSplit (σ.wkLeft' ρ) (σ.wkRight' ρ)
   | .nil, .nil => .nil

@@ -659,6 +659,16 @@ theorem Ctx?.Wk.ix_bounded {Γ Δ : Ctx? α} (h : Γ.Wk Δ) (i : ℕ)
       apply I; convert hi using 0; simp
   | skip _ _ I => simp [ix, *]
 
+theorem Ctx?.Wk.ix_antibounded {Γ Δ : Ctx? α} (h : Γ.Wk Δ) (i : ℕ)
+  (hi : h.ix i < Γ.length) : i < Δ.length
+  := by induction h generalizing i with
+  | nil => simp at hi
+  | cons _ _ I => cases i <;> simp at *; apply I; assumption
+  | skip _ _ I => simp at *; apply I; assumption
+
+theorem Ctx?.Wk.ix_bounded_iff {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) (i : ℕ)
+  : ρ.ix i < Γ.length ↔ i < Δ.length := ⟨ρ.ix_antibounded i, ρ.ix_bounded i⟩
+
 def Ctx?.Wk.skips {Γ Δ : Ctx? α} (h : Wk Γ Δ) : ℕ := h 0
 
 --TODO: minimize and report because this is a _sin_

@@ -15,19 +15,19 @@ variable {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε]
 
 inductive DRWS.refStep (R : DRWS φ α) : DRWS φ α
   | equiv {Γ A} {a b : Term φ (Ty α)} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
-    : EquivStep Γ A a b da db → refStep R Γ A a b da db
+    : EquivStep.rel da db → refStep R Γ A a b da db
   | beta {Γ A} {a b : Term φ (Ty α)} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
-    : Beta Γ A a b da db → refStep R Γ A a b da db
+    : Beta.rel da db → refStep R Γ A a b da db
   | base {Γ A} {a b : Term φ (Ty α)} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
-    : R Γ A a b da db → refStep R Γ A a b da db
+    : R.rel da db → refStep R Γ A a b da db
 
 def DRWS.refines (R : DRWS φ α) : DRWS φ α := R.refStep.uniform
 
 inductive RWS.refStep (R : RWS φ α) : RWS φ α
   | equiv {Γ A} {a b : Term φ (Ty α)} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
-    : DRWS.EquivStep Γ A a b da db → refStep R Γ A a b
+    : DRWS.EquivStep.rel da db → refStep R Γ A a b
   | beta {Γ A} {a b : Term φ (Ty α)} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
-    : DRWS.Beta Γ A a b da db → refStep R Γ A a b
+    : DRWS.Beta.rel da db → refStep R Γ A a b
   | base {Γ A} {a b : Term φ (Ty α)}
     : R Γ A a b → refStep R Γ A a b
 

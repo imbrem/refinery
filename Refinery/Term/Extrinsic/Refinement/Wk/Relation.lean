@@ -132,3 +132,57 @@ instance DRWS.instWkCongrStep : WkCongr (Step (S := S)) where
         (db.wk ((hΓ.leftWk ρ).scons _))))
       simp
       simp [ren_ren, <-Nat.liftWk_comp, Nat.liftWk_comp_succ]
+
+instance DRWS.instWkCongrBeta : WkCongr (Beta (S := S)) where
+  cwk_congr {Γ Δ} ρ _ _ _ da db h := by cases h with
+    | beta_pos hΓ da q hq db ha hb hcomm heq =>
+      apply DRWS.cast_eq
+        (.base (.beta_pos
+        (hΓ.wk' ρ) (da.wk (hΓ.rightWk' ρ)) q
+          (le_trans hq (hΓ.wkRight_quant' ρ))
+          (db.wk ((hΓ.leftWk' ρ).scons _))
+        inferInstance
+        inferInstance
+        hcomm
+        heq))
+      simp
+      simp only [Ctx?.Wk.ix, Ctx?.SSplit.ix_leftWk, ← subst_renIn, ← subst_renOut]
+      congr
+      ext x
+      cases x with
+      | zero => simp
+      | succ x =>
+        simp only [Subst.get_renIn, Nat.liftWk_succ, SubstDS.subst0_get_succ, SubstDS.refl_get,
+          Ctx?.SSplit.length_wkLeft', Subst.get_renOut, ρ.ix_bounded_iff, hΓ.left_length,
+          Ctx?.SSplit.ix_leftWk']
+        split <;> rfl
+    | beta_neg hΓ da q hq db ha hb hcomm heq =>
+      apply DRWS.cast_eq
+        (.base (.beta_neg
+        (hΓ.wk' ρ) (da.wk (hΓ.rightWk' ρ)) q
+          (le_trans hq (hΓ.wkRight_quant' ρ))
+          (db.wk ((hΓ.leftWk' ρ).scons _))
+        inferInstance
+        inferInstance
+        hcomm
+        heq))
+      simp only [Ctx?.Wk.ix, Ctx?.SSplit.ix_leftWk, ← subst_renIn, ← subst_renOut]
+      congr
+      ext x
+      cases x with
+      | zero => simp
+      | succ x =>
+        simp only [Subst.get_renIn, Nat.liftWk_succ, SubstDS.subst0_get_succ, SubstDS.refl_get,
+          Ctx?.SSplit.length_wkLeft', Subst.get_renOut, ρ.ix_bounded_iff, hΓ.left_length,
+          Ctx?.SSplit.ix_leftWk']
+        split <;> rfl
+      simp
+
+instance DRWS.instWkCongrEquivFwdStep : WkCongr (EquivFwdStep (S := S)) where
+  cwk_congr ρ _ _ _ _ _ h := by cases h with
+    | let_move h => have ⟨da, db, h⟩ := (rel.cwk_congr ρ h); exact ⟨_, _, .let_move h⟩
+    | let_bind h => have ⟨da, db, h⟩ := (rel.cwk_congr ρ h); exact ⟨_, _, .let_bind h⟩
+    | step h => have ⟨da, db, h⟩ := (rel.cwk_congr ρ h); exact ⟨_, _, .step h⟩
+
+instance DRWS.instWkCongrEquivStep : WkCongr (EquivStep (S := S))
+  := DRWS.wk_congr_symm _

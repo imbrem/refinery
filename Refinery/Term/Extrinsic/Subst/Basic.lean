@@ -374,4 +374,32 @@ def SubstDS.subst0 {Γ Γl Γr : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
   : SubstDS φ Γ (Γl.cons ⟨A, q⟩)
   := .cons hΓ (.refl Γl) (.valid _ _ da (le_trans (by simp [quant]) hq))
 
+@[simp]
+theorem SubstDS.subst0_get_zero {Γ Γl Γr : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
+  (hΓ : Γ.SSplit Γl Γr) (da : Γr ⊢ a : A) (q : Quant) (hq : q ≤ quant Γr)
+  : (SubstDS.subst0 hΓ da q hq).get 0 = a := rfl
+
+@[simp]
+theorem SubstDS.subst0_get_succ {Γ Γl Γr : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
+  (hΓ : Γ.SSplit Γl Γr) (da : Γr ⊢ a : A) (q : Quant) (hq : q ≤ quant Γr) (i : ℕ)
+  : (SubstDS.subst0 hΓ da q hq).get (i + 1) = (SubstDS.refl Γl).get i := rfl
+
+@[simp]
+theorem SubstDS.lift_get_zero {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (v : Var? α)
+  : (σ.lift v).get 0 = .bv 0 := rfl
+
+@[simp]
+theorem SubstDS.lift_get_succ {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (v : Var? α) (i : ℕ)
+  : (σ.lift v).get (i + 1) = ↑⁰ (σ.get i) := by simp [lift, Ctx?.wk0]; rfl
+
+theorem SubstDS.refl_get {Γ : Ctx? α} (i : ℕ)
+  : (SubstDS.refl (S := S) Γ).get i = if i < Γ.length then .bv i else .invalid := by
+  induction Γ generalizing i with
+  | nil => simp
+  | cons Γ v I => cases i with
+  | zero => simp [refl]
+  | succ i =>
+    simp [refl, I]
+    split <;> rfl
+
 end Term
