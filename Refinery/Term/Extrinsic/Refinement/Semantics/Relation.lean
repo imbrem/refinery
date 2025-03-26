@@ -29,3 +29,5 @@ instance DRWS.refStep.valid (R : DRWS φ α) [Valid R C] : Valid R.refStep C whe
   den_ref da db h := by cases h <;> apply Valid.den_ref _ _ (by assumption)
 
 instance DRWS.refines.valid (R : DRWS φ α) [Valid R C] : Valid R.refines C := DRWS.uniform_valid _
+
+--TODO: RWS.refStep.valid

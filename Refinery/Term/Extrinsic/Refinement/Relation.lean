@@ -22,3 +22,13 @@ inductive DRWS.refStep (R : DRWS φ α) : DRWS φ α
     : R Γ A a b da db → refStep R Γ A a b da db
 
 def DRWS.refines (R : DRWS φ α) : DRWS φ α := R.refStep.uniform
+
+inductive RWS.refStep (R : RWS φ α) : RWS φ α
+  | equiv {Γ A} {a b : Term φ (Ty α)} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
+    : DRWS.EquivStep Γ A a b da db → refStep R Γ A a b
+  | beta {Γ A} {a b : Term φ (Ty α)} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
+    : DRWS.Beta Γ A a b da db → refStep R Γ A a b
+  | base {Γ A} {a b : Term φ (Ty α)}
+    : R Γ A a b → refStep R Γ A a b
+
+def RWS.refines (R : RWS φ α) : RWS φ α := R.refStep.uniform

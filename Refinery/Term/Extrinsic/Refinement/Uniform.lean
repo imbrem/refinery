@@ -282,12 +282,43 @@ abbrev DRWS.rel (R : DRWS φ α)
   {Γ : Ctx? α} {A : Ty α} {a b : Term φ (Ty α)} (da : Γ ⊢ a : A) (db : Γ ⊢ b : A) : Prop
   := R Γ A a b da db
 
+theorem DRWS.rel.cast_term {R : DRWS φ α} {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
+  (h : R.rel da db) {a' b'} (ha : a = a') (hb : b = b')
+  : R.rel (da.cast_term ha) (db.cast_term hb) := by cases ha; cases hb; exact h
+
+theorem DRWS.rel.of_cast_term {R : DRWS φ α} {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
+  {a' b'} (ha : a = a') (hb : b = b')
+  (h : R.rel (da.cast_term ha) (db.cast_term hb))
+  : R.rel da db := by cases ha; cases hb; exact h
+
+class DRWS.Reflexive (R : DRWS φ α) : Prop where
+  refl_strict {Γ A a} (da : Γ ⊢ a : A) : R.rel da da
+
+theorem Deriv.ref_rfl {R : DRWS φ α} [hR : R.Reflexive] {Γ A a} (da : Γ ⊢ a : A) : R.rel da da
+  := DRWS.Reflexive.refl_strict da
+
 class DRWS.Coherent (R : DRWS φ α) : Prop where
   elim {Γ A a b} (da da' : Γ ⊢ a : A) (db db' : Γ ⊢ b : A) : R.rel da db → R.rel da' db'
 
-theorem DRWS.coh {R : DRWS φ α} [Coherent R] {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} (h : R.rel da db)
-  (da' : Γ ⊢ a : A) (db' : Γ ⊢ b : A) : R.rel da' db'
+theorem Deriv.ref_rfl' {R : DRWS φ α} [hRR : R.Reflexive] [hRC : R.Coherent]
+  {Γ A a} (da da' : Γ ⊢ a : A) : R.rel da da'
+  := hRC.elim _ _ _ _ (da.ref_rfl)
+
+theorem Deriv.ref_rfl_of_eq {R : DRWS φ α} [hRR : R.Reflexive] [hRC : R.Coherent] {Γ A a b}
+  (da : Γ ⊢ a : A) (db : Γ ⊢ b : A) (h : a = b) : R.rel da db
+  := by cases h; exact da.ref_rfl' db
+
+theorem DRWS.of_eq {R : DRWS φ α} [hRR : R.Reflexive] [hRC : R.Coherent]
+  (h : a = b) : ∀{da : Γ ⊢ a : A} {db : Γ ⊢ b : A}, R.rel da db
+  := λ{da db} => da.ref_rfl_of_eq db h
+
+theorem DRWS.rel.coh {R : DRWS φ α} [Coherent R] {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
+  (h : R.rel da db) (da' : Γ ⊢ a : A) (db' : Γ ⊢ b : A) : R.rel da' db'
   := Coherent.elim da da' db db' h
+
+theorem DRWS.cast_eq {R : DRWS φ α} [Coherent R] {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
+  (h : R.rel da db) (ha : a = a') (hb : b = b') (da' : Γ ⊢ a' : A) (db' : Γ ⊢ b' : A)
+  : R.rel da' db' := by cases ha; cases hb; exact h.coh da' db'
 
 def DRWS.toRWS (R : DRWS φ α) : RWS φ α
   := λΓ A a b => ∃da : (Γ ⊢ a : A), ∃db : (Γ ⊢ b : A), R.rel da db
@@ -530,6 +561,9 @@ inductive DRWS.uniform (R : DRWS φ α) : DRWS φ α
   | trans {Γ a b c A} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} {dc : Γ ⊢ c : A}
     : uniform R _ _ _ _ da db → uniform R _ _ _ _ db dc → uniform R _ _ _ _ da dc
 
+instance DRWS.uniform_reflexive (R : DRWS φ α) : Reflexive R.uniform where
+  refl_strict da := .refl da da
+
 instance DRWS.uniform_coherent (R : DRWS φ α) : Coherent R.uniform where
   elim da da' db db' h := .trans (.refl da' da) (.trans h (.refl db db'))
 
@@ -582,37 +616,37 @@ theorem RWS.uniform.toDRWS {R : RWS φ α} {Γ A a b}
   | op hf ra Ia =>
     have ⟨Da⟩ := ra.wt.left;
     have ⟨Da'⟩ := ra.wt.right;
-    exact DRWS.coh ((Ia Da Da').op hf) _ _
+    exact DRWS.rel.coh ((Ia Da Da').op hf) _ _
   | let₁ hΓ ra rb Ia Ib =>
     have ⟨Da⟩ := ra.wt.left;
     have ⟨Da'⟩ := ra.wt.right;
     have ⟨Db⟩ := rb.wt.left;
     have ⟨Db'⟩ := rb.wt.right;
-    exact DRWS.coh ((Ia Da Da').let₁ hΓ (Ib Db Db')) _ _
+    exact DRWS.rel.coh ((Ia Da Da').let₁ hΓ (Ib Db Db')) _ _
   | let₂ hΓ ra rb Ia Ib =>
     have ⟨Da⟩ := ra.wt.left;
     have ⟨Da'⟩ := ra.wt.right;
     have ⟨Db⟩ := rb.wt.left;
     have ⟨Db'⟩ := rb.wt.right;
-    exact DRWS.coh ((Ia Da Da').let₂ hΓ (Ib Db Db')) _ _
+    exact DRWS.rel.coh ((Ia Da Da').let₂ hΓ (Ib Db Db')) _ _
   | pair hΓ ra rb Ia Ib =>
     have ⟨Da⟩ := ra.wt.left;
     have ⟨Da'⟩ := ra.wt.right;
     have ⟨Db⟩ := rb.wt.left;
     have ⟨Db'⟩ := rb.wt.right;
-    exact DRWS.coh ((Ia Da Da').pair hΓ (Ib Db Db')) _ _
+    exact DRWS.rel.coh ((Ia Da Da').pair hΓ (Ib Db Db')) _ _
   | inl ra Ia =>
     have ⟨Da⟩ := ra.wt.left;
     have ⟨Da'⟩ := ra.wt.right;
-    exact DRWS.coh ((Ia Da Da').inl) _ _
+    exact DRWS.rel.coh ((Ia Da Da').inl) _ _
   | inr rb Ib =>
     have ⟨Db⟩ := rb.wt.left;
     have ⟨Db'⟩ := rb.wt.right;
-    exact DRWS.coh ((Ib Db Db').inr) _ _
+    exact DRWS.rel.coh ((Ib Db Db').inr) _ _
   | abort ra Ia =>
     have ⟨Da⟩ := ra.wt.left;
     have ⟨Da'⟩ := ra.wt.right;
-    exact DRWS.coh ((Ia Da Da').abort) _ _
+    exact DRWS.rel.coh ((Ia Da Da').abort) _ _
   | case hΓ ra rb rc Ia Ib Ic =>
     have ⟨Da⟩ := ra.wt.left;
     have ⟨Da'⟩ := ra.wt.right;
@@ -620,18 +654,18 @@ theorem RWS.uniform.toDRWS {R : RWS φ α} {Γ A a b}
     have ⟨Db'⟩ := rb.wt.right;
     have ⟨Dc⟩ := rc.wt.left;
     have ⟨Dc'⟩ := rc.wt.right;
-    exact DRWS.coh ((Ia Da Da').case hΓ (Ib Db Db') (Ic Dc Dc')) _ _
+    exact DRWS.rel.coh ((Ia Da Da').case hΓ (Ib Db Db') (Ic Dc Dc')) _ _
   | iter hΓ hc hd ra rb Ia Ib =>
     have ⟨Da⟩ := ra.wt.left;
     have ⟨Da'⟩ := ra.wt.right;
     have ⟨Db⟩ := rb.wt.left;
     have ⟨Db'⟩ := rb.wt.right;
-    exact DRWS.coh ((Ia Da Da').iter hΓ hc hd (Ib Db Db')) _ _
+    exact DRWS.rel.coh ((Ia Da Da').iter hΓ hc hd (Ib Db Db')) _ _
   | pos_unif hΓ hΓc =>
-    apply DRWS.coh
+    apply DRWS.rel.coh
     apply DRWS.uniform.pos_unif hΓ hΓc <;> apply_assumption
   | neg_unif hΓ hΓc =>
-    apply DRWS.coh
+    apply DRWS.rel.coh
     apply DRWS.uniform.neg_unif hΓ hΓc <;> apply_assumption
   | base h => exact DRWS.uniform.base h
   | refl => exact DRWS.uniform.refl da db

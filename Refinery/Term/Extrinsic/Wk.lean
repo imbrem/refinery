@@ -154,6 +154,14 @@ theorem Deriv.wk_eq_cast_term
   (D : Δ ⊢ a : A) : (D.wk ρ).cast_term ha = (D.wk ρ').cast_term ha'
   := by cases h; rfl
 
+--TODO: requires wk_wk; not sure if that holds, and shouldn't matter due to coherence
+-- theorem Deriv.wk_cons_cons_wk1
+--   {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {l l' r r' : Var? α} (ρl : l'.Wk l) (ρr : r'.Wk r) [hl : l.del]
+--   {a : Term φ (Ty α)} (D : Δ.cons r ⊢ a : A)
+--   : (D.wk1 l).wk ((ρ.cons ρl).cons ρr)
+--   = ((D.wk (ρ.cons ρr)).wk1 l' (hx := sorry)).cast_term sorry
+--   := sorry
+
 def Deriv.pwk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} {a : Term φ (Ty α)}
   (D : Δ ⊢ a : A) : (Γ ⊢ a : A)
   := (D.wk ρ.toWk).cast_term (by simp [Ctx?.Wk.ix_pwk])

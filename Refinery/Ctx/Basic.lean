@@ -333,6 +333,8 @@ theorem Var?.Wk.refl (v : Var? α) : v.Wk v := ⟨rfl, le_refl _, λh => h.del�
 theorem Var?.Wk.comp {u v w : Var? α} (h : u.Wk v) (h' : v.Wk w) : u.Wk w
   := ⟨h.ty.trans h'.ty, h'.q.trans h.q, λx => (x.del.anti h').anti h⟩
 
+theorem Var?.Wk.del {v w : Var? α} (h : v.Wk w) [hv : w.del] : v.del := Var?.del.anti h
+
 instance Var?.instPartialOrder : PartialOrder (Var? α) where
   le_refl _ := Wk.refl _
   le_trans _ _ _ h h' := Wk.comp h h'
