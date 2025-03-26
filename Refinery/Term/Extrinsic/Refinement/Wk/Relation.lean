@@ -80,3 +80,55 @@ instance DRWS.instWkCongrLetBind : WkCongr (LetBind (S := S)) where
         (db.wk (((hΓ.leftWk ρ).scons _)))))
       simp
       simp [ren_ren, <-Nat.liftWk_comp, Nat.liftWk_comp_succ]
+
+instance DRWS.instWkCongrStep : WkCongr (Step (S := S)) where
+  uwk_congr {Γ Δ} ρ _ _ _ da db h := by cases h with
+    | terminal db => apply DRWS.cast_eq (.base (.terminal (db.wk ρ))) rfl rfl
+    | initial  hΓ da db dc =>
+      apply DRWS.cast_eq
+        (.base (.initial (hΓ.wk ρ) (da.wk (hΓ.rightWk ρ))
+        (db.wk ((hΓ.leftWk ρ).scons _))
+        (dc.wk ((hΓ.leftWk ρ).scons _))))
+      simp
+      simp [ren_ren, <-Nat.liftWk_comp, Nat.liftWk_comp_succ]
+    | let₂_eta db =>
+      apply DRWS.cast_eq (.base (.let₂_eta (db.wk ρ))) rfl rfl
+    | case_eta db =>
+      apply DRWS.cast_eq (.base (.case_eta (db.wk ρ))) rfl rfl
+    | let₂_beta hΓ hΓc da db dc =>
+      apply DRWS.cast_eq
+        (.base (.let₂_beta (hΓ.wk ρ) (hΓc.wk (hΓ.rightWk ρ))
+        (da.wk ((hΓc.leftWk (hΓ.rightWk ρ))))
+        (db.wk ((hΓc.rightWk (hΓ.rightWk ρ))))
+        (dc.wk (((hΓ.leftWk ρ).scons _).scons _))))
+      simp
+      simp [ren_ren, <-Nat.liftWk_comp, Nat.liftWk_comp_succ]
+    | case_inl hΓ da db dc =>
+      apply DRWS.cast_eq
+        (.base (.case_inl (hΓ.wk ρ) (da.wk (hΓ.rightWk ρ))
+        (db.wk ((hΓ.leftWk ρ).scons _))
+        (dc.wk ((hΓ.leftWk ρ).scons _))))
+      simp
+      simp [ren_ren, <-Nat.liftWk_comp, Nat.liftWk_comp_succ]
+    | case_inr hΓ da db dc =>
+      apply DRWS.cast_eq
+        (.base (.case_inr (hΓ.wk ρ) (da.wk (hΓ.rightWk ρ))
+        (db.wk ((hΓ.leftWk ρ).scons _))
+        (dc.wk ((hΓ.leftWk ρ).scons _))))
+      simp
+      simp [ren_ren, <-Nat.liftWk_comp, Nat.liftWk_comp_succ]
+    | fixpoint hΓ hc hd da db =>
+      apply DRWS.cast_eq
+        (.base (.fixpoint (hΓ.wk ρ) (hΓ.wkLeft_copy ρ) (hΓ.wkLeft_del ρ)
+        (da.wk (hΓ.rightWk ρ))
+        (db.wk ((hΓ.leftWk ρ).scons _))))
+      simp
+      simp [ren_ren, <-Nat.liftWk_comp, Nat.liftWk_comp_succ]
+      rfl
+    | codiag hΓ hc hd da db =>
+      apply DRWS.cast_eq
+        (.base (.codiag (hΓ.wk ρ) (hΓ.wkLeft_copy ρ) (hΓ.wkLeft_del ρ)
+        (da.wk (hΓ.rightWk ρ))
+        (db.wk ((hΓ.leftWk ρ).scons _))))
+      simp
+      simp [ren_ren, <-Nat.liftWk_comp, Nat.liftWk_comp_succ]
