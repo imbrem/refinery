@@ -338,9 +338,16 @@ instance RWS.toDRWS_coherent (R : RWS φ α) : DRWS.Coherent R.toDRWS where
 
 def DRWS.cohere (R : DRWS φ α) : DRWS φ α := R.toRWS.toDRWS
 
+def DRWS.cohere.base {R : DRWS φ α} {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
+  (h : R.rel da db) : R.cohere Γ A a b da db := ⟨da, db, h⟩
+
 instance DRWS.cohere_coherent (R : DRWS φ α) : Coherent R.cohere := R.toRWS.toDRWS_coherent
 
 theorem DRWS.cohere_increasing (R : DRWS φ α) : R ≤ R.cohere := λ_ _ _ _ _ _ h => ⟨_, _, h⟩
+
+theorem DRWS.cohere.mono {R R' : DRWS φ α} {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
+  (hR : R ≤ R') (h : R.cohere.rel da db) : R'.cohere.rel da db
+  := have ⟨da, db, h⟩ := h; ⟨da, db, hR _ _ _ _ _ _ h⟩
 
 inductive DRWS.ref (R : DRWS φ α) : DRWS φ α
   | base {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R.rel da db → ref R _ _ _ _ da db
@@ -687,8 +694,23 @@ inductive DRWS.symm (R : DRWS φ α) : DRWS φ α
   | fwd {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R.rel da db → symm R _ _ _ _ da db
   | bwd {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R.rel da db → symm R _ _ _ _ db da
 
+theorem DRWS.symm_increasing (R : DRWS φ α) : R ≤ R.symm := λ _ _ _ _ _ _ h => symm.fwd h
+
 inductive DRWS.swap (R : DRWS φ α) : DRWS φ α
   | mk {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R.rel da db → swap R _ _ _ _ db da
+
+theorem DRWS.rel.toSwap {R : DRWS φ α} {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
+  (h : R.rel da db) : R.swap.rel db da := swap.mk h
+
+theorem DRWS.swap.get {R : DRWS φ α} {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
+  (h : R.swap.rel db da) : R.rel da db := by cases h; assumption
+
+theorem DRWS.swap_le_symm (R : DRWS φ α) : R.swap ≤ R.symm
+  := λ _ _ _ _ _ _ h => symm.bwd h.get
+
+theorem DRWS.swap.toCohere {R : DRWS φ α} {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
+  (h : R.cohere.swap.rel db da) : R.swap.cohere.rel db da
+  := have ⟨da, db, h⟩ := h; ⟨db, da, mk h⟩
 
 inductive DRWS.iso (R : DRWS φ α) : DRWS φ α
   | mk {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R.rel da db → R.rel db da → iso R _ _ _ _ da db

@@ -36,7 +36,6 @@ theorem DRWS.DWkCongr.mk' {R : DRWS φ α}
   : DWkCongr R where
   dwkD_congr ρ _ _ _ da db h := (dwk_congr ρ da db h).wkD_of_wk
 
-
 theorem DRWS.rel.dwkD_congr [DWkCongr R]
   {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A a b} {da : Δ ⊢ a : A} {db : Δ ⊢ b : A} (h : R.rel da db)
   : R.rel (da.wkD ρ) (db.wkD ρ) := DWkCongr.dwkD_congr ρ da db h
@@ -52,18 +51,35 @@ instance DRWS.dwk_congr_symm (R : DRWS φ α) [DWkCongr R] : R.symm.DWkCongr whe
   dwkD_congr ρ _ _ _ _ _ | .fwd h => .fwd (h.dwkD_congr ρ) | .bwd h => .bwd (h.dwkD_congr ρ)
 
 class DRWS.WkCongr (R : DRWS φ α) where
+  cwk_congr {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A a b} (da : Δ ⊢ a : A) (db : Δ ⊢ b : A) :
+    R.rel da db → R.cohere.rel (da.wk ρ) (db.wk ρ)
+
+theorem DRWS.rel.cwk_congr [WkCongr R]
+  {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A a b} {da : Δ ⊢ a : A} {db : Δ ⊢ b : A}
+  : R.rel da db → R.cohere.rel (da.wk ρ) (db.wk ρ)
+  := WkCongr.cwk_congr ρ da db
+
+instance DRWS.WkCongr.of_dwk_congr {R : DRWS φ α} [DWkCongr R] : WkCongr R where
+  cwk_congr ρ _ _ _ _ _ h := .base (h.dwk_congr ρ)
+
+instance DRWS.wk_congr_symm (R : DRWS φ α) [WkCongr R] : R.symm.WkCongr where
+  cwk_congr ρ _ _ _ _ _
+    | .fwd h => (h.cwk_congr ρ).mono R.symm_increasing
+    | .bwd h => (h.cwk_congr ρ).toSwap.toCohere.mono R.swap_le_symm
+
+class DRWS.UWkCongr (R : DRWS φ α) where
   uwk_congr {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A a b} (da : Δ ⊢ a : A) (db : Δ ⊢ b : A) :
     R.rel da db → R.uniform.rel (da.wk ρ) (db.wk ρ)
 
-instance DRWS.WkCongr.of_dwk_congr {R : DRWS φ α} [DWkCongr R] : WkCongr R where
-  uwk_congr ρ _ _ _ _ _ h := uniform.base (h.dwk_congr ρ)
+instance DRWS.UWkCongr.of_wk_congr {R : DRWS φ α} [WkCongr R] : UWkCongr R where
+  uwk_congr ρ _ _ _ _ _ h := R.uniform_le_cohere _ _ _ _ _ _ (h.cwk_congr ρ)
 
-theorem DRWS.rel.uwk_congr [WkCongr R]
+theorem DRWS.rel.uwk_congr [UWkCongr R]
   {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A a b} {da : Δ ⊢ a : A} {db : Δ ⊢ b : A}
   : R.rel da db → R.uniform.rel (da.wk ρ) (db.wk ρ)
-  := WkCongr.uwk_congr ρ da db
+  := UWkCongr.uwk_congr ρ da db
 
-instance DRWS.dwk_congr_uniform (R : DRWS φ α) [WkCongr R] : R.uniform.DWkCongr where
+instance DRWS.dwk_congr_uniform (R : DRWS φ α) [UWkCongr R] : R.uniform.DWkCongr where
   dwkD_congr {Γ Δ} ρ _ _ _ da db h := by induction h generalizing Γ with
     | pos_unif hΔ hΔc hc hd ha hs hb hei hec hsb I =>
       --TODO: simplfy
@@ -217,7 +233,7 @@ instance DRWS.dwk_congr_uniform (R : DRWS φ α) [WkCongr R] : R.uniform.DWkCong
       exact Coherent.elim
         (driw.cast_term hriw) _ (dliw.cast_term hliw) _
         (h.cast_term hriw hliw)
-    | base => apply rel.of_cast_term; apply WkCongr.uwk_congr; assumption
+    | base => apply rel.of_cast_term; apply UWkCongr.uwk_congr; assumption
     | refl => apply DRWS.rel.wkD_of_wk; apply uniform.refl
     | trans => apply uniform.trans <;> apply_assumption
     | _ => simp only [Deriv.wkD]; constructor <;> apply_assumption

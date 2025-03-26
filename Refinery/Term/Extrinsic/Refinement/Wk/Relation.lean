@@ -8,7 +8,7 @@ namespace Term
 variable {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε]
 
 instance DRWS.instWkCongrLetMove : WkCongr (LetMove (S := S)) where
-  uwk_congr {Γ Δ} ρ _ _ _ da db h := by cases h with
+  cwk_congr {Γ Δ} ρ _ _ _ da db h := by cases h with
     | let_op hΓ hf da db =>
       apply DRWS.cast_eq
         (.base (.let_op (hΓ.wk ρ) hf (da.wk (hΓ.rightWk ρ)) (db.wk ((hΓ.leftWk ρ).scons _))))
@@ -56,7 +56,7 @@ instance DRWS.instWkCongrLetMove : WkCongr (LetMove (S := S)) where
       simp [ren_ren, <-Nat.liftWk_comp, Nat.liftWk_comp_succ]
 
 instance DRWS.instWkCongrLetBind : WkCongr (LetBind (S := S)) where
-  uwk_congr {Γ Δ} ρ _ _ _ da db h := by cases h with
+  cwk_congr {Γ Δ} ρ _ _ _ da db h := by cases h with
     | bind_op hf da => apply DRWS.cast_eq (.base (.bind_op hf (da.wk ρ))) rfl rfl
     | bind_let₂ hΓ da db =>
       apply DRWS.cast_eq
@@ -82,7 +82,7 @@ instance DRWS.instWkCongrLetBind : WkCongr (LetBind (S := S)) where
       simp [ren_ren, <-Nat.liftWk_comp, Nat.liftWk_comp_succ]
 
 instance DRWS.instWkCongrStep : WkCongr (Step (S := S)) where
-  uwk_congr {Γ Δ} ρ _ _ _ da db h := by cases h with
+  cwk_congr {Γ Δ} ρ _ _ _ da db h := by cases h with
     | terminal db => apply DRWS.cast_eq (.base (.terminal (db.wk ρ))) rfl rfl
     | initial  hΓ da db dc =>
       apply DRWS.cast_eq
