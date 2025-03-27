@@ -186,3 +186,22 @@ instance DRWS.instWkCongrEquivFwdStep : WkCongr (EquivFwdStep (S := S)) where
 
 instance DRWS.instWkCongrEquivStep : WkCongr (EquivStep (S := S))
   := DRWS.wk_congr_symm _
+
+instance DRWS.wk_congr_refStep (R : DRWS φ α) [WkCongr R] : WkCongr R.refStep where
+  cwk_congr ρ _ _ _ _ _ h := by cases h with
+    | equiv h => have ⟨da, db, h⟩ := (rel.cwk_congr ρ h); exact ⟨_, _, .equiv h⟩
+    | beta h => have ⟨da, db, h⟩ := (rel.cwk_congr ρ h); exact ⟨_, _, .beta h⟩
+    | base h => have ⟨da, db, h⟩ := (rel.cwk_congr ρ h); exact ⟨_, _, .base h⟩
+
+instance DRWS.uwk_congr_refStep (R : DRWS φ α) [UWkCongr R] : UWkCongr R.refStep where
+  uwk_congr ρ _ _ _ _ _  h := by cases h with
+    | equiv h => exact (h.uwk_congr ρ).mono (λ_ _ _ _ _ _ h => .equiv h)
+    | beta h => exact (h.uwk_congr ρ).mono (λ_ _ _ _ _ _ h => .beta h)
+    | base h => exact (h.uwk_congr ρ).mono (λ_ _ _ _ _ _ h => .base h)
+
+instance DRWS.instDWkCongrRefines (R : DRWS φ α) [UWkCongr R] : DWkCongr R.refines
+  := R.refStep.dwk_congr_uniform
+
+end Term
+
+end Refinery
