@@ -82,7 +82,7 @@ instance Signature.IsFn.instHasEff [E : Effectful2 C ε] [SigModel φ α ε C]
 class Model
   (φ : Type _) (α : outParam (Type _)) (ε : outParam (Type _)) [S : Signature φ α ε]
   (C : Type _) [Category C] [PremonoidalCategory C] [ChosenFiniteCoproducts C]
-               [BraidedCategory' C] [Iterate C] [E : Elgot2 C ε]
+               [BraidedCategory' C] [E : Effectful2 C ε]
   extends SigModel φ α ε C where
   copy_swap {A : Ty α} [hA : IsRel A] : Δ_ A ≫ (β'_ _ _).hom = copy A
   copy_assoc {A : Ty α} [hA : IsRel A] :
@@ -116,7 +116,7 @@ attribute [simp] Model.drop_unit Model.copy_unit
 
 attribute [reassoc] Model.copy_swap Model.copy_assoc Model.drop_tensor Model.copy_tensor
 
-variable [Iterate C] [E : Elgot2 C ε] [M : Model φ α ε C]
+variable [E : Effectful2 C ε] [M : Model φ α ε C]
 
 theorem Model.copy_swap_inv {A : Ty α} [hA : IsRel A]
   : Δ_ A ≫ (β'_ _ _).inv = M.copy A
