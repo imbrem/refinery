@@ -10,11 +10,31 @@ namespace Term
 variable  {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε]
           {R : DRWS φ α} [R.UWkCongr]
 
-def Wf.rby.wk_congr {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a b : Wf R Δ A} (h : a.rby b)
+theorem Wf.rby.wk_congr {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a b : Wf R Δ A} (h : a.rby b)
   : (a.wk ρ).rby (b.wk ρ) := h.dwk_congr ρ
 
-def Wf.wk_congr {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a b : Wf R Δ A} (h : a ≈ b)
+theorem Wf.wk_congr {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a b : Wf R Δ A} (h : a ≈ b)
   : a.wk ρ ≈ b.wk ρ := ⟨h.left.wk_congr ρ, h.right.wk_congr ρ⟩
+
+theorem Wf.wk0_congr {Γ : Ctx? α} (x : Var? α) [hx : x.del] {A : Ty α} {a b : Wf R Γ A} (h : a ≈ b)
+    : a.wk0 x ≈ b.wk0 x := by
+  apply Wf.equiv_coh (Wf.wk_congr (Γ.wk0 x) h) <;>
+  simp [wk, wk0, Ctx?.Wk.ix, Ctx?.wk0, Nat.stepWk]
+
+theorem Wf.wk1_congr {Γ : Ctx? α} (x : Var? α) [hx : x.del] {v : Var? α}
+  {A : Ty α} {a b : Wf R (Γ.cons v) A} (h : a ≈ b) : a.wk1 x ≈ b.wk1 x := by
+  apply Wf.equiv_coh (Wf.wk_congr ((Γ.wk0 x).scons _) h) <;>
+  simp [wk, wk1, Ctx?.Wk.ix, Ctx?.wk0, Nat.stepWk]
 
 def Eqv.wk {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} (a : Eqv R Δ A) : Eqv R Γ A
   := a.liftOn (λ a => e⟦a.wk ρ⟧) (λ_ _ h => sound <| Wf.wk_congr ρ h)
+
+theorem Eqv.wk_mk {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {a : Wf R Δ A}
+  : Eqv.wk ρ (e⟦a⟧) = e⟦a.wk ρ⟧ := rfl
+
+def Eqv.wk0 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {A : Ty α} (a : Eqv R Γ A) : Eqv R (Γ.cons x) A
+  := a.liftOn (λ a => e⟦a.wk0 x⟧) (λ_ _ h => sound <| Wf.wk0_congr x h)
+
+def Eqv.wk1 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {v : Var? α} {A : Ty α} (a : Eqv R (Γ.cons v) A)
+  : Eqv R ((Γ.cons x).cons v) A
+  := a.liftOn (λ a => e⟦a.wk1 x⟧) (λ_ _ h => sound <| Wf.wk1_congr x h)

@@ -23,6 +23,8 @@ inductive DRWS.refStep (R : DRWS φ α) : DRWS φ α
 
 def DRWS.refines (R : DRWS φ α) : DRWS φ α := R.refStep.uniform
 
+instance DRWS.refines_coherent (R : DRWS φ α) : Coherent (R.refines) := R.refStep.uniform_coherent
+
 inductive RWS.refStep (R : RWS φ α) : RWS φ α
   | equiv {Γ A} {a b : Term φ (Ty α)} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
     : DRWS.EquivStep.rel da db → refStep R Γ A a b

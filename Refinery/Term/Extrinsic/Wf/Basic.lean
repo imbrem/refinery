@@ -23,6 +23,13 @@ def Wf.wk {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} (a : Wf R Δ A) : Wf R �
 theorem Wf.tm_wk {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} (a : Wf R Δ A)
   : (a.wk ρ).tm = a.tm.ren ρ := rfl
 
+def Wf.wk0 {Γ : Ctx? α} (x : Var? α) [hv : x.del] {A : Ty α} (a : Wf R Γ A) : Wf R (Γ.cons x) A
+  := ⟨_, a.deriv.wk0 x⟩
+
+def Wf.wk1 {Γ : Ctx? α} (x : Var? α) [hv : x.del] {v : Var? α} {A : Ty α} (a : Wf R (Γ.cons v) A)
+  : Wf R ((Γ.cons x).cons v) A
+  := ⟨_, a.deriv.wk1 x⟩
+
 def Wf.subst {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A : Ty α} (a : Wf R Δ A) : Wf R Γ A
   := ⟨a.tm.subst σ, a.deriv.subst σ⟩
 
@@ -38,6 +45,15 @@ theorem Wf.rby.trans {Γ : Ctx? α} {A : Ty α} {a b c : Wf R Γ A}
   (hab : a.rby b) (hbc : b.rby c) : a.rby c
   := DRWS.uniform.trans hab hbc
 
+theorem Wf.rby.coh_pair {Γ : Ctx? α} {A : Ty α} {a b : Term φ (Ty α)}
+  {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} {da' : Γ ⊢ a : A} {db' : Γ ⊢ b : A}
+  (h : rby (R := R) ⟨a, da⟩ ⟨b, db⟩) : rby (R := R) ⟨a, da'⟩ ⟨b, db'⟩
+  := DRWS.rel.coh h _ _
+
+theorem Wf.rby.coh {Γ : Ctx? α} {A : Ty α} {a b a' b' : Wf R Γ A}
+  (h : a.rby b) (ha : a.tm = a'.tm) (hb : b.tm = b'.tm) : a'.rby b'
+  := by cases a; cases b; cases ha; cases hb; exact h.coh_pair
+
 instance Wf.instPreorder (R : DRWS φ α) (Γ : Ctx? α) (A : Ty α) : Preorder (Wf R Γ A) where
   le := rby
   le_refl a := a.rby_refl
@@ -50,6 +66,15 @@ instance Wf.setoid (R : DRWS φ α) (Γ : Ctx? α) (A : Ty α) : Setoid (Wf R Γ
       symm hab := ⟨hab.right, hab.left⟩
       trans hab hbc := ⟨le_trans hab.left hbc.left, le_trans hbc.right hab.right⟩
     }
+
+theorem Wf.equiv_coh_pair {Γ : Ctx? α} {A : Ty α} {a b : Term φ (Ty α)}
+  {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} {da' : Γ ⊢ a : A} {db' : Γ ⊢ b : A}
+  (h : (⟨a, da⟩ : Wf R Γ A) ≈ ⟨b, db⟩) : (⟨a, da'⟩ : Wf R Γ A) ≈ ⟨b, db'⟩
+  := ⟨h.left.coh_pair, h.right.coh_pair⟩
+
+theorem Wf.equiv_coh {Γ : Ctx? α} {A : Ty α} {a b a' b' : Wf R Γ A}
+  (h : a ≈ b) (ha : a.tm = a'.tm) (hb : b.tm = b'.tm) : a' ≈ b'
+  := ⟨h.left.coh ha hb, h.right.coh hb ha⟩
 
 def Wf.bv {Γ : Ctx? α} {A : Ty α} (i : ℕ) (hv : Γ.At ⟨A, 1⟩ i) : Wf R Γ A
   := ⟨.bv i, .bv hv⟩
@@ -193,6 +218,11 @@ theorem Eqv.quotInd₃ {Γ Δ Ξ : Ctx? α} {A B C : Ty α}
   {motive : Eqv R Γ A → Eqv R Δ B → Eqv R Ξ C → Prop}
   (a b c) (h : ∀ a b c, motive e⟦a⟧ e⟦b⟧ e⟦c⟧) : motive a b c
   := Quotient.inductionOn₃ a b c h
+
+theorem Eqv.quotInd₄ {Γ Δ Ξ Θ : Ctx? α} {A B C D : Ty α}
+  {motive : Eqv R Γ A → Eqv R Δ B → Eqv R Ξ C → Eqv R Θ D → Prop}
+  (a b c d) (h : ∀ a b c d, motive e⟦a⟧ e⟦b⟧ e⟦c⟧ e⟦d⟧) : motive a b c d
+  := by induction a using quotInd; induction b, c, d using quotInd₃; apply h
 
 def Eqv.liftOn {Γ : Ctx? α} {A : Ty α} {β : Type _} (a : Eqv R Γ A) (f : Wf R Γ A → β)
   (h : ∀ a b, a ≈ b → f a = f b) : β := Quotient.liftOn a f h
