@@ -96,6 +96,52 @@ def subst (σ : Subst φ α) : Term φ α → Term φ α
 instance instSMul : SMul (Subst φ α) (Term φ α) where
   smul := subst
 
+theorem smul_def (σ : Subst φ α) (a : Term φ α) : σ • a = a.subst σ := rfl
+
+namespace Subst
+
+@[simp] theorem smul_bv (σ : Subst φ α) (ix : ℕ) : σ • .bv ix = σ.get ix := rfl
+
+@[simp]
+theorem smul_op (σ : Subst φ α) (f : φ) (a : Term φ α) : σ • Term.op f a = .op f (σ • a) := rfl
+
+@[simp]
+theorem smul_let₁ (σ : Subst φ α) (a : Term φ α) (A : α) (b : Term φ α)
+  : σ • Term.let₁ a A b = .let₁ (σ • a) A (↑ˢ σ • b) := rfl
+
+@[simp]
+theorem smul_let₂ (σ : Subst φ α) (a : Term φ α) (A B : α) (b : Term φ α)
+  : σ • Term.let₂ a A B b = .let₂ (σ • a) A B (↑ˢ (↑ˢ σ) • b) := rfl
+
+@[simp]
+theorem smul_unit (σ : Subst φ α) : σ • Term.unit (φ := φ) (α := α) = Term.unit := rfl
+
+@[simp]
+theorem smul_pair (σ : Subst φ α) (a b : Term φ α)
+  : σ • Term.pair a b = .pair (σ • a) (σ • b) := rfl
+
+@[simp]
+theorem smul_inl (σ : Subst φ α) (A B : α) (a : Term φ α)
+  : σ • Term.inl A B a = .inl A B (σ • a) := rfl
+
+@[simp]
+theorem smul_inr (σ : Subst φ α) (A B : α) (b : Term φ α)
+  : σ • Term.inr A B b = .inr A B (σ • b) := rfl
+
+@[simp]
+theorem smul_case (σ : Subst φ α) (a : Term φ α) (A B : α) (b c : Term φ α)
+  : σ • Term.case a A B b c = .case (σ • a) A B (↑ˢ σ • b) (↑ˢ σ • c) := rfl
+
+@[simp]
+theorem smul_abort (σ : Subst φ α) (A : α) (a : Term φ α)
+  : σ • Term.abort A a = .abort A (σ • a) := rfl
+
+@[simp]
+theorem smul_iter (σ : Subst φ α) (a : Term φ α) (A B : α) (b : Term φ α)
+  : σ • Term.iter a A B b = .iter (σ • a) A B (↑ˢ σ • b) := rfl
+
+end Subst
+
 instance Subst.instMul : Mul (Subst φ α) where
   mul σ τ i := (τ.get i).subst σ
 

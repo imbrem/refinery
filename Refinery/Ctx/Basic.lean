@@ -45,6 +45,15 @@ def Ctx?.cons (Γ : Ctx? α) (v : Var? α) : Ctx? α := List.cons v Γ
 
 def Ctx?.erase (Γ : Ctx? α) : Ctx? α := Γ.map Var?.erase
 
+@[match_pattern]
+abbrev Ctx?.one (v : Var? α) : Ctx? α := .cons .nil v
+
+namespace Var?
+
+export Ctx? (one)
+
+end Var?
+
 @[simp]
 theorem Ctx?.erase_nil : Ctx?.erase (.nil : Ctx? α) = .nil := rfl
 
@@ -704,6 +713,10 @@ theorem Ctx?.del.wk {Γ Δ : Ctx? α} (h : Γ.Wk Δ) [hΔ : Δ.del] : Γ.del := 
     have _ := I hΔ
     infer_instance
   ) hΔ
+
+
+def Ctx?.extend1 (Γ : Ctx? α) (v : Var? α) [hΓ : Γ.del] : (Γ.cons v).Wk v.one
+  := Γ.drop.scons _
 
 @[simp]
 def Ctx?.erasePWk (Γ : Ctx? α) [h : Γ.del] : PWk Γ Γ.erase := match Γ, h with

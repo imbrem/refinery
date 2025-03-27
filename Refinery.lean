@@ -9,3 +9,4 @@ import Refinery.Term.Extrinsic.Semantics.Subst
 import Refinery.Term.Extrinsic.Refinement.Uniform
 import Refinery.Term.Extrinsic.Refinement.Semantics.Relation
 import Refinery.Term.Extrinsic.Wf.Basic
+import Refinery.Term.Extrinsic.Refinement.Arrow.Category
