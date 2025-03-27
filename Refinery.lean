@@ -8,3 +8,4 @@ import Refinery.Term.Extrinsic.Semantics.Minimal
 import Refinery.Term.Extrinsic.Semantics.Subst
 import Refinery.Term.Extrinsic.Refinement.Uniform
 import Refinery.Term.Extrinsic.Refinement.Semantics.Relation
+import Refinery.Term.Extrinsic.Wf.Basic

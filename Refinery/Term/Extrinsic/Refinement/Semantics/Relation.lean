@@ -8,11 +8,9 @@ import Refinery.Term.Extrinsic.Refinement.Relation
 namespace Refinery
 
 open CategoryTheory MonoidalCategory' PremonoidalCategory DistributiveCategory
-     ChosenFiniteCoproducts
+     ChosenFiniteCoproducts HasCommRel HasQuant
 
 open scoped MonoidalCategory
-
-open HasCommRel HasQuant
 
 namespace Term
 
