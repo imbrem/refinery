@@ -1,4 +1,5 @@
-import Refinery.Term.Extrinsic.Wf.Wk
+import Refinery.Term.Extrinsic.Wf.LetMove
+import Refinery.Term.Extrinsic.Wf.PreBeta
 import Mathlib.CategoryTheory.Category.Basic
 
 open HasQuant HasPQuant HasCommRel
@@ -98,7 +99,9 @@ instance DRWS.arrowCat (R : DRWS φ α) [R.UWkCongr] : Category (DRWS.Obj R) whe
   Hom := DRWS.Arrow R
   id := DRWS.Arrow.refl R
   comp := DRWS.Arrow.comp
-  id_comp f := by sorry
+  id_comp f := by
+    simp only [Arrow.comp, Arrow.refl, Eqv.letArrow, Arrow.extend1, PreArrow.refl, PreArrow.e]
+    sorry
   comp_id f := by sorry
   assoc f g h := by sorry
 

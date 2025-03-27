@@ -30,11 +30,15 @@ def Wf.wk1 {Γ : Ctx? α} (x : Var? α) [hv : x.del] {v : Var? α} {A : Ty α} (
   : Wf R ((Γ.cons x).cons v) A
   := ⟨_, a.deriv.wk1 x⟩
 
+def Wf.pwk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} (a : Wf R Δ A) : Wf R Γ A
+  := ⟨a.tm, a.deriv.pwk ρ⟩
+
 def Wf.subst {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A : Ty α} (a : Wf R Δ A) : Wf R Γ A
   := ⟨a.tm.subst σ, a.deriv.subst σ⟩
 
 theorem Wf.tm_subst {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A : Ty α} (a : Wf R Δ A)
   : (a.subst σ).tm = a.tm.subst σ := rfl
+
 
 def Wf.rby {Γ : Ctx? α} {A : Ty α} (a b : Wf R Γ A) : Prop := R.refines.rel a.deriv b.deriv
 
@@ -59,21 +63,35 @@ instance Wf.instPreorder (R : DRWS φ α) (Γ : Ctx? α) (A : Ty α) : Preorder 
   le_refl a := a.rby_refl
   le_trans _ _ _ := rby.trans
 
+def Wf.eqv {Γ : Ctx? α} {A : Ty α} (a b : Wf R Γ A) : Prop := a ≤ b ∧ b ≤ a
+
 instance Wf.setoid (R : DRWS φ α) (Γ : Ctx? α) (A : Ty α) : Setoid (Wf R Γ A) where
-    r l r := l ≤ r ∧ r ≤ l
+    r := eqv
     iseqv := {
-      refl a := ⟨le_refl a, le_refl a⟩
+      refl a := ⟨a.rby_refl, a.rby_refl⟩
       symm hab := ⟨hab.right, hab.left⟩
       trans hab hbc := ⟨le_trans hab.left hbc.left, le_trans hbc.right hab.right⟩
     }
 
-theorem Wf.equiv_coh_pair {Γ : Ctx? α} {A : Ty α} {a b : Term φ (Ty α)}
+theorem Wf.eqv_refl (a : Wf R Γ A) : a.eqv a := ⟨a.rby_refl, a.rby_refl⟩
+
+theorem Wf.eqv.symm {Γ : Ctx? α} {A : Ty α} {a b : Wf R Γ A} (h : a.eqv b) : b ≈ a
+  := ⟨h.right, h.left⟩
+
+theorem Wf.eqv_symm_iff {Γ : Ctx? α} {A : Ty α} {a b : Wf R Γ A} : a.eqv b ↔ b.eqv a
+  := ⟨Wf.eqv.symm, Wf.eqv.symm⟩
+
+theorem Wf.eqv.trans {Γ : Ctx? α} {A : Ty α} {a b c : Wf R Γ A}
+  (hab : a.eqv b) (hbc : b.eqv c) : a ≈ c
+  := ⟨le_trans hab.left hbc.left, le_trans hbc.right hab.right⟩
+
+theorem Wf.eqv.coh_pair {Γ : Ctx? α} {A : Ty α} {a b : Term φ (Ty α)}
   {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} {da' : Γ ⊢ a : A} {db' : Γ ⊢ b : A}
-  (h : (⟨a, da⟩ : Wf R Γ A) ≈ ⟨b, db⟩) : (⟨a, da'⟩ : Wf R Γ A) ≈ ⟨b, db'⟩
+  (h : (⟨a, da⟩ : Wf R Γ A).eqv ⟨b, db⟩) : (⟨a, da'⟩ : Wf R Γ A).eqv ⟨b, db'⟩
   := ⟨h.left.coh_pair, h.right.coh_pair⟩
 
-theorem Wf.equiv_coh {Γ : Ctx? α} {A : Ty α} {a b a' b' : Wf R Γ A}
-  (h : a ≈ b) (ha : a.tm = a'.tm) (hb : b.tm = b'.tm) : a' ≈ b'
+theorem Wf.eqv.coh {Γ : Ctx? α} {A : Ty α} {a b a' b' : Wf R Γ A}
+  (h : a.eqv b) (ha : a.tm = a'.tm) (hb : b.tm = b'.tm) : a' ≈ b'
   := ⟨h.left.coh ha hb, h.right.coh hb ha⟩
 
 def Wf.bv {Γ : Ctx? α} {A : Ty α} (i : ℕ) (hv : Γ.At ⟨A, 1⟩ i) : Wf R Γ A
@@ -201,6 +219,23 @@ theorem Wf.equiv_iter_congr {Γ Γl Γr : Ctx? α} {A B : Ty α} (hΓ : Γ.SSpli
   (ha : a ≈ a') (hb : b ≈ b') : (iter hΓ a b) ≈ (iter hΓ a' b')
   := ⟨rby.iter_congr hΓ ha.left hb.left, rby.iter_congr hΓ ha.right hb.right⟩
 
+def Wf.cls {Γ : Ctx? α} {A : Ty α} (a : Wf R Γ A) : Set (Term φ (Ty α))
+  := {b : Term φ (Ty α) | ∃db, a ≈ ⟨b, db⟩}
+
+theorem Wf.eqv.mem_cls {Γ : Ctx? α} {A : Ty α} {a b : Wf R Γ A}
+  (h : a.eqv b) : a.tm ∈ b.cls
+  := ⟨a.deriv, h.symm⟩
+
+theorem Wf.eqv.of_mem_cls {Γ : Ctx? α} {A : Ty α} {a b : Wf R Γ A}
+  (h : a.tm ∈ b.cls) : a ≈ b := by cases h; apply symm; apply coh_pair; assumption
+
+theorem Wf.mem_cls_iff {Γ : Ctx? α} {A : Ty α} {a b : Wf R Γ A}
+  : a.tm ∈ b.cls ↔ a ≈ b := ⟨Wf.eqv.of_mem_cls, Wf.eqv.mem_cls⟩
+
+@[simp]
+theorem Wf.mem_cls {Γ : Ctx? α} {A : Ty α} (a : Wf R Γ A) : a.tm ∈ a.cls
+  := a.eqv_refl.mem_cls
+
 def Eqv (R : DRWS φ α) (Γ : Ctx? α) (A : Ty α) := Quotient (Wf.setoid R Γ A)
 
 def Wf.e {Γ : Ctx? α} {A : Ty α} (a : Wf R Γ A) : Eqv R Γ A := ⟦a⟧
@@ -255,6 +290,10 @@ theorem Eqv.liftOn₃_mk {Γ Δ Ξ : Ctx? α} {A : Ty α} {B : Ty α} {C : Ty α
   (a : Wf R Γ A) (b : Wf R Δ B) (c : Wf R Ξ C) (f : Wf R Γ A → Wf R Δ B → Wf R Ξ C → β) (h)
   : Eqv.liftOn₃ ⟦a⟧ ⟦b⟧ ⟦c⟧ f h = f a b c := rfl
 
+def Eqv.cls {Γ : Ctx? α} {A : Ty α} (a : Eqv R Γ A) : Set (Term φ (Ty α))
+  := a.liftOn Wf.cls (λ_ _ h =>
+    Set.ext (λ_ => ⟨λ⟨dc, h'⟩ => ⟨dc, h.symm.trans h'⟩, λ⟨dc, h'⟩ => ⟨dc, h.trans h'⟩⟩))
+
 def Eqv.rby {Γ : Ctx? α} {A : Ty α} (a b : Eqv R Γ A) : Prop
   := liftOn₂ a b Wf.rby (λ_ _ _ _ ha hb
     => propext ⟨λ r => ha.right.trans (r.trans hb.left), λ r => ha.left.trans (r.trans hb.right)⟩)
@@ -270,6 +309,19 @@ theorem Eqv.sound {Γ : Ctx? α} {A : Ty α} {a b : Wf R Γ A} (h : a ≈ b) : e
 
 theorem Eqv.exact {Γ : Ctx? α} {A : Ty α} {a b : Wf R Γ A} (h : e⟦a⟧ = e⟦b⟧) : a ≈ b
   := Quotient.exact h
+
+theorem Eqv.cls_mk {Γ : Ctx? α} {A : Ty α} (a : Wf R Γ A) : e⟦a⟧.cls = a.cls
+  := rfl
+
+theorem Eqv.cls_injective {Γ : Ctx? α} {A : Ty α}
+  : Function.Injective (Eqv.cls (R := R) (Γ := Γ) (A := A))
+  := λa b h => by
+  induction a, b using Eqv.quotInd₂; apply sound;
+  rw [<-Wf.mem_cls_iff, <-Eqv.cls_mk, <-h]; apply Wf.mem_cls
+
+theorem Eqv.cls_inj {Γ : Ctx? α} {A : Ty α} {a b : Eqv R Γ A}
+  : a.cls = b.cls ↔ a = b
+  := ⟨λh => Eqv.cls_injective h, λh => by cases h; rfl⟩
 
 theorem Wf.rby.eqv {Γ : Ctx? α} {A : Ty α} {a b : Wf R Γ A} (h : a.rby b) : e⟦a⟧.rby e⟦b⟧
   := h
