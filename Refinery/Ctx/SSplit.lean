@@ -617,18 +617,18 @@ theorem Var?.SSplit.wk_sboth_quant {u' : Var? α} {A : Ty α} {q : Quant}
 @[simp]
 theorem Var?.SSplit.leftWk {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.SSplit v w)
   : (σ.wkLeft u') ≤ v := by cases u with | mk A q =>
-    cases q using EQuant.casesZero <;> cases σ <;> first | exact ρ | exact (erase_mono ρ)
+    cases q using EQuant.casesZero <;> cases σ <;> first | exact ρ | exact (Wk.erase ρ)
 
 theorem Var?.SSplit.wk_left_del {u v w : Var? α} (σ : u.SSplit v w) [hv : v.del]
-  : u ≤ w := by cases σ <;> simp [Var?.del.erase_le]
+  : u.Wk w := by cases σ <;> simp [Var?.del.erase_le]
 
 theorem Var?.SSplit.wk_right_del {u v w : Var? α} (σ : u.SSplit v w) [hw : w.del]
-  : u ≤ v := by cases σ <;> simp [Var?.del.erase_le]
+  : u.Wk v := by cases σ <;> simp [Var?.del.erase_le]
 
 @[simp]
 theorem Var?.SSplit.rightWk {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.SSplit v w)
   : (σ.wkRight u') ≤ w := by cases u with | mk A q =>
-    cases q using EQuant.casesZero <;> cases σ <;> first | exact ρ | exact (erase_mono ρ)
+    cases q using EQuant.casesZero <;> cases σ <;> first | exact ρ | exact (Wk.erase ρ)
 
 def Var?.SSplit.wk' {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.SSplit v w) :
   u'.SSplit (σ.wkLeft' u') (σ.wkRight' u') := match u, σ with
@@ -661,12 +661,12 @@ theorem Var?.SSplit.wk_sboth_quant' {u' : Var? α} {A : Ty α} {q : Quant}
 @[simp]
 theorem Var?.SSplit.leftWk' {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.SSplit v w)
   : (σ.wkLeft' u') ≤ v := by cases u with | mk A q =>
-    cases q using EQuant.casesZero <;> cases σ <;> first | exact ρ | exact (erase_mono ρ)
+    cases q using EQuant.casesZero <;> cases σ <;> first | exact ρ | exact (Wk.erase ρ)
 
 @[simp]
 theorem Var?.SSplit.rightWk' {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.SSplit v w)
   : (σ.wkRight' u') ≤ w := by cases u with | mk A q =>
-    cases q using EQuant.casesZero <;> cases σ <;> first | exact ρ | exact (erase_mono ρ)
+    cases q using EQuant.casesZero <;> cases σ <;> first | exact ρ | exact (Wk.erase ρ)
 
 @[simp]
 def Ctx?.SSplit.wkLeft {Γ' Γ Δ Ξ : Ctx? α}
@@ -920,7 +920,7 @@ def Ctx?.erase_left : (Γ : Ctx? α) → Γ.SSplit Γ.erase Γ
   | .cons Γ v => .cons Γ.erase_left (.right v)
 
 theorem Var?.SSplit.wkLeft_quant
-  {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.SSplit v w)
+  {u' u v w : Var? α} (ρ : u'.Wk u) (σ : u.SSplit v w)
   : quant v ≤ quant (σ.wkLeft u') := by cases u with | mk A q =>
     cases q using EQuant.casesZero with
     | zero => cases σ <;> rfl
@@ -928,13 +928,11 @@ theorem Var?.SSplit.wkLeft_quant
       cases σ <;> simp <;>
       cases u' with | mk A' q' =>
       cases q' using EQuant.casesZero with
-      | zero => cases ρ.q using EQuant.le.casesLE
-      | rest q' =>
-        have h := ρ.q; simp only [quant] at h;
-        cases ρ.ty; simp [quant]; apply inf_le_of_left_le; rw [<-EQuant.coe_le_coe]; exact ρ.q
+      | zero => cases ρ.zero_to_quant
+      | rest q' => cases ρ; assumption
 
 theorem Var?.SSplit.wkRight_quant'
-  {u' u v w : Var? α} (ρ : u' ≤ u) (σ : u.SSplit v w)
+  {u' u v w : Var? α} (ρ : u'.Wk u) (σ : u.SSplit v w)
   : quant w ≤ quant (σ.wkRight' u') := by cases u with | mk A q =>
     cases q using EQuant.casesZero with
     | zero => cases σ <;> rfl
@@ -942,10 +940,8 @@ theorem Var?.SSplit.wkRight_quant'
       cases σ <;> simp <;>
       cases u' with | mk A' q' =>
       cases q' using EQuant.casesZero with
-      | zero => cases ρ.q using EQuant.le.casesLE
-      | rest q' =>
-        have h := ρ.q; simp only [quant] at h;
-        cases ρ.ty; simp [quant]; apply inf_le_of_left_le; rw [<-EQuant.coe_le_coe]; exact ρ.q
+      | zero => cases ρ.zero_to_quant
+      | rest q' => cases ρ; assumption
 
 theorem Ctx?.SSplit.wkLeft_quant
   {Γ' Γ Δ Ξ : Ctx? α} (ρ : Γ'.Wk Γ) (σ : Γ.SSplit Δ Ξ)

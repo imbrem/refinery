@@ -43,13 +43,13 @@ theorem Var?.Split.erase_eq_both {u v w : Var? α} (σ : u.Split v w)
 
 theorem Var?.Split.wk_left_zero {u w : Var? α} (σ : u.Split ⟨X, 0⟩ w) : u.Wk w
   := by cases u; cases σ with
-  | neither h => exact ⟨rfl, h.q, λ_ => h⟩
+  | neither h => constructor; assumption
   | left h => cases h.ty; exact h
   | _ => assumption
 
 theorem Var?.Split.wk_right_zero {u v : Var? α} (σ : u.Split v ⟨X, 0⟩) : u.Wk v
   := by cases u; cases σ with
-  | neither h => exact ⟨rfl, h.q, λ_ => h⟩
+  | neither h => constructor; assumption
   | right h => cases h.ty; exact h
   | _ => assumption
 
@@ -74,12 +74,12 @@ theorem Var?.Split.ty_eq_out {u v w : Var? α} (σ : u.Split v w)
 @[simp]
 theorem Var?.Split.zero_not_left_quant {X Y : Ty α} {q : Quant}
   (σ : Split ⟨X, 0⟩ ⟨Y, q⟩ v) : False
-  := by cases σ with | left h | sboth _ h => exact Var?.Wk.not_zero_le h
+  := by cases σ with | left h | sboth _ h => exact Var?.Wk.zero_to_quant h
 
 @[simp]
 theorem Var?.Split.zero_not_right_quant {X Y : Ty α} {q : Quant}
   (σ : Split ⟨X, 0⟩ v ⟨Y, q⟩) : False
-  := by cases σ with | right h | sboth _ _ h => exact Var?.Wk.not_zero_le h
+  := by cases σ with | right h | sboth _ _ h => exact Var?.Wk.zero_to_quant h
 
 theorem Var?.Split.zero_left_quant {X Y : Ty α} {q}
   (σ : Split ⟨X, 0⟩ ⟨Y, q⟩ v) : q = 0
@@ -94,7 +94,7 @@ theorem Var?.Split.zero_right_quant {X Y : Ty α} {q}
 theorem Var?.Split.del_in {u v w : Var? α} (σ : u.Split v w) [hu : v.del] [w.del] : u.del
   := by cases σ with
   | neither => assumption
-  | left h | right h | sboth _ h => apply Var?.del.anti h
+  | left h | right h | sboth _ h => apply h.del
 
 inductive Ctx?.Split : Ctx? α → Ctx? α → Ctx? α → Type _ where
   | nil : Ctx?.Split .nil .nil .nil

@@ -263,6 +263,9 @@ theorem Var?.ZWk.copy {u v : Var? α} (ρ : u.ZWk v) [hu : u.copy] : v.copy := b
 theorem Var?.ZWk.del {u v : Var? α} (ρ : u.ZWk v) [hu : u.del] : v.del := by
   cases ρ <;> infer_instance
 
+theorem Var?.ZWk.antisymm {u v : Var? α} (ρ : u.ZWk v) (σ : v.ZWk u) : u = v := by
+  cases ρ <;> cases σ <;> rfl
+
 inductive Ctx?.ZWk : Ctx? α → Ctx? α → Type _ where
   | nil : Ctx?.ZWk .nil .nil
   | cons {Γ Δ} {v w} (h : Ctx?.ZWk Γ Δ) (hv : v.ZWk w)
@@ -309,7 +312,10 @@ theorem Ctx?.ZWk.del {Γ Δ : Ctx? α} (ρ : Γ.ZWk Δ) [hΓ : Γ.del] : Δ.del 
 theorem Ctx?.ZWk.zqeq {Γ Δ : Ctx? α} (ρ : Γ.ZWk Δ) : Γ.ZQEq Δ
   := by induction ρ <;> simp [*]; apply Var?.ZWk.zqeq; assumption
 
-theorem Ctx?.ZWk.antisymm  {Γ Δ : Ctx? α} (ρ : Γ.ZWk Δ) (σ : Δ.ZWk Γ) : Γ = Δ := PWk.antisymm ρ σ
+theorem Ctx?.ZWk.antisymm  {Γ Δ : Ctx? α} (ρ : Γ.ZWk Δ) (σ : Δ.ZWk Γ) : Γ = Δ := by
+  induction ρ with
+  | nil => rfl
+  | cons => cases σ; congr; apply_assumption; assumption; apply Var?.ZWk.antisymm <;> assumption
 
 def Var?.SSplit.fuseCtx {u v w v' w' : Var? α} : u.SSplit v w → v.ZWk v' → w.ZWk w' → Var? α
   | .left _, .refl _, _ => u

@@ -211,17 +211,19 @@ instance Var?.del.instDelQuant (A : Ty α) [IsAff A] : (⟨A, .del⟩ : Var? α)
 instance Var?.copy.instCopyQuant (A : Ty α) [IsRel A] : (⟨A, .copy⟩ : Var? α).copy
   := by simp [copy_iff, scopy_iff, *]
 
-theorem Ctx?.quant_le_of_quant_le_cons (Γ : Ctx? α) (h : q ≤ quant (Γ.cons v)) : q ≤ quant Γ
-  := by simp at h; exact h.1
+theorem Ctx?.quant_le_of_quant_le_cons (Γ : Ctx? α) (h : q ≤ quant (Γ.cons v))
+  : q ≤ quant Γ := by simp at h; exact h.1
 
-theorem Ctx?.quant_le_var_of_quant_le_cons (Γ : Ctx? α) (h : q ≤ quant (Γ.cons v)) : q ≤ quant v
-  := by simp at h; exact h.2
+theorem Ctx?.quant_le_var_of_quant_le_cons (Γ : Ctx? α) (h : q ≤ quant (Γ.cons v))
+  : q ≤ quant v := by simp at h; exact h.2
 
+@[simp]
 instance Var?.copy.ety_rel (v : Var? α) [h : v.copy] : IsRel v.ety := by
   cases v with | mk A q => cases q using EQuant.casesZero with
   | zero => simp only [ety]; infer_instance
   | rest => simp [quant, IsRel.is_rel_iff] at h; exact ⟨h.2⟩
 
+@[simp]
 instance Var?.del.ety_aff (v : Var? α) [h : v.del] : IsAff v.ety := by
   cases v with | mk A q => cases q using EQuant.casesZero with
   | zero => simp only [ety]; infer_instance
@@ -297,33 +299,65 @@ instance Ctx?.ety_aff_of_del {Γ : Ctx? α} [h : Γ.del] : IsAff (Ctx?.ety Γ) :
     simp only [ety]
     apply IsAff.tensor
 
-structure Var?.Wk (v w : Var? α) : Prop where
-  ty : v.ty = w.ty
-  q : w.q ≤ v.q
-  unused_del : w.unused → v.del
+inductive Var?.Wk : Var? α → Var? α → Prop where
+  | drop {A : Ty α} {q : EQuant} (h : Var?.del ⟨A, q⟩) : Wk ⟨A, q⟩ ⟨A, 0⟩
+  | wk {A : Ty α} {q q' : Quant} (h : q' ⊓ quant A ≤ q ⊓ quant A) : Wk ⟨A, q⟩ ⟨A, q'⟩
 
 instance Var?.instLE : LE (Var? α) := ⟨Wk⟩
 
-theorem Var?.erase_mono {v w : Var? α} (h : v ≤ w) : v.erase ≤ w.erase := by
-  cases v with | mk A q => cases w with | mk A' q' =>
-    exact ⟨h.ty, le_refl _, λ_ => inferInstance⟩
+theorem Var?.Wk.ty {v w : Var? α} (h : v.Wk w) : v.ty = w.ty := by cases h <;> rfl
 
-theorem Var?.used.anti {v w : Var? α} (h : v ≤ w) (hw : w.used) : v.used := hw.trans h.q
+theorem Var?.Wk.erase {v w : Var? α} (h : v.Wk w) : v.erase ≤ w.erase
+  := by cases v; cases w; cases h.ty; exact .drop inferInstance
+
+theorem Var?.Wk.unused_del {v w : Var? α} (h : v.Wk w) (hw : w.unused) : v.del := by cases h with
+  | drop => assumption
+  | wk => simp at hw
+
+theorem Var?.Wk.used {v w : Var? α} (h : v.Wk w) (hw : w.used) : v.used
+  := by cases h with | drop => cases hw | wk => simp
+
+theorem Var?.used.anti {v w : Var? α} (h : v.Wk w) (hw : w.used) : v.used
+  := h.used hw
 
 theorem Var?.unused.mono {v w : Var? α} (h : v ≤ w) : (hv : v.unused) → w.unused
   := by simp only [unused_iff, not_imp_not]; exact used.anti h
 
-theorem Var?.del.anti {v w : Var? α} (h : v ≤ w) [hw : w.del] : v.del := open Classical in
-  if hw' : w.used then
-    by rw [del_iff] at *; exact ⟨hw.1.trans h.q, λ_ => h.ty ▸ hw.2 hw'⟩
-  else
-    h.unused_del (unused_iff.mpr hw')
+theorem Var?.Wk.del {v w : Var? α} (h : v.Wk w) [hw : w.del] : v.del := by
+  cases h with
+  | drop => assumption
+  | wk =>
+    constructor
+    apply le_trans hw.del_le_quant
+    assumption
+
+theorem Var?.del.anti {v w : Var? α} (h : v ≤ w) (hw : w.del) : v.del := h.del
 
 theorem Var?.del.wk {v w : Var? α} (ρ : v ≤ w) (hw : w.del) : v.del := hw.anti ρ
 
-theorem Var?.scopy.anti {v w : Var? α} (h : v ≤ w) (hw : w.scopy) : v.scopy where
-  q := hw.q.trans h.q
+theorem Var?.scopy.zero {A : Ty α} (h : Var?.scopy ⟨A, 0⟩) : False := by
+  have h := h.q; simp at h
+
+theorem Var?.Wk.zero_to_quant {A B : Ty α} {q : Quant} (h : Var?.Wk ⟨A, 0⟩ ⟨B, q⟩) : False
+  := by cases h
+
+theorem Var?.Wk.scopy {v w : Var? α} (h : v.Wk w) (hw : w.scopy) : v.scopy where
+  q := by cases h with
+    | drop => cases hw.q using EQuant.le.casesLE
+    | wk h =>
+      rename_i A q q'
+      cases q with
+      | top | copy => simp [EQuant.copy]
+      | one | del =>
+        have hwt := hw.ty.copy_le_quant
+        generalize hqA : quant A = qA
+        simp only [hqA] at *
+        cases hw.q using Quant.le.casesOn_all
+        <;> cases hwt using Quant.le.casesOn_all
+        <;> cases h using Quant.le.casesOn_all
   ty := h.ty ▸ hw.ty
+
+theorem Var?.scopy.anti {v w : Var? α} (h : v ≤ w) (hw : w.scopy) : v.scopy := h.scopy hw
 
 theorem Var?.used.scopy_anti {v w : Var? α} (h : v ≤ w) (hw' : w.used) [hw : w.copy] : v.scopy
   := by rw [copy_iff] at *; exact (hw hw').anti h
@@ -331,46 +365,40 @@ theorem Var?.used.scopy_anti {v w : Var? α} (h : v ≤ w) (hw' : w.used) [hw : 
 theorem Var?.copy.anti {v w : Var? α} (h : v ≤ w) [hw : w.copy] (hw' : w.used) : v.copy
   := (hw'.scopy_anti h).copy
 
-theorem Var?.used.quant_anti {v w : Var? α} (h : v ≤ w) (hw : w.used) : quant w ≤ quant v := by
-  cases w with | mk A q =>
-    cases q using EQuant.casesZero with
-    | zero => cases hw
-    | rest => cases v; cases h.ty; cases h.q using EQuant.le.casesLE <;> simp [quant]
+theorem Var?.used.quant_anti {v w : Var? α} (h : v.Wk w) (hw : w.used) : quant w ≤ quant v
+  := by cases h with | drop => cases hw | wk => assumption
 
-theorem Var?.Wk.refl (v : Var? α) : v.Wk v := ⟨rfl, le_refl _, λh => h.del⟩
+@[simp]
+theorem Var?.Wk.refl (v : Var? α) : v.Wk v
+  := by cases v using Var?.casesZero <;> constructor <;> simp
 
-theorem Var?.Wk.comp {u v w : Var? α} (h : u.Wk v) (h' : v.Wk w) : u.Wk w
-  := ⟨h.ty.trans h'.ty, h'.q.trans h.q, λx => (x.del.anti h').anti h⟩
+theorem Var?.Wk.comp {u v w : Var? α} (ρuv : u.Wk v) (ρvw : v.Wk w) : u.Wk w
+  := by cases ρuv with
+  | drop => cases ρvw; constructor; assumption
+  | wk h => cases ρvw with
+  | drop h' => constructor; constructor; apply le_trans h'.del_le_quant h
+  | wk h' => constructor; apply le_trans h' h
 
-theorem Var?.Wk.del {v w : Var? α} (h : v.Wk w) [hv : w.del] : v.del := Var?.del.anti h
-
-instance Var?.instPartialOrder : PartialOrder (Var? α) where
+instance Var?.instPreorder : Preorder (Var? α) where
   le_refl _ := Wk.refl _
   le_trans _ _ _ h h' := Wk.comp h h'
-  le_antisymm _ _ h h' := ext h.ty (le_antisymm h'.q h.q)
 
-theorem Var?.Wk.ety_aff {v w : Var? α} (h : v.Wk w) (hv : IsAff v.ety) : IsAff w.ety
-  := by cases w using Var?.casesZero with
-  | zero A => infer_instance
-  | rest A q => cases v using Var?.casesZero with
-    | zero A => cases h.ty; cases h.q using EQuant.le.casesLE
-    | rest A q => cases h.ty; exact hv
+--TODO: this induces a setoid on variables
 
-theorem Var?.Wk.ety_aff' {v w : Var? α} (h : v.Wk w) (hv : IsAff w.ety) : IsAff v.ety
-  := by cases v using Var?.casesZero with
-  | zero A => infer_instance
-  | rest A q => cases w using Var?.casesZero with
-    | zero A => exact ⟨le_trans (h.unused_del (by simp)).del_le_quant (by simp [quant, ety])⟩
-    | rest A q => cases h.ty; exact hv
+theorem Var?.Wk.ety_aff {v w : Var? α} (ρ : v.Wk w) (hv : IsAff v.ety) : IsAff w.ety
+  := by cases ρ <;> simp [*]
 
-theorem Var?.Wk.ety_aff_zero {B : Ty α} (h : v ≤ Var?.mk B 0)
-  : IsAff v.ety := del.ety_aff _ (h := del.anti h)
+theorem Var?.Wk.ety_aff' {v w : Var? α} (ρ : v.Wk w) (hv : IsAff w.ety) : IsAff v.ety
+  := by cases ρ <;> simp [*]
 
-theorem Var?.Wk.ety_eq_quant {B : Ty α} {q : Quant} (h : v ≤ Var?.mk B q)
-  : v.ety = B := by
-  cases v with | mk A q' => cases q' using EQuant.casesZero with
-  | zero => cases h.q using EQuant.le.casesLE
-  | rest => cases h.ty; rfl
+theorem Var?.Wk.ety_aff_iff {v w : Var? α} (ρ : v.Wk w)
+  : IsAff v.ety ↔ IsAff w.ety := ⟨ρ.ety_aff, ρ.ety_aff'⟩
+
+theorem Var?.Wk.ety_aff_zero {B : Ty α} (ρ : Wk v (Var?.mk B 0))
+  : IsAff v.ety := del.ety_aff _ (h := ρ.del)
+
+theorem Var?.Wk.ety_eq_quant {B : Ty α} {q : Quant} (ρ : Wk v (Var?.mk B q))
+  : v.ety = B := by cases ρ; rfl
 
 theorem Var?.Wk.ety_eq_used {v w : Var? α} (h : v ≤ w) (hw : w.used) : v.ety = w.ety := by
   cases w with | mk A q =>
@@ -378,53 +406,59 @@ theorem Var?.Wk.ety_eq_used {v w : Var? α} (h : v ≤ w) (hw : w.used) : v.ety 
     | zero => cases hw
     | rest => rw [ety_eq_quant h]
 
-theorem Var?.del.erase_le (v : Var? α) [hv : v.del] : v ≤ v.erase := ⟨
-  rfl,
-  by cases v with | mk A q => cases q using EQuant.casesZero with | zero => rfl | rest q =>
-    simp [IsAff.is_aff_iff', quant] at *; apply le_trans hv; simp,
-  λ_ => hv
-⟩
+@[simp]
+theorem Var?.del.erase_le (v : Var? α) [hv : v.del] : v.Wk v.erase
+  := by cases v; constructor; assumption
 
-theorem Var?.del.of_erase_le {v : Var? α} (h : v ≤ v.erase) : v.del := by
-  cases v with | mk A q => cases q using EQuant.casesZero with
-  | zero => infer_instance
-  | rest q => exact h.unused_del (by simp)
+theorem Var?.del.of_erase_le {v : Var? α} (ρ : v.Wk v.erase) : v.del
+  := by cases ρ; assumption
 
 theorem Var?.del_iff_erase_le {v : Var? α} : v.del ↔ v ≤ v.erase
   := ⟨λ_ => del.erase_le v, del.of_erase_le⟩
 
-theorem Var?.Wk.quant_le_quant_iff  {A B : Ty α} {q q' : Quant}
-  : Var?.mk A q ≤ Var?.mk B q' ↔ A = B ∧ q' ≤ q :=
-  ⟨λh => ⟨h.ty, h.q⟩, λ⟨ht, hq⟩ => ⟨ht, hq, (by simp)⟩⟩
+@[simp]
+theorem Var?.Wk.top_wk_quant {A : Ty α} {q : Quant}
+  : (Var?.mk A ⊤).Wk (Var?.mk A q) := by constructor; simp
 
-theorem Var?.Wk.not_zero_le {A B : Ty α} {q : Quant}  (h : (Var?.mk A 0).Wk ⟨B, q⟩) : False
-  := by cases h.q using EQuant.le.casesLE
+@[simp]
+theorem Var?.Wk.top_wk_one {A : Ty α}
+  : (Var?.mk A ⊤).Wk (Var?.mk A 1) := Var?.Wk.top_wk_quant
+
+@[simp]
+theorem Var?.Wk.quant_wk_one {A : Ty α} {q : Quant}
+  : (Var?.mk A q).Wk (Var?.mk A 1) := by constructor; simp
+
+@[simp]
+theorem Var?.Wk.zero_wk_quant_iff {A B : Ty α} {q : Quant} : (Var?.mk A 0).Wk ⟨B, q⟩ ↔ False
+  := by rw [iff_false]; apply Wk.zero_to_quant
+
+theorem Var?.Wk.eq_wk_mk
+  {A B : Ty α} {q q' : EQuant} (ρ : (Var?.mk A q).Wk (Var?.mk B q')) : A = B
+  := by cases ρ <;> rfl
+
+@[simp]
+theorem Var?.Wk.zero_wk_zero_iff {A B : Ty α} : (Var?.mk A 0).Wk (Var?.mk B 0) ↔ A = B
+  := ⟨λρ => ρ.eq_wk_mk, λh => by cases h; constructor; simp⟩
 
 @[simp]
 theorem Var?.Wk.top_le_quant {A : Ty α} {q : Quant}
-  : (Var?.mk A ⊤ ≤ Var?.mk A q) := ⟨rfl, le_top, λh => by cases h⟩
+  : (Var?.mk A ⊤ ≤ Var?.mk A q) := top_wk_quant
 
 @[simp]
 theorem Var?.Wk.top_le_one {A : Ty α}
-  : (Var?.mk A ⊤ ≤ Var?.mk A 1) := Var?.Wk.top_le_quant
+  : (Var?.mk A ⊤ ≤ Var?.mk A 1) := top_wk_one
 
 @[simp]
 theorem Var?.Wk.quant_le_one {A : Ty α} {q : Quant}
-  : (Var?.mk A q ≤ Var?.mk A 1) := ⟨rfl, by simp, λh => by cases h⟩
+  : (Var?.mk A q ≤ Var?.mk A 1) := quant_wk_one
 
 @[simp]
 theorem Var?.Wk.zero_le_quant_iff {A B : Ty α} {q : Quant} : (Var?.mk A 0 ≤ ⟨B, q⟩) ↔ False
-  := by rw [iff_false]; apply not_zero_le
-
-@[simp]
-theorem Var?.Wk.le_quant_iff  {A B : Ty α} {q : EQuant} {q' : Quant}
-  : Var?.mk A q ≤ Var?.mk B q' ↔ A = B ∧ q' ≤ q := by cases q using EQuant.casesZero with
-  | zero => simp only [zero_le_quant_iff, false_iff, not_and]; intro h; cases q' <;> decide
-  | rest => simp [quant_le_quant_iff]
+  := zero_wk_quant_iff
 
 @[simp]
 theorem Var?.Wk.zero_le_zero_iff {A B : Ty α} : Var?.mk A 0 ≤ Var?.mk B 0 ↔ A = B
-  := ⟨λh => h.ty, λh => ⟨h, le_refl _, by simp⟩⟩
+  := zero_wk_zero_iff
 
 theorem Var?.Wk.zero_le_iff {A} {v : Var? α} : ⟨A, 0⟩ ≤ v ↔ A = v.ty ∧ v.unused
   := by cases v with | mk B q => cases q using EQuant.casesZero <;> simp
@@ -432,13 +466,13 @@ theorem Var?.Wk.zero_le_iff {A} {v : Var? α} : ⟨A, 0⟩ ≤ v ↔ A = v.ty �
 theorem Var?.Wk.zero_le_unused {A} {v : Var? α} (h : ⟨A, 0⟩ ≤ v) : v.unused
   := by cases v with | mk B q => cases q using EQuant.casesZero with
   | zero => rfl
-  | rest q => exact h.not_zero_le.elim
+  | rest q => exact h.zero_to_quant.elim
 
 theorem Var?.Wk.erase_eq {v w : Var? α} (h : v.Wk w) : v.erase = w.erase
   := by cases v; cases w; cases h.ty; rfl
 
-theorem Var?.Wk.eq_zero {w : Var? α} (h : Wk ⟨A, 0⟩ w) : w = ⟨A, 0⟩
-  := by cases w; cases h.ty; cases h.q using EQuant.le.casesLE; rfl
+theorem Var?.Wk.eq_zero {w : Var? α} (ρ : Wk ⟨A, 0⟩ w) : w = ⟨A, 0⟩
+  := by cases ρ; rfl
 
 theorem Var?.Wk.eq_erase {v w : Var? α} (h : v.erase.Wk w) : w = v.erase
   := h.eq_zero
@@ -469,11 +503,11 @@ def Ctx?.PWk.comp {Γ Δ Ξ : Ctx? α} : (ρ : PWk Γ Δ) → (ρ' : PWk Δ Ξ) 
 instance Ctx?.PWk.instSubsingleton {Γ Δ : Ctx? α} : Subsingleton (PWk Γ Δ) where
   allEq ρ ρ' := by induction ρ <;> cases ρ' <;> simp; apply_assumption
 
-theorem Ctx?.PWk.antisymm {Γ Δ : Ctx? α} (h : PWk Γ Δ) (h' : PWk Δ Γ) : Γ = Δ := by
-  induction h with
-  | nil => rfl
-  | cons h hvw I => cases h' with
-  | cons h' hwv => rw [I h', le_antisymm hvw hwv]
+-- theorem Ctx?.PWk.antisymm {Γ Δ : Ctx? α} (h : PWk Γ Δ) (h' : PWk Δ Γ) : Γ = Δ := by
+--   induction h with
+--   | nil => rfl
+--   | cons h hvw I => cases h' with
+--   | cons h' hwv => rw [I h', le_antisymm hvw hwv]
 
 theorem Ctx?.PWk.length {Γ Δ : Ctx? α} (h : PWk Γ Δ) : Ctx?.length Γ = Ctx?.length Δ
   := by induction h <;> simp [*]
@@ -509,9 +543,9 @@ theorem Ctx?.Wk.toWk_toPWk {Γ Δ : Ctx? α} (h : Γ.length = Δ.length) (ρ : W
   | skip ρ => have _ := ρ.length; simp at h; omega
   | _ => simp [*]
 
-theorem Ctx?.Wk.antisymm {Γ Δ : Ctx? α} (h : Wk Γ Δ) (h' : Wk Δ Γ) : Γ = Δ :=
-  have hl := le_antisymm h'.length h.length
-  PWk.antisymm (h.toPWk hl) (h'.toPWk (hl.symm))
+-- theorem Ctx?.Wk.antisymm {Γ Δ : Ctx? α} (h : Wk Γ Δ) (h' : Wk Δ Γ) : Γ = Δ :=
+--   have hl := le_antisymm h'.length h.length
+--   PWk.antisymm (h.toPWk hl) (h'.toPWk (hl.symm))
 
 -- toPWk is a faithful functor
 theorem Ctx?.Wk.eq_pwk {Γ Δ : Ctx? α} (ρ : Wk Γ Δ) (h : Γ.length = Δ.length)
@@ -566,7 +600,7 @@ def Ctx?.wk0 (Γ : Ctx? α) (v : Var? α) [hv : v.del] : Wk (Γ.cons v) Γ := (W
 def Ctx?.Wk.comp {Γ Δ Ξ : Ctx? α} : Wk Γ Δ → Wk Δ Ξ → Wk Γ Ξ
   | .nil, .nil => .nil
   | .cons h hv, .cons h' hv' => .cons (h.comp h') (hv.trans hv')
-  | .cons h hv, .skip h' hv' => .skip (h.comp h') (Var?.del.anti hv)
+  | .cons h hv, .skip h' hv' => .skip (h.comp h') hv.del
   | .skip h hv, h' => .skip (h.comp h') hv
 
 @[simp]
@@ -707,7 +741,7 @@ theorem Ctx?.del.wk {Γ Δ : Ctx? α} (h : Γ.Wk Δ) [hΔ : Δ.del] : Γ.del := 
   | cons Γ hvw I =>
     have _ := I hΔ.tail
     have _ := hΔ.head
-    have hv := Var?.del.anti hvw
+    have hv := Var?.Wk.del hvw
     infer_instance
   | skip _ _ I =>
     have _ := I hΔ
@@ -788,7 +822,7 @@ theorem Var?.Ix.wk_comp {Γ Δ Ξ : Ctx? α} (h : Γ.Wk Δ) (h' : Δ.Wk Ξ) {v} 
 @[simp]
 theorem Var?.Ix.succ_wk_cons {Γ Δ : Ctx? α} (h : Γ.Wk Δ)
   {v v' : Var? α} (hv : v ≤ v') [hv' : IsAff v'] {w} (x : Ix Δ w)
-  : (succ _ x).wk (h.cons hv) = (succ _ (h := del.anti hv) (x.wk h)) := rfl
+  : (succ _ x).wk (h.cons hv) = (succ _ (h := hv.del) (x.wk h)) := rfl
 
 @[simp]
 theorem Var?.Ix.wk_skip {Γ Δ : Ctx? α} (h : Γ.Wk Δ)

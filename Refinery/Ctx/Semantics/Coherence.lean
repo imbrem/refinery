@@ -152,7 +152,7 @@ theorem Var?.Split.den_wkIn {u' u v w : Var? α} (ρ : u'.Wk u) (σ : u.Split v 
   | rest => cases w using Var?.casesZero with
   | zero _ => simp [den_right_zero]
   | rest => cases u' using Var?.casesZero with
-  | zero => cases ρ.not_zero_le
+  | zero => cases ρ.zero_to_quant
   | rest =>
     cases ρ.ty
     cases σ.ty_eq_left
@@ -163,7 +163,7 @@ theorem Var?.Split.den_wkIn {u' u v w : Var? α} (ρ : u'.Wk u) (σ : u.Split v 
 theorem Var?.Split.den_wkOutL {u v v' w : Var? α} (σ : u.Split v w) (ρ : v.Wk v')
   : σ.den (C := C) ≫ ρ.den ▷ _ = (σ.wkOutL ρ).den
   := by cases v using Var?.casesZero with
-  | zero _ => cases v'; cases ρ.ty; cases ρ.q using EQuant.le.casesLE; simp [den_left_zero]
+  | zero _ => cases v'; cases ρ; simp [den_left_zero]
   | rest => cases u using Var?.casesZero with
   | zero => cases σ.zero_not_left_quant
   | rest => cases σ.ty_eq_left; cases σ.ty_eq_right; cases w using Var?.casesZero with
@@ -178,7 +178,7 @@ theorem Var?.Split.den_wkOutL {u v v' w : Var? α} (σ : u.Split v w) (ρ : v.Wk
 theorem Var?.Split.den_wkOutR {u v w w' : Var? α} (σ : u.Split v w) (ρ : w.Wk w')
   : σ.den (C := C) ≫ _ ◁ ρ.den = (σ.wkOutR ρ).den
   := by cases w using Var?.casesZero with
-  | zero _ => cases w'; cases ρ.ty; cases ρ.q using EQuant.le.casesLE; simp [den_right_zero]
+  | zero _ => cases ρ; simp [den_right_zero]
   | rest => cases u using Var?.casesZero with
   | zero => cases σ.zero_not_right_quant
   | rest => cases σ.ty_eq_left; cases σ.ty_eq_right; cases v using Var?.casesZero with

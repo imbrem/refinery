@@ -61,10 +61,9 @@ theorem Var?.Wk.den_erase {v  w: Var? α} (h : v ≤ w.erase)
   : Var?.Wk.den (C := C) h = (haveI _ := h.unused_del rfl; !_ _)
   := by simp
 
-theorem Var?.Wk.den_quant {v : Var? α} {A : Ty α} {q : Quant} (h : v.Wk ⟨A, q⟩)
-  : Var?.Wk.den (C := C) h = eqToHom (by rw [ety_eq_quant h])
-  := by cases v with | mk _ q' =>
-        cases q' with | zero => have h := h.q; cases h using EQuant.le.casesLE | _ => rfl
+theorem Var?.Wk.den_quant {v : Var? α} {A : Ty α} {q : Quant} (ρ : v.Wk ⟨A, q⟩)
+  : Var?.Wk.den (C := C) ρ = eqToHom (by rw [ety_eq_quant ρ])
+  := by cases v with | mk _ q' => cases q' with | zero => cases ρ | _ => rfl
 
 @[simp]
 theorem Var?.Wk.den_used {v w : Var? α} (h : v.Wk w) (hw : w.used)
@@ -235,7 +234,7 @@ theorem Var?.Wk.den_comp {u v w : Var? α} (h : u ≤ v) (h' : v ≤ w)
       simp
       exact M.drop_aff (⊥ : ε) _ (hA := ety_aff_zero (le_trans h h')) (hB := ety_aff_zero h')
     | rest qw =>  cases qv using EQuant.casesZero with
-    | zero => cases h'.q using EQuant.le.casesLE
+    | zero => cases h'.zero_to_quant
     | rest qv => simp
 
 @[reassoc]
@@ -254,18 +253,17 @@ theorem Var?.del.den_unused {v : Var? α} (hv : v.unused)
   := by cases v; cases hv; simp [M.drop_unit]
 
 @[simp]
-theorem Var?.Wk.den_from_unused {v w : Var? α} (h : v ≤ w) (h' : v.unused)
-  : Var?.Wk.den (C := C) h
-  = eqToHom (by cases v; cases w; cases h'; cases h.q using EQuant.le.casesLE; rfl)
-  := by cases v; cases w; cases h'; cases h.q using EQuant.le.casesLE;
-        simp [den_zero (C := C) h, M.drop_unit]
+theorem Var?.Wk.den_from_unused {v w : Var? α} (ρ : v.Wk w) (h' : v.unused)
+  : Var?.Wk.den (C := C) ρ
+  = eqToHom (by cases v; cases w; cases h'; cases ρ; rfl)
+  := by cases v; cases w; cases h'; cases ρ; simp [den_zero (C := C) _, M.drop_unit]
 
-theorem Var?.Wk.den_from_zero {v : Var? α} {A : Ty α} (h : ⟨A, 0⟩ ≤ v)
-  : Var?.Wk.den (C := C) h = eqToHom (by cases v; cases h.q using EQuant.le.casesLE; rfl)
+theorem Var?.Wk.den_from_zero {v : Var? α} {A : Ty α} (ρ : Var?.Wk ⟨A, 0⟩ v)
+  : Var?.Wk.den (C := C) ρ = eqToHom (by cases v; cases ρ; rfl)
   := by simp
 
-theorem Var?.Wk.den_from_erase {v w : Var? α} (h : v.erase ≤ w)
-  : Var?.Wk.den (C := C) h = eqToHom (by cases v; cases w; cases h.q using EQuant.le.casesLE; rfl)
+theorem Var?.Wk.den_from_erase {v w : Var? α} (ρ : v.erase.Wk w)
+  : Var?.Wk.den (C := C) ρ = eqToHom (by cases ρ; rfl)
   := by simp
 
 @[simp]
