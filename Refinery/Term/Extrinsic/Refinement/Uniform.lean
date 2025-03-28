@@ -345,6 +345,9 @@ instance DRWS.cohere_coherent (R : DRWS φ α) : Coherent R.cohere := R.toRWS.to
 
 theorem DRWS.cohere_increasing (R : DRWS φ α) : R ≤ R.cohere := λ_ _ _ _ _ _ h => ⟨_, _, h⟩
 
+theorem DRWS.coherent_cohere (R : DRWS φ α) [hR : R.Coherent] : R.cohere = R
+  := le_antisymm (λ_ _ _ _ _ _ ⟨_, _, h⟩ => h.coh _ _) R.cohere_increasing
+
 theorem DRWS.cohere.mono {R R' : DRWS φ α} {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A}
   (hR : R ≤ R') (h : R.cohere.rel da db) : R'.cohere.rel da db
   := have ⟨da, db, h⟩ := h; ⟨da, db, hR _ _ _ _ _ _ h⟩

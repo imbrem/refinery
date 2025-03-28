@@ -42,3 +42,9 @@ def Eqv.wk0 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {A : Ty α} (a : Eqv R Γ 
 def Eqv.wk1 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {v : Var? α} {A : Ty α} (a : Eqv R (Γ.cons v) A)
   : Eqv R ((Γ.cons x).cons v) A
   := a.liftOn (λ a => e⟦a.wk1 x⟧) (λ_ _ h => sound <| Wf.eqv.wk1_congr x h)
+
+def Eqv.pwk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} (a : Eqv R Δ A) : Eqv R Γ A
+  := a.liftOn (λ a => e⟦a.pwk ρ⟧) (λ_ _ h => sound <| Wf.eqv.pwk_congr ρ h)
+
+theorem Eqv.pwk_mk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} {a : Wf R Δ A}
+  : Eqv.pwk ρ (e⟦a⟧) = e⟦a.pwk ρ⟧ := rfl
