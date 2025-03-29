@@ -1,5 +1,6 @@
 import Refinery.Term.Extrinsic.Refinement.Wk.Relation
 import Refinery.Term.Extrinsic.Wf.Wk
+import Refinery.Term.Extrinsic.FreeVar
 
 open HasQuant HasPQuant HasCommRel
 
@@ -88,3 +89,26 @@ theorem Eqv.let₁_eta'
 
 theorem Eqv.let₁_eta {Γ : Ctx? α} {A : Ty α} (a : Eqv R Γ A) : a.let₁ Γ.erase_left .bv0 = a := by
   induction a using Eqv.quotInd; apply sound; apply Wf.let₁_eta
+
+theorem Wf.let₁_bv0 {Γ : Ctx? α} {A B : Ty α} (a : Wf R (Γ.cons ⟨A, ⊤⟩) B)
+  : Wf.bv0.let₁ (Γ.erase_right.cons (.right ⟨A, ⊤⟩)) (a.wk1 ⟨A, 0⟩) ≈ a
+  := by
+    apply (Wf.pre_beta_pureIn
+      (Γ.erase_right.cons (.right ⟨A, ⊤⟩)) .bv0 (quant A) (by simp; simp [quant])
+        ((a.pwk ((Ctx?.PWk.refl _).cons (.wk (by simp)))).wk1 _) (ha := by simp [bv0])).coh
+    · rfl
+    · cases a;
+      simp only [subst, EQuant.coe_top, pwk, wk1, ← subst_renIn]
+      apply Subst.subst1_fvi
+      intro x hx
+      cases x; rfl
+      simp [SubstDS.refl, SubstDS.refl_get]
+      split
+      rfl
+      have hd := Deriv.fvi_le_length (by assumption)
+      simp only [Ctx?.length_cons] at hd
+      omega
+
+theorem Eqv.let₁_bv0 [R.UWkCongr] {Γ : Ctx? α} {A B : Ty α} (a : Eqv R (Γ.cons ⟨A, ⊤⟩) B)
+  : Eqv.bv0.let₁ (Γ.erase_right.cons (.right ⟨A, ⊤⟩)) (a.wk1 ⟨A, 0⟩) = a
+  := by induction a using Eqv.quotInd; apply sound; apply Wf.let₁_bv0

@@ -39,7 +39,6 @@ def Wf.subst {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A : Ty α} (a : Wf R Δ 
 theorem Wf.tm_subst {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A : Ty α} (a : Wf R Δ A)
   : (a.subst σ).tm = a.tm.subst σ := rfl
 
-
 def Wf.rby {Γ : Ctx? α} {A : Ty α} (a b : Wf R Γ A) : Prop := R.refines.rel a.deriv b.deriv
 
 theorem Wf.rby_refl {Γ : Ctx? α} {A : Ty α} (a : Wf R Γ A) : a.rby a
@@ -93,6 +92,9 @@ theorem Wf.eqv.coh_pair {Γ : Ctx? α} {A : Ty α} {a b : Term φ (Ty α)}
 theorem Wf.eqv.coh {Γ : Ctx? α} {A : Ty α} {a b a' b' : Wf R Γ A}
   (h : a.eqv b) (ha : a.tm = a'.tm) (hb : b.tm = b'.tm) : a' ≈ b'
   := ⟨h.left.coh ha hb, h.right.coh hb ha⟩
+
+theorem Wf.eqv.of_tm {Γ : Ctx? α} {A : Ty α} {a b : Wf R Γ A}
+  (h : a.tm = b.tm) : a ≈ b := a.eqv_refl.coh rfl h
 
 def Wf.bv {Γ : Ctx? α} {A : Ty α} (i : ℕ) (hv : Γ.At ⟨A, 1⟩ i) : Wf R Γ A
   := ⟨.bv i, .bv hv⟩
@@ -177,43 +179,43 @@ theorem Wf.rby.iter_congr {Γ Γl Γr : Ctx? α} {A B : Ty α} (hΓ : Γ.SSplit 
   (ha : a.rby a') (hb : b.rby b') : (iter hΓ a b).rby (iter hΓ  a' b')
   := DRWS.uniform.iter hΓ hc hd ha hb
 
-theorem Wf.equiv_op_congr {Γ : Ctx? α} {f : φ} {A B} (hf : S.FnTy f A B)
+theorem Wf.eqv.op_congr {Γ : Ctx? α} {f : φ} {A B} (hf : S.FnTy f A B)
   {a a' : Wf R Γ A} (ha : a ≈ a') : (op hf a) ≈ (op hf a')
   := ⟨rby.op_congr hf ha.left, rby.op_congr hf ha.right⟩
 
-theorem Wf.equiv_let₁_congr {Γ Γl Γr : Ctx? α} {A B} (hΓ : Γ.SSplit Γl Γr)
+theorem Wf.eqv.let₁_congr {Γ Γl Γr : Ctx? α} {A B} (hΓ : Γ.SSplit Γl Γr)
   {a a' : Wf R Γr A} {b b' : Wf R (Γl.cons ⟨A, ⊤⟩) B}
   (ha : a ≈ a') (hb : b ≈ b') : (let₁ hΓ a b) ≈ (let₁ hΓ a' b')
   := ⟨rby.let₁_congr hΓ ha.left hb.left, rby.let₁_congr hΓ ha.right hb.right⟩
 
-theorem Wf.equiv_pair_congr {Γ Γl Γr : Ctx? α} {A B} (hΓ : Γ.SSplit Γl Γr)
+theorem Wf.eqv.pair_congr {Γ Γl Γr : Ctx? α} {A B} (hΓ : Γ.SSplit Γl Γr)
   {a a' : Wf R Γl A} {b b' : Wf R Γr B}
   (ha : a ≈ a') (hb : b ≈ b') : (pair hΓ a b) ≈ (pair hΓ a' b')
   := ⟨rby.pair_congr hΓ ha.left hb.left, rby.pair_congr hΓ ha.right hb.right⟩
 
-theorem Wf.equiv_let₂_congr {Γ Γl Γr : Ctx? α} {A B C} (hΓ : Γ.SSplit Γl Γr)
+theorem Wf.eqv.let₂_congr {Γ Γl Γr : Ctx? α} {A B C} (hΓ : Γ.SSplit Γl Γr)
   {a a' : Wf R Γr (A.tensor B)} {b b' : Wf R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C}
   (ha : a ≈ a') (hb : b ≈ b') : (let₂ hΓ a b) ≈ (let₂ hΓ a' b')
   := ⟨rby.let₂_congr hΓ ha.left hb.left, rby.let₂_congr hΓ ha.right hb.right⟩
 
-theorem Wf.equiv_inl_congr {Γ : Ctx? α} {A B} {a a' : Wf R Γ A} (ha : a ≈ a')
+theorem Wf.eqv.inl_congr {Γ : Ctx? α} {A B} {a a' : Wf R Γ A} (ha : a ≈ a')
   : (inl A B a) ≈ (inl A B a')
   := ⟨rby.inl_congr ha.left, rby.inl_congr ha.right⟩
 
-theorem Wf.equiv_inr_congr {Γ : Ctx? α} {A B} {b b' : Wf R Γ B} (hb : b ≈ b')
+theorem Wf.eqv.inr_congr {Γ : Ctx? α} {A B} {b b' : Wf R Γ B} (hb : b ≈ b')
   : (inr A B b) ≈ (inr A B b')
   := ⟨rby.inr_congr hb.left, rby.inr_congr hb.right⟩
 
-theorem Wf.equiv_case_congr {Γ Γl Γr : Ctx? α} {A B C} (hΓ : Γ.SSplit Γl Γr)
+theorem Wf.eqv.case_congr {Γ Γl Γr : Ctx? α} {A B C} (hΓ : Γ.SSplit Γl Γr)
   {a a' : Wf R Γr (A.coprod B)} {b b' : Wf R (Γl.cons ⟨A, ⊤⟩) C} {c c' : Wf R (Γl.cons ⟨B, ⊤⟩) C}
   (ha : a ≈ a') (hb : b ≈ b') (hc : c ≈ c') : (case hΓ a b c) ≈ (case hΓ a' b' c')
   := ⟨rby.case_congr hΓ ha.left hb.left hc.left, rby.case_congr hΓ ha.right hb.right hc.right⟩
 
-theorem Wf.equiv_abort_congr {Γ : Ctx? α} {A} {a a' : Wf R Γ Ty.empty} (ha : a ≈ a')
+theorem Wf.eqv.abort_congr {Γ : Ctx? α} {A} {a a' : Wf R Γ Ty.empty} (ha : a ≈ a')
   : (abort A a) ≈ (abort A a')
   := ⟨rby.abort_congr ha.left, rby.abort_congr ha.right⟩
 
-theorem Wf.equiv_iter_congr {Γ Γl Γr : Ctx? α} {A B : Ty α} (hΓ : Γ.SSplit Γl Γr)
+theorem Wf.eqv.iter_congr {Γ Γl Γr : Ctx? α} {A B : Ty α} (hΓ : Γ.SSplit Γl Γr)
   [hc : Γl.copy] [hd : Γl.del]
   {a a' : Wf R Γr A} {b b' : Wf R (Γl.cons ⟨A, ⊤⟩) (B.coprod A)}
   (ha : a ≈ a') (hb : b ≈ b') : (iter hΓ a b) ≈ (iter hΓ a' b')
@@ -355,12 +357,12 @@ def Eqv.bv0 {Γ : Ctx? α} [hΓ : Γ.del] {A : Ty α} {q : Quant} : Eqv R (Γ.co
   := e⟦Wf.bv0⟧
 
 def Eqv.op {Γ : Ctx? α} {f : φ} {A B} (hf : S.FnTy f A B) (a : Eqv R Γ A) : Eqv R Γ B
-  := liftOn a (λa => e⟦a.op hf⟧) (λ_ _ h => Eqv.sound <| Wf.equiv_op_congr hf h)
+  := liftOn a (λa => e⟦a.op hf⟧) (λ_ _ h => Eqv.sound <| Wf.eqv.op_congr hf h)
 
 def Eqv.let₁ {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr)
   (a : Eqv R Γr A) (b : Eqv R (Γl.cons ⟨A, ⊤⟩) B)
   : Eqv R Γ B := liftOn₂ a b (λa b => e⟦a.let₁ hΓ b⟧) (λ_ _ _ _ ha hb
-    => Eqv.sound <| Wf.equiv_let₁_congr hΓ ha hb)
+    => Eqv.sound <| Wf.eqv.let₁_congr hΓ ha hb)
 
 def Eqv.unit (Γ : Ctx? α) [hΓ : Γ.del] : Eqv R Γ Ty.unit
   := e⟦Wf.unit Γ⟧
@@ -368,31 +370,31 @@ def Eqv.unit (Γ : Ctx? α) [hΓ : Γ.del] : Eqv R Γ Ty.unit
 def Eqv.pair {Γ Γl Γr : Ctx? α}  (hΓ : Γ.SSplit Γl Γr) {A B}
   (a : Eqv R Γl A) (b : Eqv R Γr B) : Eqv R Γ (Ty.tensor A B)
   := liftOn₂ a b (λa b => e⟦a.pair hΓ b⟧) (λ_ _ _ _ ha hb
-    => Eqv.sound <| Wf.equiv_pair_congr hΓ ha hb)
+    => Eqv.sound <| Wf.eqv.pair_congr hΓ ha hb)
 
 def Eqv.let₂ {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr)
   (a : Eqv R Γr (A.tensor B)) (b : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C)
   : Eqv R Γ C := liftOn₂ a b (λa b => e⟦a.let₂ hΓ b⟧) (λ_ _ _ _ ha hb
-    => Eqv.sound <| Wf.equiv_let₂_congr hΓ ha hb)
+    => Eqv.sound <| Wf.eqv.let₂_congr hΓ ha hb)
 
 def Eqv.inl {Γ : Ctx? α} (A B) (a : Eqv R Γ A) : Eqv R Γ (Ty.coprod A B)
-  := liftOn a (λa => e⟦a.inl A B⟧) (λ_ _ h => Eqv.sound <| Wf.equiv_inl_congr h)
+  := liftOn a (λa => e⟦a.inl A B⟧) (λ_ _ h => Eqv.sound <| Wf.eqv.inl_congr h)
 
 def Eqv.inr {Γ : Ctx? α} (A B) (b : Eqv R Γ B) : Eqv R Γ (Ty.coprod A B)
-  := liftOn b (λb => e⟦b.inr A B⟧) (λ_ _ h => Eqv.sound <| Wf.equiv_inr_congr h)
+  := liftOn b (λb => e⟦b.inr A B⟧) (λ_ _ h => Eqv.sound <| Wf.eqv.inr_congr h)
 
 def Eqv.case {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr)
   (a : Eqv R Γr (A.coprod B)) (b : Eqv R (Γl.cons ⟨A, ⊤⟩) C) (c : Eqv R (Γl.cons ⟨B, ⊤⟩) C)
   : Eqv R Γ C := liftOn₃ a b c (λa b c => e⟦a.case hΓ b c⟧)
-    (λ_ _ _ _ _ _ ha hb hc => Eqv.sound <| Wf.equiv_case_congr hΓ ha hb hc)
+    (λ_ _ _ _ _ _ ha hb hc => Eqv.sound <| Wf.eqv.case_congr hΓ ha hb hc)
 
 def Eqv.abort {Γ : Ctx? α} (A) (a : Eqv R Γ Ty.empty) : Eqv R Γ A
-  := liftOn a (λa => e⟦a.abort A⟧) (λ_ _ h => Eqv.sound <| Wf.equiv_abort_congr h)
+  := liftOn a (λa => e⟦a.abort A⟧) (λ_ _ h => Eqv.sound <| Wf.eqv.abort_congr h)
 
 def Eqv.iter {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) [hc : Γl.copy] [hd : Γl.del]
   (a : Eqv R Γr A) (b : Eqv R (Γl.cons ⟨A, ⊤⟩) (B.coprod A))
   : Eqv R Γ B := liftOn₂ a b (λa b => e⟦a.iter hΓ b⟧) (λ_ _ _ _ ha hb
-    => Eqv.sound <| Wf.equiv_iter_congr hΓ ha hb)
+    => Eqv.sound <| Wf.eqv.iter_congr hΓ ha hb)
 
 --TODO: Wf HasEff
 

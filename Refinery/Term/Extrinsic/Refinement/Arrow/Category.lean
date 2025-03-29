@@ -99,11 +99,15 @@ instance DRWS.arrowCat (R : DRWS φ α) [R.UWkCongr] : Category (DRWS.Obj R) whe
   Hom := DRWS.Arrow R
   id := DRWS.Arrow.refl R
   comp := DRWS.Arrow.comp
-  id_comp f := by
-    simp only [Arrow.comp, Arrow.refl, Eqv.letArrow, Arrow.extend1, PreArrow.refl, PreArrow.e]
-    sorry
-  comp_id f := by sorry
-  assoc f g h := by sorry
+  id_comp f := f.let₁_bv0
+  comp_id f := f.let₁_eta
+  assoc f g h := by
+    simp only [DRWS.Arrow.comp, Eqv.letArrow, Eqv.let_let₁]
+    induction f, g, h using Eqv.quotInd₃
+    apply Eqv.sound
+    apply Wf.eqv.of_tm
+    simp [Wf.wk, Wf.let₁, Wf.wk1, Ctx?.extend1, ren_ren, <-Nat.liftWk_comp]
+    rfl
 
 theorem DRWS.Obj.id_def (A : R.Obj) : 𝟙 A = Arrow.refl R A := rfl
 
