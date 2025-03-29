@@ -23,7 +23,7 @@ variable {φ : Type _} {α : Type _} {ε : Type _} [S : Signature φ α ε]
 
 instance DRWS.LetBind.bivalid : BiValid (LetBind (S := S)) C where
   den_eq Dl Dr h := by cases h with
-  | bind_op => simp only [Deriv.den, Ctx?.At.den, ge_iff_le, le_refl, Var?.Wk.den_used,
+  | bind_op => simp only [Deriv.bv0, Deriv.den, Ctx?.At.den, ge_iff_le, le_refl, Var?.Wk.den_used,
     eqToHom_refl, tensorHom_id, Category.assoc, ← Central.left_exchange_assoc, id_whiskerLeft,
     Iso.inv_hom_id_assoc, Ctx?.SSplit.den_drop_left_assoc, Ctx?.PWk.den_refl', Category.id_comp]
   | bind_let₂ =>

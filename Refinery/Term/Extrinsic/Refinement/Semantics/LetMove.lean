@@ -149,7 +149,7 @@ instance DRWS.LetMove.bivalid : BiValid (LetMove (S := S)) C where
   | let_op hΓ hf da db =>
     rename_i Γ Γr Γl f a A B b
     simp only [
-      Deriv.den, Ctx?.SSplit.den, Var?.SSplit.den, Var?.erase, Var?.ety, ety_var,
+      Deriv.den, Ctx?.SSplit.den, Var?.SSplit.den, Var?.erase, Var?.ety, ety_var, Deriv.bv0,
       swap_inner_tensorUnit_right, Ty.den, PremonoidalCategory.whiskerLeft_comp, Category.assoc,
       Deriv.den_wk1, Ctx?.den, Ctx?.ety, Ctx?.At.den, Var?.Wk.den, eqToHom_refl,
       tensorHom_def, PremonoidalCategory.whiskerLeft_id, Category.id_comp, M.drop_unit
@@ -200,7 +200,7 @@ instance DRWS.LetMove.bivalid : BiValid (LetMove (S := S)) C where
   | let_abort hΓ da db =>
     rename_i Γ Γr Γl a A b
     simp only [
-      Deriv.den, Ctx?.SSplit.den, Var?.SSplit.den, Var?.erase, Var?.ety, ety_var,
+      Deriv.den, Ctx?.SSplit.den, Var?.SSplit.den, Var?.erase, Var?.ety, ety_var, Deriv.bv0,
       swap_inner_tensorUnit_right, Ty.den, PremonoidalCategory.whiskerLeft_comp, Category.assoc,
       Deriv.den_wk1, Ctx?.den, Ctx?.ety, Ctx?.At.den, Var?.Wk.den, eqToHom_refl,
       tensorHom_def, PremonoidalCategory.whiskerLeft_id, Category.id_comp, M.drop_unit
@@ -223,7 +223,7 @@ instance DRWS.LetMove.bivalid : BiValid (LetMove (S := S)) C where
       Var?.SSplit.den, tensorHom_def, swap_inner_tensorUnit_right,
       PremonoidalCategory.comp_whiskerRight_assoc, Ctx?.At.den, M.drop_tensor, M.drop_unit,
       Var?.Wk.den, eqToHom_refl, PremonoidalCategory.whiskerLeft_id,
-      PremonoidalCategory.id_whiskerRight, Category.id_comp
+      PremonoidalCategory.id_whiskerRight, Category.id_comp, Deriv.bv0
     ]
     rw [
       <-(hΓ.s1_23_12_3 hΓc).assoc_coherence_assoc (hΓ.s1_23_12 hΓc),

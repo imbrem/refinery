@@ -112,3 +112,59 @@ theorem Wf.let₁_bv0 {Γ : Ctx? α} {A B : Ty α} (a : Wf R (Γ.cons ⟨A, ⊤�
 theorem Eqv.let₁_bv0 [R.UWkCongr] {Γ : Ctx? α} {A B : Ty α} (a : Eqv R (Γ.cons ⟨A, ⊤⟩) B)
   : Eqv.bv0.let₁ (Γ.erase_right.cons (.right ⟨A, ⊤⟩)) (a.wk1 ⟨A, 0⟩) = a
   := by induction a using Eqv.quotInd; apply sound; apply Wf.let₁_bv0
+
+theorem Wf.bind_pwk_inl {Γ Γl Γr : Ctx? α}
+  {A : Ty α} (a : Wf R Γr A) (hΓ : Γ.SSplit Γl Γr) [hΓl : Γl.del]
+  : a.let₁ hΓ (.inl A B .bv0) ≈ (a.pwk (hΓ.pwk_left_del)).inl A B := by
+  apply (Wf.pre_beta_pureLout hΓ a (.inl A B .bv0) (hb := by simp [inl, bv0])).coh <;> rfl
+
+theorem Wf.bind_inl' {Γ : Ctx? α} {A : Ty α}
+  (a : Wf R Γ A) (hΓ : Γ.SSplit Γl Γ) [hΓl : Γl.del]
+  : a.let₁ hΓ (.inl A B .bv0) ≈ a.inl A B := by
+  apply (Wf.pre_beta_pureLout hΓ a (.inl A B .bv0) (hb := by simp [inl, bv0])).coh <;> rfl
+
+theorem Wf.bind_inl {Γ : Ctx? α} {A : Ty α} (a : Wf R Γ A)
+  : a.let₁ Γ.erase_left (.inl A B .bv0) ≈ a.inl A B
+  := a.bind_inl' _
+
+theorem Eqv.bind_pwk_inl [R.UWkCongr] {Γ Γl Γr : Ctx? α}
+  {A : Ty α} (a : Eqv R Γr A) (hΓ : Γ.SSplit Γl Γr) [hΓl : Γl.del]
+  : a.let₁ hΓ (.inl A B .bv0) = (a.pwk (hΓ.pwk_left_del)).inl A B := by
+  induction a using Eqv.quotInd; apply sound; apply Wf.bind_pwk_inl
+
+theorem Eqv.bind_inl' {Γ : Ctx? α} {A : Ty α}
+  (a : Eqv R Γ A) (hΓ : Γ.SSplit Γl Γ) [hΓl : Γl.del]
+  : a.let₁ hΓ (.inl A B .bv0) = a.inl A B := by
+  induction a using Eqv.quotInd; apply sound; apply Wf.bind_inl'
+
+theorem Eqv.bind_inl {Γ : Ctx? α} {A : Ty α} (a : Eqv R Γ A)
+  : a.let₁ Γ.erase_left (.inl A B .bv0) = a.inl A B
+  := a.bind_inl' _
+
+theorem Wf.bind_pwk_inr {Γ Γl Γr : Ctx? α}
+  {A : Ty α} (a : Wf R Γr A) (hΓ : Γ.SSplit Γl Γr) [hΓl : Γl.del]
+  : a.let₁ hΓ (.inr B A .bv0) ≈ (a.pwk (hΓ.pwk_left_del)).inr B A := by
+  apply (Wf.pre_beta_pureLout hΓ a (.inr B A .bv0) (hb := by simp [inr, bv0])).coh <;> rfl
+
+theorem Wf.bind_inr' {Γ : Ctx? α} {A : Ty α}
+  (a : Wf R Γ A) (hΓ : Γ.SSplit Γl Γ) [hΓl : Γl.del]
+  : a.let₁ hΓ (.inr B A .bv0) ≈ a.inr B A := by
+  apply (Wf.pre_beta_pureLout hΓ a (.inr B A .bv0) (hb := by simp [inr, bv0])).coh <;> rfl
+
+theorem Wf.bind_inr {Γ : Ctx? α} {A : Ty α} (a : Wf R Γ A)
+  : a.let₁ Γ.erase_left (.inr B A .bv0) ≈ a.inr B A
+  := a.bind_inr' _
+
+theorem Eqv.bind_pwk_inr [R.UWkCongr] {Γ Γl Γr : Ctx? α}
+  {A : Ty α} (a : Eqv R Γr A) (hΓ : Γ.SSplit Γl Γr) [hΓl : Γl.del]
+  : a.let₁ hΓ (.inr B A .bv0) = (a.pwk (hΓ.pwk_left_del)).inr B A := by
+  induction a using Eqv.quotInd; apply sound; apply Wf.bind_pwk_inr
+
+theorem Eqv.bind_inr' {Γ : Ctx? α} {A : Ty α}
+  (a : Eqv R Γ A) (hΓ : Γ.SSplit Γl Γ) [hΓl : Γl.del]
+  : a.let₁ hΓ (.inr B A .bv0) = a.inr B A := by
+  induction a using Eqv.quotInd; apply sound; apply Wf.bind_inr'
+
+theorem Eqv.bind_inr {Γ : Ctx? α} {A : Ty α} (a : Eqv R Γ A)
+  : a.let₁ Γ.erase_left (.inr B A .bv0) = a.inr B A
+  := a.bind_inr' _

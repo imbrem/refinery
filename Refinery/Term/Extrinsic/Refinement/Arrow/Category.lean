@@ -1,4 +1,4 @@
-import Refinery.Term.Extrinsic.Wf.LetMove
+import Refinery.Term.Extrinsic.Wf.Rewrite
 import Refinery.Term.Extrinsic.Wf.PreBeta
 import Mathlib.CategoryTheory.Category.Basic
 
@@ -49,18 +49,20 @@ def DRWS.PreArrow.comp {A B C : Ty α} (f : DRWS.PreArrow R A B) (g : DRWS.PreAr
 
 def DRWS.Arrow.toEqv (a : DRWS.Arrow R A B) : Eqv R (.one ⟨A, ⊤⟩) B := a
 
-def DRWS.Arrow.refl (R : DRWS φ α) (A : Ty α) : Arrow R A A := (PreArrow.refl R A).e
+def Eqv.toArr (a : Eqv R (.one ⟨A, ⊤⟩) B) : DRWS.Arrow R A B := a
 
-theorem DRWS.Arrow.le_sound {A B : Ty α} {a b : DRWS.PreArrow R A B} (h : a ≤ b) : a.e ≤ b.e
+def DRWS.idArr (R : DRWS φ α) (A : Ty α) : Arrow R A A := (PreArrow.refl R A).e
+
+theorem DRWS.PreArrow.le_sound {A B : Ty α} {a b : DRWS.PreArrow R A B} (h : a ≤ b) : a.e ≤ b.e
   := h
 
-theorem DRWS.Arrow.le_exact {A B : Ty α} {a b : DRWS.PreArrow R A B} (h : a.e ≤ b.e) : a ≤ b
+theorem DRWS.PreArrow.le_exact {A B : Ty α} {a b : DRWS.PreArrow R A B} (h : a.e ≤ b.e) : a ≤ b
   := h
 
-theorem DRWS.Arrow.sound {A B : Ty α} {a b : DRWS.PreArrow R A B} (h : a ≈ b) : a.e = b.e
+theorem DRWS.PreArrow.sound {A B : Ty α} {a b : DRWS.PreArrow R A B} (h : a ≈ b) : a.e = b.e
   := Eqv.sound h
 
-theorem DRWS.Arrow.exact {A B : Ty α} {a b : DRWS.PreArrow R A B} (h : a.e = b.e) : a ≈ b
+theorem DRWS.PreArrow.exact {A B : Ty α} {a b : DRWS.PreArrow R A B} (h : a.e = b.e) : a ≈ b
   := Eqv.exact h
 
 variable [R.UWkCongr]
@@ -93,31 +95,36 @@ theorem Eqv.letArrow_mk {Γ : Ctx? α} {A B : Ty α} {a : Wf R Γ A} {b : R.PreA
   : (e⟦a⟧).letArrow b.e = e⟦a.letArrow b⟧ := rfl
 
 def DRWS.Arrow.comp {A B C : Ty α} (f : DRWS.Arrow R A B) (g : DRWS.Arrow R B C)
-  : DRWS.Arrow R A C := Eqv.letArrow f g
+  : DRWS.Arrow R A C := (Eqv.letArrow f.toEqv g).toArr
+
+theorem DRWS.Arrow.id_comp {A B : Ty α} (f : DRWS.Arrow R A B)
+  : (DRWS.idArr R A).comp f = f := f.let₁_bv0
+
+theorem DRWS.Arrow.comp_id {A B : Ty α} (f : DRWS.Arrow R A B)
+  : f.comp (DRWS.idArr R B) = f := f.let₁_eta
+
+theorem DRWS.Arrow.comp_assoc {A B C D : Ty α}
+  (f : DRWS.Arrow R A B) (g : DRWS.Arrow R B C) (h : DRWS.Arrow R C D)
+  : (f.comp g).comp h = f.comp (g.comp h) := by
+  simp only [DRWS.Arrow.comp, Eqv.letArrow, Eqv.let_let₁, Eqv.toArr, toEqv]
+  induction f, g, h using Eqv.quotInd₃
+  apply Eqv.sound
+  apply Wf.eqv.of_tm
+  simp [Wf.wk, Wf.let₁, Wf.wk1, Ctx?.extend1, ren_ren, <-Nat.liftWk_comp]
+  rfl
 
 instance DRWS.arrowCat (R : DRWS φ α) [R.UWkCongr] : Category (DRWS.Obj R) where
   Hom := DRWS.Arrow R
-  id := DRWS.Arrow.refl R
+  id := R.idArr
   comp := DRWS.Arrow.comp
-  id_comp f := f.let₁_bv0
-  comp_id f := f.let₁_eta
-  assoc f g h := by
-    simp only [DRWS.Arrow.comp, Eqv.letArrow, Eqv.let_let₁]
-    induction f, g, h using Eqv.quotInd₃
-    apply Eqv.sound
-    apply Wf.eqv.of_tm
-    simp [Wf.wk, Wf.let₁, Wf.wk1, Ctx?.extend1, ren_ren, <-Nat.liftWk_comp]
-    rfl
+  id_comp f := f.id_comp
+  comp_id f := f.comp_id
+  assoc f g h := f.comp_assoc g h
 
-theorem DRWS.Obj.id_def (A : R.Obj) : 𝟙 A = Arrow.refl R A := rfl
+theorem DRWS.Obj.id_def (A : R.Obj) : 𝟙 A = R.idArr A := rfl
 
 theorem DRWS.Arrow.comp_def {A B C : R.Obj} (f : A ⟶ B) (g : B ⟶ C) : f ≫ g = f.comp g := rfl
 
 end Term
 
 end Refinery
-
---TODO: DRWS.Arrow is a category!
-
---TODO: then
--- monoidal category structure

@@ -91,7 +91,7 @@ inductive DRWS.LetMove : DRWS φ α
     : LetMove Γ C (.let₁ (.op f a) B b) (.let₁ a A (.let₁ (.op f (.bv 0)) B (↑¹ b)))
       ((Da.op hf).let₁ hΓ Db)
       (Da.let₁ hΓ (.let₁ (Γl.erase_right.cons (.right _))
-                  (.op hf (.bv (.here inferInstance (by simp)))) (Db.wk1 _)))
+                  (.op hf .bv0) (Db.wk1 _)))
   | let_let₁ {a A b B c C}
     (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
     (Da : Γr ⊢ a : A) (Db : Γm.cons ⟨A, ⊤⟩ ⊢ b : B) (Dc : Γl.cons ⟨B, ⊤⟩ ⊢ c : C)
@@ -120,7 +120,7 @@ inductive DRWS.LetMove : DRWS φ α
     : LetMove Γ B (.let₁ (.abort A a) A b) (.let₁ a Ty.empty (.let₁ (.abort A (.bv 0)) A (↑¹ b)))
       (Da.abort.let₁ hΓ Db)
       (Da.let₁ hΓ (.let₁ (Γl.erase_right.cons (.right _))
-                  (.abort (.bv (.here inferInstance (by simp)))) (Db.wk1 _)))
+                  (.abort .bv0) (Db.wk1 _)))
   | let_iter {Γ Γc Γl Γm Γr : Ctx? α} {a A B b C}
     (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
     (hc : Γm.copy) (hd : Γm.del)
@@ -134,7 +134,7 @@ inductive DRWS.LetMove : DRWS φ α
               inferInstance
               (Db.case ((hΓ.s1_23_12 hΓc).cons (.right _))
               (Dc.wk1 ⟨A, 0⟩).inl
-              (.inr (.bv (.here inferInstance (by simp))))))
+              (.inr .bv0)))
 
 -- Note: let_abort and let_op should be derivable from binding/substitution operators
 -- as well as let_inl, let_inr
@@ -143,7 +143,7 @@ inductive DRWS.LetBind : DRWS φ α
   | bind_op {f a A B}
     (hf : S.FnTy f A B) (Da : Γ ⊢ a : A)
     : LetBind Γ B _ _ (Da.op hf)
-      (Da.let₁ Γ.erase_left (.op hf (.bv (.here inferInstance (by simp)))))
+      (Da.let₁ Γ.erase_left (.op hf .bv0))
   | bind_let₂ {Γ Γl Γr : Ctx? α} {a A B b C}
     (hΓ : Γ.SSplit Γl Γr) (Da : Γr ⊢ a : A.tensor B) (Db : (Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ b : C)
     : LetBind Γ C _ _ (Da.let₂ hΓ Db)
