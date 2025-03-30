@@ -109,6 +109,12 @@ def Wf.bv0 {Γ : Ctx? α} [hΓ : Γ.del] {A : Ty α} {q : Quant} : Wf R (Γ.cons
 def Wf.bv1 {Γ : Ctx? α} [hΓ : Γ.del] {v : Var? α} [hv : v.del] {A : Ty α} {q : Quant}
   : Wf R (((Γ.cons ⟨A, q⟩).cons v)) A := ⟨.bv 1, .bv1⟩
 
+def Wf.bv2 {Γ : Ctx? α} [hΓ : Γ.del] {l r : Var? α} [hl : l.del] [hr : r.del] {A : Ty α}
+  {q : Quant} : Wf R (((Γ.cons ⟨A, q⟩).cons l).cons r) A := ⟨.bv 2, .bv2⟩
+
+def Wf.bv3 {Γ : Ctx? α} [hΓ : Γ.del] {l m r : Var? α} [hl : l.del] [hm : m.del] [hr : r.del]
+  {A : Ty α} {q : Quant} : Wf R ((((Γ.cons ⟨A, q⟩).cons l).cons m).cons r) A := ⟨.bv 3, .bv3⟩
+
 def Wf.op {Γ : Ctx? α} {f : φ} {A B} (hf : S.FnTy f A B) (a : Wf R Γ A) : Wf R Γ B
   := ⟨.op f a.tm, .op hf a.deriv⟩
 
@@ -365,6 +371,12 @@ def Eqv.bv0 {Γ : Ctx? α} [hΓ : Γ.del] {A : Ty α} {q : Quant} : Eqv R (Γ.co
 
 def Eqv.bv1 {Γ : Ctx? α} [hΓ : Γ.del] {v : Var? α} [hv : v.del] {A : Ty α} {q : Quant}
   : Eqv R (((Γ.cons ⟨A, q⟩).cons v)) A := e⟦Wf.bv1⟧
+
+def Eqv.bv2 {Γ : Ctx? α} [hΓ : Γ.del] {l r : Var? α} [hl : l.del] [hr : r.del] {A : Ty α}
+  {q : Quant} : Eqv R (((Γ.cons ⟨A, q⟩).cons l).cons r) A := e⟦Wf.bv2⟧
+
+def Eqv.bv3 {Γ : Ctx? α} [hΓ : Γ.del] {l m r : Var? α} [hl : l.del] [hm : m.del] [hr : r.del]
+  {A : Ty α} {q : Quant} : Eqv R ((((Γ.cons ⟨A, q⟩).cons l).cons m).cons r) A := e⟦Wf.bv3⟧
 
 def Eqv.op {Γ : Ctx? α} {f : φ} {A B} (hf : S.FnTy f A B) (a : Eqv R Γ A) : Eqv R Γ B
   := liftOn a (λa => e⟦a.op hf⟧) (λ_ _ h => Eqv.sound <| Wf.eqv.op_congr hf h)

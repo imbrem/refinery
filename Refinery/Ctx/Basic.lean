@@ -713,6 +713,10 @@ theorem Ctx?.Wk.ix_antibounded {Γ Δ : Ctx? α} (h : Γ.Wk Δ) (i : ℕ)
   | cons _ _ I => cases i <;> simp at *; apply I; assumption
   | skip _ _ I => simp at *; apply I; assumption
 
+theorem Ctx?.Wk.ix_add_len {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) (i : ℕ)
+  : ρ (i + Δ.length) = i + Γ.length
+  := by induction ρ generalizing i <;> simp [Nat.liftWk, Nat.add_assoc, *]
+
 theorem Ctx?.Wk.ix_bounded_iff {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) (i : ℕ)
   : ρ.ix i < Γ.length ↔ i < Δ.length := ⟨ρ.ix_antibounded i, ρ.ix_bounded i⟩
 

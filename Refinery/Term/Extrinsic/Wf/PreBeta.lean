@@ -168,3 +168,17 @@ theorem Eqv.bind_inr' {Γ : Ctx? α} {A : Ty α}
 theorem Eqv.bind_inr {Γ : Ctx? α} {A : Ty α} (a : Eqv R Γ A)
   : a.let₁ Γ.erase_left (.inr B A .bv0) = a.inr B A
   := a.bind_inr' _
+
+theorem Wf.bind_pwk_abort {Γ Γl Γr : Ctx? α}
+  {A : Ty α} (a : Wf R Γr .empty) (hΓ : Γ.SSplit Γl Γr) [hΓl : Γl.del]
+  : a.let₁ hΓ (.abort A .bv0) ≈ (a.pwk (hΓ.pwk_left_del)).abort A := by
+  apply (Wf.pre_beta_pureLout hΓ a (.abort A .bv0) (hb := by simp [abort, bv0])).coh <;> rfl
+
+theorem Wf.bind_abort' {Γ : Ctx? α} {A : Ty α}
+  (a : Wf R Γ .empty) (hΓ : Γ.SSplit Γl Γ) [hΓl : Γl.del]
+  : a.let₁ hΓ (.abort A .bv0) ≈ a.abort A := by
+  apply (Wf.pre_beta_pureLout hΓ a (.abort A .bv0) (hb := by simp [abort, bv0])).coh <;> rfl
+
+theorem Wf.bind_abort {Γ : Ctx? α} {A : Ty α} (a : Wf R Γ .empty)
+  : a.let₁ Γ.erase_left (.abort A .bv0) ≈ a.abort A
+  := a.bind_abort' _

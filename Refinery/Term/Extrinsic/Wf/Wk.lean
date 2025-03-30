@@ -52,6 +52,40 @@ def Eqv.wk2 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {l r : Var? α} {A : Ty α
   : Eqv R (((Γ.cons x).cons l).cons r) A
   := a.liftOn (λ a => e⟦a.wk2 x⟧) (λ_ _ h => sound <| Wf.eqv.wk2_congr x h)
 
+theorem Eqv.wk0_bv0 {Γ : Ctx? α} [hΓ : Γ.del] {A : Ty α} {q : Quant} {x : Var? α} [hx : x.del]
+  : (Eqv.bv0 (R := R) (Γ := Γ) (A := A) (q := q)).wk0 x = .bv1
+  := rfl
+
+theorem Eqv.wk1_bv0 {Γ : Ctx? α} [hΓ : Γ.del] {A : Ty α} {q : Quant} {x : Var? α} [hx : x.del]
+  : (Eqv.bv0 (R := R) (Γ := Γ) (A := A) (q := q)).wk1 x = .bv0
+  := rfl
+
+theorem Eqv.wk2_bv0 {Γ : Ctx? α} [hΓ : Γ.del] {v : Var? α} [hv : v.del]
+  {A : Ty α} {q : Quant} {x : Var? α} [hx : x.del]
+  : (Eqv.bv0 (R := R) (Γ := Γ.cons v) (A := A) (q := q)).wk2 x = .bv0
+  := rfl
+
+theorem Eqv.wk0_bv1 {Γ : Ctx? α} [hΓ : Γ.del] {v : Var? α} [hv : v.del]
+  {A : Ty α} {q : Quant} {x : Var? α} [hx : x.del]
+  : (Eqv.bv1 (R := R) (Γ := Γ) (v := v) (A := A) (q := q)).wk0 x = .bv2
+  := rfl
+
+theorem Eqv.wk1_bv1 {Γ : Ctx? α} [hΓ : Γ.del] {v : Var? α} [hv : v.del]
+  {A : Ty α} {q : Quant} {x : Var? α} [hx : x.del]
+  : (Eqv.bv1 (R := R) (Γ := Γ) (v := v) (A := A) (q := q)).wk1 x = .bv2
+  := rfl
+
+theorem Eqv.wk2_bv1 {Γ : Ctx? α} [hΓ : Γ.del] {v : Var? α} [hv : v.del]
+  {A : Ty α} {q : Quant} {x : Var? α} [hx : x.del]
+  : (Eqv.bv1 (R := R) (Γ := Γ) (v := v) (A := A) (q := q)).wk2 x = .bv1
+  := rfl
+
+theorem Eqv.wk0_pair' {Γ Γl Γr : Ctx? α}  (hΓ : Γ.SSplit Γl Γr) {A B}
+  (a : Eqv R Γl A) (b : Eqv R Γr B) {x l r : Var? α}
+  (hlr : x.SSplit l r) [hx : x.del] [hl : l.del] [hr : r.del]
+  : (a.pair hΓ b).wk0 x = (a.wk0 l).pair (hΓ.cons hlr) (b.wk0 r)
+  := by induction a, b using quotInd₂; apply sound; apply Wf.eqv.of_tm; rfl
+
 def Eqv.pwk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} (a : Eqv R Δ A) : Eqv R Γ A
   := a.liftOn (λ a => e⟦a.pwk ρ⟧) (λ_ _ h => sound <| Wf.eqv.pwk_congr ρ h)
 

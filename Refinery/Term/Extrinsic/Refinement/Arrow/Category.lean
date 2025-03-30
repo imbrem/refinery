@@ -101,8 +101,52 @@ theorem Eqv.letArrow_mk {Γ : Ctx? α} {A B : Ty α} {a : Wf R Γ A} {b : R.PreA
 theorem Eqv.letArrow_id (a : Eqv R Γ A) : a.letArrow (DRWS.Obj.id A) = a
   := a.let₁_eta
 
+theorem Eqv.wk_letArrow {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) (a : Eqv R Δ A) (b : R.Arrow A B)
+  : (a.letArrow b).wk ρ = (a.wk ρ).letArrow b := by
+  induction a, b using quotInd₂
+  apply sound; apply Wf.eqv.of_tm
+  simp [Wf.wk, Wf.let₁, Ctx?.extend1, Ctx?.Wk.drop_ix, ren_ren, <-Nat.liftWk_comp]
+  congr
+  funext x; cases x; rfl
+  simp only [Nat.liftWk_succ, Function.comp_apply, add_left_inj, Ctx?.Wk.ix_add_len]
+
+theorem Eqv.wk0_letArrow (a : Eqv R Γ A) (b : R.Arrow A B) (x : Var? α) [hx : x.del]
+  : (a.letArrow b).wk0 x = (a.wk0 x).letArrow b
+  := by
+  induction a, b using quotInd₂
+  apply sound; apply Wf.eqv.of_tm
+  simp [Wf.wk0, Wf.wk, Wf.let₁, Ctx?.extend1, Ctx?.Wk.drop_ix, ren_ren, <-Nat.liftWk_comp]
+  rfl
+
+theorem Eqv.wk1_letArrow {Γ : Ctx? α} {v}
+  (a : Eqv R (Γ.cons v) A) (b : R.Arrow A B) (x : Var? α) [hx : x.del]
+  : (a.letArrow b).wk1 x = (a.wk1 x).letArrow b
+  := by
+  induction a, b using quotInd₂
+  apply sound; apply Wf.eqv.of_tm
+  simp [Wf.wk1, Wf.wk, Wf.let₁, Ctx?.extend1, Ctx?.Wk.drop_ix, ren_ren, <-Nat.liftWk_comp]
+  rfl
+
+theorem Eqv.wk2_letArrow {Γ : Ctx? α} {l r}
+  (a : Eqv R ((Γ.cons l).cons r) A) (b : R.Arrow A B) (x : Var? α) [hx : x.del]
+  : (a.letArrow b).wk2 x = (a.wk2 x).letArrow b
+  := by
+  induction a, b using quotInd₂
+  apply sound; apply Wf.eqv.of_tm
+  simp [Wf.wk2, Wf.wk, Wf.let₁, Ctx?.extend1, Ctx?.Wk.drop_ix, ren_ren, <-Nat.liftWk_comp]
+  rfl
+
 theorem DRWS.Arrow.bv0_letArrow (f : Arrow R A B) : Eqv.letArrow .bv0 f = f
   := f.let₁_bv0
+
+theorem DRWS.Arrow.bv0_letArrow' (Γ : Ctx? α) [hΓ : Γ.del] (f : Arrow R A B)
+  : Eqv.letArrow .bv0 f = f.extend1 Γ
+  := by
+  conv => rhs; rw [<-f.bv0_letArrow]
+  induction f using Eqv.quotInd
+  apply Eqv.sound; apply Wf.eqv.of_tm
+  simp [Wf.let₁, Wf.wk, Wf.bv0, Ctx?.extend1, ren_ren, <-Nat.liftWk_comp, Ctx?.Wk.drop_ix]
+  rfl
 
 def DRWS.Arrow.comp {A B C : Ty α} (f : DRWS.Arrow R A B) (g : DRWS.Arrow R B C)
   : DRWS.Arrow R A C := (Eqv.letArrow f.toEqv g).toArr
@@ -117,6 +161,21 @@ theorem DRWS.Arrow.comp_le_congr {A B C : Ty α}
   {f f' : DRWS.Arrow R A B} {g g' : DRWS.Arrow R B C}
   (hf : f ≤ f') (hg : g ≤ g') : f.comp g ≤ f'.comp g'
   := by induction f, g, f', g' using Eqv.quotInd₄; apply Wf.rby.letArrow_congr hf hg
+
+theorem Eqv.let_letArrow
+  {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr)
+  (a : Eqv R Γr A) (f : DRWS.Arrow R A B) (b : Eqv R (Γl.cons ⟨B, ⊤⟩) C)
+  : (a.letArrow f).let₁ hΓ b
+  = a.let₁ hΓ ((f.extend1 _).let₁ (Γl.erase_right.cons (.right _)) (b.wk1 _))
+  := by
+  rw [letArrow, let_let₁]
+  induction a, b, f using Eqv.quotInd₃
+  apply Eqv.sound
+  apply Wf.eqv.of_tm
+  simp [
+    Wf.wk, Wf.let₁, Wf.wk1, Ctx?.extend1, ren_ren, <-Nat.liftWk_comp, Nat.stepWk, Ctx?.Wk.drop_ix,
+    <-hΓ.left_length, <-hΓ.right_length
+  ]
 
 theorem Eqv.letArrow_let₁
   {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr)

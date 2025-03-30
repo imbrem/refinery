@@ -47,6 +47,14 @@ def Deriv.bv0 {Γ : Ctx? α} [hΓ : Γ.del] {A : Ty α} {q : Quant}
 def Deriv.bv1 {Γ : Ctx? α} [hΓ : Γ.del] {v : Var? α} [hv : v.del] {A : Ty α} {q : Quant}
   : ((Γ.cons ⟨A, q⟩).cons v ⊢ .bv (φ := φ) 1 : A) := .bv (.there (.here hΓ Var?.Wk.quant_le_one) hv)
 
+def Deriv.bv2 {Γ : Ctx? α} [hΓ : Γ.del] {l r : Var? α} [hl : l.del] [hr : r.del]
+  {A : Ty α} {q : Quant} : (((Γ.cons ⟨A, q⟩).cons l).cons r ⊢ .bv (φ := φ) 2 : A)
+  := .bv (.there (.there (.here hΓ Var?.Wk.quant_le_one) hl) hr)
+
+def Deriv.bv3  {Γ : Ctx? α} [hΓ : Γ.del] {l m r : Var? α} [hl : l.del] [hm : m.del] [hr : r.del]
+  {A : Ty α} {q : Quant} : ((((Γ.cons ⟨A, q⟩).cons l).cons m).cons r ⊢ .bv (φ := φ) 3 : A)
+  := .bv (.there (.there (.there (.here hΓ Var?.Wk.quant_le_one) hl) hm) hr)
+
 def Deriv.cast {Γ Γ' : Ctx? α} {A A' : Ty α} {a a' : Term φ (Ty α)}
   (hΓ : Γ = Γ') (hA : A = A') (ha : a = a')
   (D : Γ ⊢ a : A) : (Γ' ⊢ a' : A') := hΓ ▸ hA ▸ ha ▸ D
