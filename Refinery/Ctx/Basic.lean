@@ -94,6 +94,10 @@ theorem Ctx?.length_cons' (Γ : Ctx? α) (A : Ty α) (q : EQuant)
   : Ctx?.length (Ctx?.cons' Γ A q) = Ctx?.length Γ + 1 := rfl
 
 @[simp]
+theorem Ctx?.length_erase (Γ : Ctx? α) : (Ctx?.erase Γ).length = Γ.length
+  := by unfold Ctx?.erase; unfold Ctx?.length; simp
+
+@[simp]
 def Ctx?.ety : Ctx? α → Ty α
   | .nil => Ty.unit
   | .cons Γ v => .tensor (Ctx?.ety Γ) v.ety
@@ -748,6 +752,10 @@ theorem Ctx?.del.wk {Γ Δ : Ctx? α} (h : Γ.Wk Δ) [hΔ : Δ.del] : Γ.del := 
     infer_instance
   ) hΔ
 
+theorem Ctx?.Wk.drop_ix {Γ : Ctx? α} (ρ : Γ.Wk .nil) : ρ.ix = (· + Γ.length) := by induction Γ with
+  | nil => cases ρ; rfl
+  | cons Γ v I => cases ρ with
+  | skip => funext x; simp [Nat.stepWk, I, Nat.add_assoc]
 
 def Ctx?.extend1 (Γ : Ctx? α) (v : Var? α) [hΓ : Γ.del] : (Γ.cons v).Wk v.one
   := Γ.drop.scons _
