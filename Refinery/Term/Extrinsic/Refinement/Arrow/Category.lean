@@ -1,6 +1,6 @@
 import Refinery.Term.Extrinsic.Wf.Rewrite
 import Refinery.Term.Extrinsic.Wf.PreBeta
-import Mathlib.CategoryTheory.Category.Basic
+import Discretion.Poset2.Basic
 
 open HasQuant HasPQuant HasCommRel
 
@@ -113,6 +113,11 @@ theorem DRWS.Arrow.id_comp {A B : Ty α} (f : DRWS.Arrow R A B)
 theorem DRWS.Arrow.comp_id {A B : Ty α} (f : DRWS.Arrow R A B)
   : f.comp (Obj.id B) = f := f.let₁_eta
 
+theorem DRWS.Arrow.comp_le_congr {A B C : Ty α}
+  {f f' : DRWS.Arrow R A B} {g g' : DRWS.Arrow R B C}
+  (hf : f ≤ f') (hg : g ≤ g') : f.comp g ≤ f'.comp g'
+  := by induction f, g, f', g' using Eqv.quotInd₄; apply Wf.rby.letArrow_congr hf hg
+
 theorem Eqv.letArrow_let₁
   {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr)
   (a : Eqv R Γr A) (b : Eqv R (Γl.cons ⟨A, ⊤⟩) B) (f : DRWS.Arrow R B C)
@@ -155,6 +160,17 @@ instance DRWS.arrowCat (R : DRWS φ α) [R.UWkCongr] : Category (DRWS.Obj R) whe
 theorem DRWS.Obj.id_def (A : R.Obj) : 𝟙 A = A.id := rfl
 
 theorem DRWS.Arrow.comp_def {A B C : R.Obj} (f : A ⟶ B) (g : B ⟶ C) : f ≫ g = f.comp g := rfl
+
+instance DRWS.arrowRefines (R : DRWS φ α) [R.UWkCongr] : Refines (DRWS.Obj R) where
+  refines f g := f.rby g
+
+instance DRWS.arrowPos2 (R : DRWS φ α) [R.UWkCongr] : Poset2 (DRWS.Obj R) where
+  refines_comp := Arrow.comp_le_congr
+  refines_is_partial_order := {
+    refl := le_refl (α := DRWS.Arrow _ _ _)
+    trans _ _ _ := le_trans (α := DRWS.Arrow _ _ _)
+    antisymm _ _ := le_antisymm (α := DRWS.Arrow _ _ _)
+  }
 
 end Term
 
