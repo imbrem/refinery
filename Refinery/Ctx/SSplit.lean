@@ -196,6 +196,12 @@ inductive Ctx?.SSplit : Ctx? α → Ctx? α → Ctx? α → Type _ where
   | cons {Γ Δ Ξ v l r} (σ : SSplit Γ Δ Ξ) (hvw : v.SSplit l r)
     : SSplit (Ctx?.cons Γ v) (Ctx?.cons Δ l) (Ctx?.cons Ξ r)
 
+def Ctx?.SSplit.head {Γ Δ Ξ : Ctx? α} (σ : Ctx?.SSplit (Γ.cons x) (Δ.cons l) (Ξ.cons r))
+  : x.SSplit l r := match σ with | .cons _ h => h
+
+def Ctx?.SSplit.tail {Γ Δ Ξ : Ctx? α} (σ : Ctx?.SSplit (Γ.cons x) (Δ.cons l) (Ξ.cons r))
+  : Ctx?.SSplit Γ Δ Ξ := match σ with | .cons h _ => h
+
 @[simp]
 def Ctx?.SSplit.unstrict {Γ Δ Ξ : Ctx? α} : Γ.SSplit Δ Ξ → Γ.Split Δ Ξ
   | .nil => .nil

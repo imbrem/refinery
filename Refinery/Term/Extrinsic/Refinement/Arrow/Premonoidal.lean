@@ -65,32 +65,46 @@ theorem Eqv.letArrow_whiskerRight
   simp [Ctx?.nil, Ctx?.cons, Ctx?.erase, ren_ren, <-Nat.liftWk_comp]
   rfl
 
--- theorem DRWS.Arrow.whiskerLeft_comp_whiskerLeft {A : R.Obj} (f : Arrow R B C) (g : Arrow R C D)
---   : (f.whiskerLeft A).comp (g.whiskerLeft A) = (f.comp g).whiskerLeft A
---   := by
---   rw [comp, Eqv.letArrow_whiskerLeft, whiskerLeft, Eqv.toEqv_toArr, Eqv.let₂_let₂, whiskerLeft]
---   congr 2
---   conv => rhs; rw [Eqv.bind_pair]
---   rw [Eqv.let₂_beta]
---   congr 1
---   simp only [
---     Eqv.wk0_letArrow, Eqv.wk0_bv0, Eqv.let_letArrow, comp, Eqv.toArr, extend1, Eqv.wk_letArrow,
---     toEqv
---   ]
---   congr 2
---   rw [bv0_letArrow']
---   conv => lhs;
---   induction g using Eqv.quotInd
---   apply Eqv.sound; apply Wf.eqv.of_tm
---   simp only [
---     Wf.let₁, Wf.wk, Wf.pair, Wf.wk1, Wf.bv1, Wf.wk2, Wf.bv0, Ctx?.extend1, Ctx?.Wk.drop_ix,
---     Ctx?.Wk.ix, Ctx?.length_erase, Ctx?.length_cons, Ctx?.length_nil, Nat.zero_add
---   ]
---   sorry
+theorem DRWS.Arrow.whiskerLeft_comp_whiskerLeft {A : R.Obj}
+  (f : Arrow R B C) (g : Arrow R C D)
+  : (f.whiskerLeft A).comp (g.whiskerLeft A) = (f.comp g).whiskerLeft A
+  := by
+  rw [comp, Eqv.letArrow_whiskerLeft, whiskerLeft, Eqv.toEqv_toArr, Eqv.let₂_let₂, whiskerLeft]
+  congr 2
+  conv => rhs; rw [Eqv.bind_pair]
+  rw [Eqv.let₂_beta]
+  congr 1
+  simp only [
+    Eqv.wk0_letArrow, Eqv.wk0_bv0, Eqv.let_letArrow, comp, Eqv.toArr, extend1, Eqv.wk_letArrow,
+    toEqv
+  ]
+  congr 2
+  rw [bv0_letArrow']
+  conv => lhs;
+  simp only [Eqv.wk2_pair, Eqv.wk1_pair, Eqv.wk1_bv1, Eqv.wk2_bv1, Eqv.wk1_bv0]
+  apply Eq.symm
+  generalize (Ctx?.SSplit.cons (α := α) _ _) = hΓ₁
+  generalize (Ctx?.SSplit.cons (α := α) _ _) = hΓ₂
+  generalize (Ctx?.SSplit.cons (α := α) _ _) = hΓ₃
+  generalize hρ : (Ctx?.extend1 (hΓ := _) (α := α) _ _) = ρ
+  induction f, g using Eqv.quotInd₂ with
+  | h f g =>
+  apply Eqv.sound
+  apply ((g.wk ρ).pre_beta_pureLout hΓ₁
+    (Wf.pair (.cons (.cons (.cons (Ctx?.erase_right _) (.left _)) (.left _)) (.right _))
+      .bv3 .bv0) (hb := _)).coh
+  rfl
+  simp [
+    Wf.pair, Wf.wk1, Wf.subst, Wf.wk, Wf.bv3, Wf.bv2, Wf.wk2, SubstDS.refl_get, Wf.bv0,
+    Ctx?.extend1, ren_ren, <-Nat.liftWk_comp, <-hρ
+  ]
+  rfl
+  reduce
+  infer_instance
 
--- theorem DRWS.Arrow.whiskerLeft_comp {A : R.Obj} (f : Arrow R B C) (g : Arrow R C D)
---   : (f.comp g).whiskerLeft A = (f.whiskerLeft A).comp (g.whiskerLeft A)
---   := (f.whiskerLeft_comp_whiskerLeft g).symm
+theorem DRWS.Arrow.whiskerLeft_comp {A : R.Obj} (f : Arrow R B C) (g : Arrow R C D)
+  : (f.comp g).whiskerLeft A = (f.whiskerLeft A).comp (g.whiskerLeft A)
+  := (f.whiskerLeft_comp_whiskerLeft g).symm
 
 def DRWS.Obj.assoc (A B C : R.Obj) : Arrow R ((A.tensor B).tensor C) (A.tensor (B.tensor C))
   := Eqv.toArr (.let₂ (Ctx?.erase_left _) .bv0 (

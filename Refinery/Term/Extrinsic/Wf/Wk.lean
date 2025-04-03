@@ -80,10 +80,74 @@ theorem Eqv.wk2_bv1 {Γ : Ctx? α} [hΓ : Γ.del] {v : Var? α} [hv : v.del]
   : (Eqv.bv1 (R := R) (Γ := Γ) (v := v) (A := A) (q := q)).wk2 x = .bv1
   := rfl
 
-theorem Eqv.wk0_pair' {Γ Γl Γr : Ctx? α}  (hΓ : Γ.SSplit Γl Γr) {A B}
-  (a : Eqv R Γl A) (b : Eqv R Γr B) {x l r : Var? α}
-  (hlr : x.SSplit l r) [hx : x.del] [hl : l.del] [hr : r.del]
-  : (a.pair hΓ b).wk0 x = (a.wk0 l).pair (hΓ.cons hlr) (b.wk0 r)
+theorem Eqv.wk0_bv2 {Γ : Ctx? α} [hΓ : Γ.del] {l r : Var? α} [hl : l.del] [hr : r.del]
+  {A : Ty α} {q : Quant} {x : Var? α} [hx : x.del]
+  : (Eqv.bv2 (R := R) (Γ := Γ) (l := l) (r := r) (A := A) (q := q)).wk0 x = .bv3
+  := rfl
+
+theorem Eqv.wk1_bv2 {Γ : Ctx? α} [hΓ : Γ.del] {l r : Var? α} [hl : l.del] [hr : r.del]
+  {A : Ty α} {q : Quant} {x : Var? α} [hx : x.del]
+  : (Eqv.bv2 (R := R) (Γ := Γ) (l := l) (r := r) (A := A) (q := q)).wk1 x = .bv3
+  := rfl
+
+theorem Eqv.wk2_bv2 {Γ : Ctx? α} [hΓ : Γ.del] {l r : Var? α} [hl : l.del] [hr : r.del]
+  {A : Ty α} {q : Quant} {x : Var? α} [hx : x.del]
+  : (Eqv.bv2 (R := R) (Γ := Γ) (l := l) (r := r) (A := A) (q := q)).wk2 x = .bv3
+  := rfl
+
+theorem Eqv.wk0_pair' {Γ Γl Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γl Γr) {A B}
+  (a : Eqv R Γl A) (b : Eqv R Γr B) {x xl xr : Var? α}
+  (hΓ' : (Γ.cons x).SSplit (Γl.cons xl) (Γr.cons xr)) [hx : x.del]
+  : (a.pair hΓ b).wk0 x =
+    haveI _ : xl.del := hΓ'.head.left_del
+    haveI _ : xr.del := hΓ'.head.right_del
+    (a.wk0 xl).pair hΓ' (b.wk0 xr)
+  := by induction a, b using quotInd₂; apply sound; apply Wf.eqv.of_tm; rfl
+
+theorem Eqv.wk1_pair' {Γ Γl Γr : Ctx? α} {v vl vr}
+  (hΓ : (Γ.cons v).SSplit (Γl.cons vl) (Γr.cons vr)) {A B}
+  (a : Eqv R (Γl.cons vl) A) (b : Eqv R (Γr.cons vr) B) {x xl xr : Var? α}
+  (hΓ' : ((Γ.cons x).cons v).SSplit ((Γl.cons xl).cons vl) ((Γr.cons xr).cons vr))
+  [hx : x.del]
+  : (a.pair hΓ b).wk1 x =
+    haveI _ : xl.del := hΓ'.tail.head.left_del
+    haveI _ : xr.del := hΓ'.tail.head.right_del
+    (a.wk1 xl).pair hΓ' (b.wk1 xr)
+  := by induction a, b using quotInd₂; apply sound; apply Wf.eqv.of_tm; rfl
+
+theorem Eqv.wk2_pair' {Γ Γl Γr : Ctx? α} {l r ll lr rl rr}
+  (hΓ : ((Γ.cons l).cons r).SSplit ((Γl.cons ll).cons lr) ((Γr.cons rl).cons rr)) {A B}
+  (a : Eqv R ((Γl.cons ll).cons lr) A) (b : Eqv R ((Γr.cons rl).cons rr) B) {x xl xr : Var? α}
+  (hΓ' : (((Γ.cons x).cons l).cons r).SSplit
+    (((Γl.cons xl).cons ll).cons lr)
+    (((Γr.cons xr).cons rl).cons rr))
+  [hx : x.del]
+  : (a.pair hΓ b).wk2 x =
+    haveI _ : xl.del := hΓ'.tail.tail.head.left_del
+    haveI _ : xr.del := hΓ'.tail.tail.head.right_del
+    (a.wk2 xl).pair hΓ' (b.wk2 xr)
+  := by induction a, b using quotInd₂; apply sound; apply Wf.eqv.of_tm; rfl
+
+theorem Eqv.wk0_pair {Γ Γl Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γl Γr) {A B}
+  (a : Eqv R Γl A) (b : Eqv R Γr B) {x : Var? α} [hx : x.del]
+  : (a.pair hΓ b).wk0 x = (a.wk0 x).pair (hΓ.cons (.left _)) (b.wk0 x.erase)
+  := by induction a, b using quotInd₂; apply sound; apply Wf.eqv.of_tm; rfl
+
+theorem Eqv.wk1_pair {Γ Γl Γr : Ctx? α} {v vl vr}
+  (hΓ : (Γ.cons v).SSplit (Γl.cons vl) (Γr.cons vr)) {A B}
+  (a : Eqv R (Γl.cons vl) A) (b : Eqv R (Γr.cons vr) B) {x : Var? α}
+  [hx : x.del]
+  : (a.pair hΓ b).wk1 x = (a.wk1 x).pair ((hΓ.tail.cons (.left _)).cons hΓ.head) (b.wk1 x.erase)
+  := by induction a, b using quotInd₂; apply sound; apply Wf.eqv.of_tm; rfl
+
+theorem Eqv.wk2_pair {Γ Γl Γr : Ctx? α} {l r ll lr rl rr}
+  (hΓ : ((Γ.cons l).cons r).SSplit ((Γl.cons ll).cons lr) ((Γr.cons rl).cons rr)) {A B}
+  (a : Eqv R ((Γl.cons ll).cons lr) A) (b : Eqv R ((Γr.cons rl).cons rr) B) {x : Var? α}
+  [hx : x.del]
+  : (a.pair hΓ b).wk2 x
+  = (a.wk2 x).pair (((hΓ.tail.tail.cons (.left _)).cons hΓ.tail.head).cons hΓ.head) (b.wk2 x.erase)
   := by induction a, b using quotInd₂; apply sound; apply Wf.eqv.of_tm; rfl
 
 def Eqv.pwk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} (a : Eqv R Δ A) : Eqv R Γ A

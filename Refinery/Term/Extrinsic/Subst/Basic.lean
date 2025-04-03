@@ -370,18 +370,18 @@ theorem SubstDS.lift_refl {Γ : Ctx? α} (v : Var? α)
   : (SubstDS.refl Γ).lift v = SubstDS.refl (S := S) (Γ.cons v) := rfl
 
 def SubstDS.subst0 {Γ Γl Γr : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
-  (hΓ : Γ.SSplit Γl Γr) (da : Γr ⊢ a : A) (q : Quant) (hq : q ≤ quant Γr)
+  (hΓ : Γ.SSplit Γl Γr) (da : Γr ⊢ a : A) (q : Quant) (hq : q ⊓ quant A ≤ quant Γr)
   : SubstDS φ Γ (Γl.cons ⟨A, q⟩)
-  := .cons hΓ (.refl Γl) (.valid _ _ da (le_trans (by simp [quant]) hq))
+  := .cons hΓ (.refl Γl) (.valid _ _ da hq)
 
 @[simp]
 theorem SubstDS.subst0_get_zero {Γ Γl Γr : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
-  (hΓ : Γ.SSplit Γl Γr) (da : Γr ⊢ a : A) (q : Quant) (hq : q ≤ quant Γr)
+  (hΓ : Γ.SSplit Γl Γr) (da : Γr ⊢ a : A) (q : Quant) (hq : q ⊓ quant A ≤ quant Γr)
   : (SubstDS.subst0 hΓ da q hq).get 0 = a := rfl
 
 @[simp]
 theorem SubstDS.subst0_get_succ {Γ Γl Γr : Ctx? α} {A : Ty α} {a : Term φ (Ty α)}
-  (hΓ : Γ.SSplit Γl Γr) (da : Γr ⊢ a : A) (q : Quant) (hq : q ≤ quant Γr) (i : ℕ)
+  (hΓ : Γ.SSplit Γl Γr) (da : Γr ⊢ a : A) (q : Quant) (hq : q ⊓ quant A ≤ quant Γr) (i : ℕ)
   : (SubstDS.subst0 hΓ da q hq).get (i + 1) = (SubstDS.refl Γl).get i := rfl
 
 @[simp]
