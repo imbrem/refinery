@@ -150,6 +150,24 @@ theorem Eqv.wk2_pair {Γ Γl Γr : Ctx? α} {l r ll lr rl rr}
   = (a.wk2 x).pair (((hΓ.tail.tail.cons (.left _)).cons hΓ.tail.head).cons hΓ.head) (b.wk2 x.erase)
   := by induction a, b using quotInd₂; apply sound; apply Wf.eqv.of_tm; rfl
 
+theorem Eqv.wk_pair {Γ Δ Δl Δr : Ctx? α}
+  (ρ : Γ.Wk Δ) (hΔ : Δ.SSplit Δl Δr) (a : Eqv R Δl A) (b : Eqv R Δr B)
+  : (Eqv.pair hΔ a b).wk ρ = Eqv.pair (hΔ.wk ρ) (a.wk (hΔ.leftWk ρ)) (b.wk (hΔ.rightWk ρ))
+  := by induction a, b using quotInd₂; apply sound; apply Wf.eqv.of_tm; simp [Wf.wk, Wf.pair]
+
+theorem Eqv.wk_let₁ {Γ Δ Δl Δr : Ctx? α}
+  (ρ : Γ.Wk Δ) (hΔ : Δ.SSplit Δl Δr) (a : Eqv R Δr A) (b : Eqv R (Δl.cons ⟨A, ⊤⟩) B)
+  : (Eqv.let₁ hΔ a b).wk ρ
+  = Eqv.let₁ (hΔ.wk ρ) (a.wk (hΔ.rightWk ρ)) (b.wk ((hΔ.leftWk ρ).scons _))
+  := by induction a, b using quotInd₂; apply sound; apply Wf.eqv.of_tm; simp [Wf.wk, Wf.let₁]
+
+theorem Eqv.wk_let₂ {Γ Δ Δl Δr : Ctx? α}
+  (ρ : Γ.Wk Δ) (hΔ : Δ.SSplit Δl Δr)
+  (a : Eqv R Δr (A.tensor B)) (b : Eqv R ((Δl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C)
+  : (Eqv.let₂ hΔ a b).wk ρ
+  = Eqv.let₂ (hΔ.wk ρ) (a.wk (hΔ.rightWk ρ)) (b.wk (((hΔ.leftWk ρ).scons _).scons _))
+  := by induction a, b using quotInd₂; apply sound; apply Wf.eqv.of_tm; simp [Wf.wk, Wf.let₂]
+
 def Eqv.pwk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} (a : Eqv R Δ A) : Eqv R Γ A
   := a.liftOn (λ a => e⟦a.pwk ρ⟧) (λ_ _ h => sound <| Wf.eqv.pwk_congr ρ h)
 

@@ -191,6 +191,20 @@ theorem Eqv.letArrow_let₁
     hΓ.left_length
   ]
 
+theorem Eqv.letArrow_let₂
+  {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr)
+  (a : Eqv R Γr (A.tensor B)) (b : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C) (f : DRWS.Arrow R C D)
+  : (a.let₂ hΓ b).letArrow f = a.let₂ hΓ (b.letArrow f)
+  := by
+  rw [letArrow, let_let₂]
+  induction a, b, f using Eqv.quotInd₃
+  apply Eqv.sound
+  apply Wf.eqv.of_tm
+  simp [
+    Wf.wk, Wf.let₁, Wf.wk1, Ctx?.extend1, ren_ren, <-Nat.liftWk_comp, Nat.stepWk, Ctx?.Wk.drop_ix,
+    hΓ.left_length, Wf.let₂
+  ]
+
 theorem Eqv.letArrow_letArrow (a : Eqv R Γr A) (f : DRWS.Arrow R A B) (g : DRWS.Arrow R B C)
   : (a.letArrow f).letArrow g = a.letArrow (f.comp g)
 := by

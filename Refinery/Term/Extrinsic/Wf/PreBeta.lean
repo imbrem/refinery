@@ -116,6 +116,23 @@ theorem Eqv.let₁_bv0 [R.UWkCongr] {Γ : Ctx? α} {A B : Ty α} (a : Eqv R (Γ.
   : Eqv.bv0.let₁ (Γ.erase_right.cons (.right ⟨A, ⊤⟩)) (a.wk1 ⟨A, 0⟩) = a
   := by induction a using Eqv.quotInd; apply sound; apply Wf.let₁_bv0
 
+theorem Eqv.let₁_unit_anti [R.UWkCongr] {Γ : Ctx? α} {A : Ty α} (a : Eqv R Γ A)
+  : a = (Eqv.unit _).let₁ Γ.erase_right (a.wk0 ⟨.unit, ⊤⟩)
+  := by
+  induction a using Eqv.quotInd with
+  | h a =>
+  apply sound
+  apply Setoid.symm
+  apply (Wf.pre_beta_pureIn Γ.erase_right (Wf.unit _) _ (by simp) (a.wk0 ⟨.unit, ⊤⟩) (ha := _)).coh
+  rfl
+  simp [Wf.subst, Wf.wk0, <-subst_renIn]
+  apply Subst.subst1_fvi
+  intro x hx
+  simp [SubstDS.refl_get]
+  exact lt_of_lt_of_le hx a.deriv.fvi_le_length
+  reduce
+  infer_instance
+
 theorem Wf.bind_pwk_inl {Γ Γl Γr : Ctx? α}
   {A : Ty α} (a : Wf R Γr A) (hΓ : Γ.SSplit Γl Γr) [hΓl : Γl.del]
   : a.let₁ hΓ (.inl A B .bv0) ≈ (a.pwk (hΓ.pwk_left_del)).inl A B := by
