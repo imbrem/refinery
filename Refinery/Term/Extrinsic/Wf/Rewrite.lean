@@ -175,6 +175,23 @@ def Eqv.let₂_beta {Γ Γc Γl Γm Γr : Ctx? α} {A B C}
   apply DRWS.EquivFwdStep.step
   apply DRWS.Step.let₂_beta
 
+theorem Eqv.let₂_beta_anti {Γ Γc Γl Γm Γr : Ctx? α} {A B C}
+  (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
+  (a : Eqv R Γr A) (b : Eqv R Γm B)
+  (c : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C)
+  : a.let₁ hΓ
+      ((b.wk0 _).let₁ (hΓc.cons (.left _)) c)
+  = ((a.pair (hΓ.s12_3_23 hΓc).comm b).let₂ (hΓ.s12_3_1_23 hΓc) c) := by
+  induction a, b, c using quotInd₃ with
+  | h a b c =>
+  apply sound
+  apply Wf.eqv.coh
+  apply exact
+  apply Eq.symm
+  exact Eqv.let₂_beta (hΓ.s12_3_1_23 hΓc) (hΓ.s12_3_23 hΓc).comm e⟦a⟧ e⟦b⟧ e⟦c⟧
+  rfl
+  rfl
+
 def Eqv.case_inl {Γ Γl Γr : Ctx? α} {A B C}
   (hΓ : Γ.SSplit Γl Γr)
   (a : Eqv R Γr A)

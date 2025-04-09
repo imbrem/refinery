@@ -180,6 +180,13 @@ instance Subst.coeRen : Coe (ℕ → ℕ) (Subst φ α) where
   coe := ofRen
 
 @[simp]
+theorem Subst.lift_ofRen (ρ : ℕ → ℕ) : (ofRen (α := α) (φ := φ) ρ).lift = ofRen (Nat.liftWk ρ)
+  := by ext x; cases x <;> rfl
+
+theorem subst_ofRen (ρ : ℕ → ℕ) (a : Term φ α) : a.subst (Subst.ofRen ρ) = a.ren ρ
+  := by induction a generalizing ρ <;> simp [subst, *]
+
+@[simp]
 theorem Subst.coe_eq_coe (ρ σ : ℕ → ℕ) : (ρ : Subst φ α) = (σ : Subst φ α) ↔ ρ = σ
   := by constructor
         intro h; ext i; have h := congrFun h i; convert h using 0; simp [ofRen]

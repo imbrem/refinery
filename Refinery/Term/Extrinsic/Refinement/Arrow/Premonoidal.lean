@@ -220,12 +220,102 @@ theorem Eqv.let₂_reassoc_inv {Γ Γl Γr : Ctx? α} {X Y A B C : Ty α}
   apply Eqv.sound; apply Wf.eqv.of_tm
   rfl
 
--- theorem Eqv.reassoc_beta {Γ Γc Γl Γm Γr : Ctx? α} {A B C : Ty α}
---   (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
---   (a : Eqv R Γl A) (b : Eqv R Γm B) (c : Eqv R Γr C)
---   : ((a.pair hΓc b).pair hΓ c).reassoc = a.pair (hΓ.s12_3_1_23 hΓc) (b.pair (hΓ.s12_3_23 hΓc) c)
---   := by
---   sorry
+theorem Eqv.reassoc_beta {Γ Γc Γl Γm Γr : Ctx? α} {A B C : Ty α}
+  (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
+  (a : Eqv R Γl A) (b : Eqv R Γm B) (c : Eqv R Γr C)
+  : ((a.pair hΓc b).pair hΓ c).reassoc = a.pair (hΓ.s12_3_1_23 hΓc) (b.pair (hΓ.s12_3_23 hΓc) c)
+  := calc
+  _ = .let₁ (hΓ.s12_3_1_23 hΓc).comm a
+      (.let₁ ((hΓ.s12_3_23 hΓc).comm.cons (.left _)) (b.wk0 _)
+        (.let₁ ((((Ctx?.erase_left _).comm.cons (.right _))).cons (.right _))
+          (.pair
+            ((((Ctx?.erase_left _).comm.cons (.left _))).cons (.right _))
+            .bv1 .bv0
+          )
+          (.let₁
+            (((Ctx?.erase_right _).comm).cons (.left _)) (((c.wk0 _).wk0 _).wk0 _)
+            (.let₂
+              ((((Ctx?.erase_left _).comm).cons (.right _)).cons (.left _))
+              .bv1
+              (.pair
+                ((((Ctx?.erase_right _).cons (.right _)).cons (.left _)).cons (.right _)) .bv1
+                (.pair
+                  ((((Ctx?.erase_right _).cons (.right _)).cons (.right _)).cons (.left _))
+                  .bv0
+                  .bv2
+                )
+              )
+            )))
+       ) := by
+      rw [reassoc, let₂_beta, bind_pair, let_let₁, let_let₁]
+      induction a, b, c using quotInd₃
+      apply Eqv.sound; apply Wf.eqv.of_tm
+      simp [Wf.let₁, Wf.let₂, Wf.pair, Wf.bv1, Wf.wk1, Wf.bv0, Wf.wk0, ren_ren, <-Nat.liftWk_comp]
+      constructor <;> rfl
+  _ = .let₁ (hΓ.s12_3_1_23 hΓc).comm a
+      (.let₁ ((hΓ.s12_3_23 hΓc).comm.cons (.left _)) (b.wk0 _)
+          (.let₁
+            ((((Ctx?.erase_right Γr).comm).cons (.left _)).cons (.left _)) (((c.wk0 _).wk0 _))
+            (.let₂
+              (((((Ctx?.erase_left _).comm).cons
+                (.right ⟨A, ⊤⟩)).cons (.right ⟨B, ⊤⟩)).cons (.left ⟨C, ⊤⟩))
+                (.pair
+                  (((((Ctx?.erase_left _).comm.cons (.left _))).cons (.right _)).cons (.right _))
+                  .bv2 .bv1
+                )
+              (.pair
+                (((((Ctx?.erase_right _).cons
+                  (.right _)).cons (.right ⟨C, ⊤⟩)).cons (.left ⟨A, ⊤⟩)).cons (.right ⟨B, ⊤⟩)) .bv1
+                (.pair
+                  (((((Ctx?.erase_right _).cons
+                    (.right _)).cons (.right ⟨C, ⊤⟩)).cons (.left ⟨A, 0⟩)).cons (.left ⟨B, ⊤⟩))
+                  .bv0
+                  .bv2
+                )
+              )
+            ))
+       ) := by
+        congr 2
+        induction c using quotInd with
+        | h c =>
+        apply sound
+        apply Wf.eqv.coh
+        apply Wf.pre_beta_pureIn
+          ((((Ctx?.erase_left _).comm.cons (.right _))).cons (.right _))
+          (.pair
+            ((((Ctx?.erase_left _).comm.cons (.left _))).cons (.right _))
+            .bv1 .bv0
+          )
+          ⊤
+          (by simp; simp [quant])
+          (.let₁
+            (((Ctx?.erase_right _).comm).cons (.left _)) (((c.wk0 _).wk0 _).wk0 _)
+            (.let₂
+              ((((Ctx?.erase_left _).comm).cons (.right _)).cons (.left _))
+              .bv1
+              (.pair
+                ((((Ctx?.erase_right _).cons (.right _)).cons (.left _)).cons (.right _)) .bv1
+                (.pair
+                  ((((Ctx?.erase_right _).cons (.right _)).cons (.right _)).cons (.left _))
+                  .bv0
+                  .bv2
+                )
+              )
+            ))
+        rfl
+        simp only [
+          Wf.subst, Wf.pair, Wf.bv1, Wf.let₁, Wf.wk0, Wf.let₂, Term.subst, Wf.bv0, Wf.bv2
+        ]
+        simp only [EQuant.coe_top, Subst.get_lift_succ, SubstDS.subst0_get_zero, ren.eq_6, ren,
+          Nat.succ_eq_add_one, Nat.reduceAdd, zero_add, Subst.get_lift_zero, ren.eq_1, let₁.injEq,
+          and_self, and_true]
+        simp only [<-subst_renIn, ren_ren]
+        rw [<-subst_ofRen]
+        apply Subst.subst_eqOn_fvi
+        intro x hx
+        simp [SubstDS.refl_get, lt_of_lt_of_le hx c.deriv.fvi_le_length]
+  _ = _ :=  by
+    sorry
 
 -- theorem Eqv.reassoc_reassoc_inv {Γ : Ctx? α} {A B C : Ty α}
 --   (a : Eqv R Γ ((A.tensor B).tensor C))
