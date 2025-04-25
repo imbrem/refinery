@@ -26,8 +26,6 @@ theorem DRWS.Arrow.from0_comp {A B : R.Obj} (f : Arrow R A B) : A.from0.comp f =
 theorem DRWS.Arrow.from0_eq {A : R.Obj} (f : Arrow R R.zeroObj A) : f = A.from0
   := from0_uniq _ _
 
---TODO: from0 initial
-
 def DRWS.Obj.inl (A B : R.Obj) : Arrow R A (A.coprod B) := (Eqv.bv0.inl A B).toArr
 
 def DRWS.Obj.inr (A B : R.Obj) : Arrow R B (A.coprod B) := (Eqv.bv0.inr A B).toArr
@@ -102,7 +100,7 @@ theorem Eqv.letArrow_case {Γ Γl Γr : Ctx? α} {A B C D : Ty α}
   (f : DRWS.Arrow R C D)
   : (a.case hΓ b c).letArrow f = a.case hΓ (b.letArrow f) (c.letArrow f)
   := by
-  rw [letArrow, let_case]
+  rw [letArrow, letT₁, let_case]
   induction a, b, c, f using Eqv.quotInd₄
   apply Eqv.sound
   apply Wf.eqv.of_tm

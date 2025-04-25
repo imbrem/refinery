@@ -1,5 +1,6 @@
 import Refinery.Term.Extrinsic.Wf.Rewrite
 import Refinery.Term.Extrinsic.Wf.PreBeta
+import Refinery.Term.Extrinsic.Wf.LetThen
 import Discretion.Poset2.Basic
 
 open HasQuant HasPQuant HasCommRel
@@ -93,7 +94,7 @@ def DRWS.Arrow.extend1 (Γ : Ctx? α) [hΓ : Γ.del] (a : DRWS.Arrow R A B)
   : Eqv R (Γ.cons ⟨A, ⊤⟩) B := a.toEqv.wk (Γ.extend1 ⟨A, ⊤⟩)
 
 def Eqv.letArrow {Γ : Ctx? α} {A B : Ty α} (a : Eqv R Γ A) (b : R.Arrow A B) : Eqv R Γ B
-  := a.let₁ Γ.erase_left (b.extend1 Γ.erase)
+  := a.letT₁ (b.extend1 Γ.erase)
 
 theorem Eqv.letArrow_mk {Γ : Ctx? α} {A B : Ty α} {a : Wf R Γ A} {b : R.PreArrow A B}
   : (e⟦a⟧).letArrow b.e = e⟦a.letArrow b⟧ := rfl
@@ -168,7 +169,7 @@ theorem Eqv.let_letArrow
   : (a.letArrow f).let₁ hΓ b
   = a.let₁ hΓ ((f.extend1 _).let₁ (Γl.erase_right.cons (.right _)) (b.wk1 _))
   := by
-  rw [letArrow, let_let₁]
+  rw [letArrow, letT₁, let_let₁]
   induction a, b, f using Eqv.quotInd₃
   apply Eqv.sound
   apply Wf.eqv.of_tm
@@ -182,7 +183,7 @@ theorem Eqv.letArrow_let₁
   (a : Eqv R Γr A) (b : Eqv R (Γl.cons ⟨A, ⊤⟩) B) (f : DRWS.Arrow R B C)
   : (a.let₁ hΓ b).letArrow f = a.let₁ hΓ (b.letArrow f)
   := by
-  rw [letArrow, let_let₁]
+  rw [letArrow, letT₁, let_let₁]
   induction a, b, f using Eqv.quotInd₃
   apply Eqv.sound
   apply Wf.eqv.of_tm
@@ -196,7 +197,7 @@ theorem Eqv.letArrow_let₂
   (a : Eqv R Γr (A.tensor B)) (b : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C) (f : DRWS.Arrow R C D)
   : (a.let₂ hΓ b).letArrow f = a.let₂ hΓ (b.letArrow f)
   := by
-  rw [letArrow, let_let₂]
+  rw [letArrow, letT₁, let_let₂]
   induction a, b, f using Eqv.quotInd₃
   apply Eqv.sound
   apply Wf.eqv.of_tm
@@ -208,7 +209,7 @@ theorem Eqv.letArrow_let₂
 theorem Eqv.letArrow_letArrow (a : Eqv R Γr A) (f : DRWS.Arrow R A B) (g : DRWS.Arrow R B C)
   : (a.letArrow f).letArrow g = a.letArrow (f.comp g)
 := by
-  simp only [letArrow, let_let₁, DRWS.Arrow.comp]
+  simp only [letArrow, letT₁, let_let₁, DRWS.Arrow.comp]
   induction a, f, g using Eqv.quotInd₃
   apply Eqv.sound
   apply Wf.eqv.of_tm

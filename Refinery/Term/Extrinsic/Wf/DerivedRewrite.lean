@@ -263,3 +263,12 @@ theorem Eqv.let₂_pair_right_bv2 {A B C} {Γ Γl Γr : Ctx? α}
   = .pair (hΓ.comm.s1_23_12_3 hΓc)
     (.let₂ (hΓ.comm.s1_23_12 hΓc).comm a b) .bv0
   := let₂_pair_right_wk0_wk0 hΓ hΓc a b (.bv0)
+
+-- theorem Eqv.let₂_pair_left_wk0_wk0 {A B C D} {Γ Γc Γl Γm Γr : Ctx? α}
+--   (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
+--   (a : Eqv R Γr (.tensor A B)) (b : Eqv R Γl C) (c : Eqv R ((Γm.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) D)
+--   [ha : a.HasEff ea] [hb : b.HasEff eb] (he : ea ⇌ eb)
+--   : a.let₂ hΓ (.pair ((hΓc.cons (.right _)).cons (.right _)) ((b.wk0 _).wk0 _) c)
+--   = .pair (hΓ.s12_3_1_23 hΓc) b (.let₂ (hΓ.s12_3_23 hΓc) a c)
+--   := by
+--   conv => rhs; rw [bind_pair_right _ _ _ _ _ he]

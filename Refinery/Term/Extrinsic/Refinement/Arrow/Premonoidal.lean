@@ -11,19 +11,19 @@ namespace Term
 variable {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε] {R : DRWS φ α} [R.UWkCongr]
 
 def DRWS.Arrow.whiskerLeft (A : R.Obj) (f : Arrow R B C) : Arrow R (A.tensor B) (A.tensor C)
-  := Eqv.toArr (.let₂ (Ctx?.erase_left _) .bv0 (.pair
+  := Eqv.toArr (.letT₂ .bv0 (.pair
     ((Ctx?.erase_right _).cons (.right _))
     .bv1 (.letArrow .bv0 f)
   ))
 
 def DRWS.Arrow.whiskerRight (f : Arrow R A B) (C : R.Obj) : Arrow R (A.tensor C) (B.tensor C)
-  := Eqv.toArr (.let₂ (Ctx?.erase_left _) .bv0 (.pair
+  := Eqv.toArr (.letT₂ .bv0 (.pair
     (((Ctx?.erase_left _).cons (.left _)).cons (.right _))
      (.letArrow .bv1 f) .bv0
   ))
 
 theorem DRWS.Obj.whiskerLeft_id (A : R.Obj) : A.id.whiskerLeft B = id (B.tensor A)
-  := by simp [Arrow.whiskerLeft, Eqv.letArrow_id]; exact Eqv.let₂_eta _
+  := by simp [Arrow.whiskerLeft, Eqv.letT₂, Eqv.letArrow_id]; exact Eqv.let₂_eta _
 
 theorem DRWS.Obj.id_whiskerRight (A : R.Obj) : A.id.whiskerRight B = id (A.tensor B)
   := by
@@ -33,7 +33,7 @@ theorem DRWS.Obj.id_whiskerRight (A : R.Obj) : A.id.whiskerRight B = id (A.tenso
 
 theorem Eqv.letArrow_whiskerLeft
   (a : Eqv R Γ (A.tensor B)) (f : DRWS.Arrow R B C)
-  : a.letArrow (f.whiskerLeft A) = .let₂ (Ctx?.erase_left _) a (.pair
+  : a.letArrow (f.whiskerLeft A) = .letT₂ a (.pair
     ((Ctx?.erase_right _).cons (.right _))
     .bv1 (.letArrow .bv0 f)
   ) := by
@@ -50,7 +50,7 @@ theorem Eqv.letArrow_whiskerLeft
 
 theorem Eqv.letArrow_whiskerRight
   (a : Eqv R Γ (A.tensor B)) (f : DRWS.Arrow R A C)
-  : a.letArrow (f.whiskerRight B) = .let₂ (Ctx?.erase_left _) a (.pair
+  : a.letArrow (f.whiskerRight B) = .letT₂ a (.pair
     (((Ctx?.erase_left _).cons (.left _)).cons (.right _))
      (.letArrow .bv1 f) .bv0
   ) := by
@@ -69,7 +69,9 @@ theorem DRWS.Arrow.whiskerLeft_comp_whiskerLeft {A : R.Obj}
   (f : Arrow R B C) (g : Arrow R C D)
   : (f.whiskerLeft A).comp (g.whiskerLeft A) = (f.comp g).whiskerLeft A
   := by
-  rw [comp, Eqv.letArrow_whiskerLeft, whiskerLeft, Eqv.toEqv_toArr, Eqv.let₂_let₂, whiskerLeft]
+  rw [
+    comp, Eqv.letArrow_whiskerLeft, whiskerLeft, Eqv.toEqv_toArr, Eqv.letT₂, Eqv.letT₂,
+    Eqv.let₂_let₂, whiskerLeft]
   congr 2
   conv => rhs; rw [Eqv.bind_pair]
   rw [Eqv.let₂_beta]
@@ -108,21 +110,25 @@ theorem DRWS.Arrow.whiskerLeft_comp {A : R.Obj} (f : Arrow R B C) (g : Arrow R C
 
 def Eqv.releft {Γ : Ctx? α} {A : Ty α}
   (a : Eqv R Γ (.tensor .unit A)) : Eqv R Γ A
-  := .let₂ (Ctx?.erase_left _) a .bv0
+  := .letT₂ a .bv0
 
 def Eqv.releft_inv {Γ : Ctx? α} {A : Ty α}
   (a : Eqv R Γ A) : Eqv R Γ (.tensor .unit A)
   := .pair (Ctx?.erase_left _) (.unit _) a
 
--- theorem Eqv.releft_inv_releft {Γ : Ctx? α} {A : Ty α}
---   (a : Eqv R Γ A) : a.releft_inv.releft = a := by
---   rw [releft_inv, releft, let₂_beta]
---   conv => rhs; rw [<-let₁_eta a]
---   sorry
+theorem Eqv.releft_inv_releft {Γ : Ctx? α} {A : Ty α}
+  (a : Eqv R Γ A) : a.releft_inv.releft = a := by
+  rw [releft_inv, releft, letT₂, let₂_beta]
+  conv => rhs; rw [<-let₁_eta a, let₁_unit_anti (let₁ _ _ _)]
+  induction a using quotInd
+  apply Eqv.sound; apply Wf.eqv.of_tm
+  rfl
 
--- theorem Eqv.releft_releft_inv {Γ : Ctx? α} {A : Ty α}
---   (a : Eqv R Γ (.tensor .unit A)) : a.releft.releft_inv = a
---   := sorry
+theorem Eqv.releft_releft_inv {Γ : Ctx? α} {A : Ty α}
+  (a : Eqv R Γ (.tensor .unit A)) : a.releft.releft_inv = a := by
+  rw [releft, releft_inv]
+  conv => rhs; rw [<-letT₂_eta a]
+  sorry
 
 def DRWS.Obj.leftUnitor (A : R.Obj) : Arrow R (.tensor .unit A) A
   := Eqv.toArr (Eqv.bv0.releft)
@@ -132,7 +138,7 @@ def DRWS.Obj.leftUnitor_inv (A : R.Obj) : Arrow R A (.tensor .unit A)
 
 def Eqv.reright {Γ : Ctx? α} {A : Ty α}
   (a : Eqv R Γ (A.tensor .unit)) : Eqv R Γ A
-  := .let₂ (Ctx?.erase_left _) a .bv1
+  := .letT₂ a .bv1
 
 def Eqv.reright_inv {Γ : Ctx? α} {A : Ty α}
   (a : Eqv R Γ A) : Eqv R Γ (A.tensor .unit)
