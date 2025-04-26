@@ -276,6 +276,7 @@ theorem Eqv.let₂_reassoc_inv {Γ Γl Γr : Ctx? α} {X Y A B C : Ty α}
   apply Eqv.sound; apply Wf.eqv.of_tm
   rfl
 
+set_option maxHeartbeats 1000000000 in
 theorem Eqv.reassoc_beta {Γ Γc Γl Γm Γr : Ctx? α} {A B C : Ty α}
   (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
   (a : Eqv R Γl A) (b : Eqv R Γm B) (c : Eqv R Γr C)
@@ -370,8 +371,120 @@ theorem Eqv.reassoc_beta {Γ Γc Γl Γm Γr : Ctx? α} {A B C : Ty α}
         apply Subst.subst_eqOn_fvi
         intro x hx
         simp [SubstDS.refl_get, lt_of_lt_of_le hx c.deriv.fvi_le_length]
+  _ = let₁ (hΓ.s12_3_1_23 hΓc).comm a
+    (let₁ ((hΓ.s12_3_23 hΓc).comm.cons (Var?.SSplit.left { ty := A, q := ⊤ })) (wk0 _ b)
+      (let₁
+        ((Γr.erase_right.comm.cons
+        (Var?.SSplit.left { ty := A, q := ⊤ })).cons (Var?.SSplit.left { ty := B, q := ⊤ }))
+        (wk0 _ (wk0 _ c))
+        (let₁
+          ((((Γr.erase.erase_left.comm.cons (Var?.SSplit.right { ty := A, q := ⊤ })).cons
+                    (Var?.SSplit.right { ty := B, q := ⊤ })).cons
+                (Var?.SSplit.left { ty := C, q := ⊤ })).s1_23_13_2
+            (((Γr.erase.erase.erase_left.comm.cons (Var?.SSplit.left { ty := A, q := ⊤ })).cons
+                  (Var?.SSplit.right { ty := B, q := ⊤ })).cons
+              (Var?.SSplit.right _)))
+          bv2
+          (let₁
+            (((((Γr.erase.erase_left.comm.cons (Var?.SSplit.right { ty := A, q := ⊤ })).cons
+                          (Var?.SSplit.right { ty := B, q := ⊤ })).cons
+                      (Var?.SSplit.left { ty := C, q := ⊤ })).s1_23_13
+                  (((Γr.erase.erase.erase_left.comm.cons (Var?.SSplit.left { ty := A, q := ⊤ })).cons
+                        (Var?.SSplit.right { ty := B, q := ⊤ })).cons
+                    (Var?.SSplit.right _))).cons
+              (Var?.SSplit.left { ty := A, q := ⊤ }))
+            bv2
+            (pair
+              (((((Γr.erase.cons _).erase_right.cons
+                            (Var?.SSplit.right _)).cons
+                        (Var?.SSplit.right { ty := C, q := ⊤ })).cons
+                    (Var?.SSplit.left { ty := A, q := ⊤ })).cons
+                (Var?.SSplit.right { ty := B, q := ⊤ }))
+              bv1
+              (pair
+                (((((Γr.erase.cons _).erase.erase_right.cons
+                              (Var?.SSplit.right _)).cons
+                          (Var?.SSplit.right { ty := C, q := ⊤ })).cons
+                      (Var?.SSplit.left { ty := A, q := 0 })).cons
+                  (Var?.SSplit.left { ty := B, q := ⊤ }))
+                bv0 bv2)))))) := by rw [let₂_beta]; rfl
+    _ = let₁ (hΓ.s12_3_1_23 hΓc).comm a
+    (let₁ ((hΓ.s12_3_23 hΓc).comm.cons (Var?.SSplit.left { ty := A, q := ⊤ })) (wk0 _ b)
+      (let₁
+        ((Γr.erase_right.comm.cons
+        (Var?.SSplit.left { ty := A, q := ⊤ })).cons (Var?.SSplit.left { ty := B, q := ⊤ }))
+        (wk0 _ (wk0 _ c))
+        (let₁
+          ((((Γr.erase.erase_left.comm.cons (Var?.SSplit.right { ty := A, q := ⊤ })).cons
+                    (Var?.SSplit.right { ty := B, q := ⊤ })).cons
+                (Var?.SSplit.left { ty := C, q := ⊤ })).s1_23_13_2
+            (((Γr.erase.erase.erase_left.comm.cons (Var?.SSplit.left { ty := A, q := ⊤ })).cons
+                  (Var?.SSplit.right { ty := B, q := ⊤ })).cons
+              (Var?.SSplit.right _)))
+          bv2
+          (
+            .pair ((Ctx?.erase_left _).cons (.left _)) .bv0
+              (.pair ((((Ctx?.erase_left _).cons (.left _)).cons (.right _)).cons (.right _))
+                .bv2
+                .bv1)
+          )
+    )))
+      := by
+      congr 4
+      apply sound
+      apply Wf.eqv.coh
+      apply Wf.pre_beta_pureIn
+        (hΓ := (((((Γr.erase.erase_left.comm.cons (Var?.SSplit.right { ty := A, q := ⊤ })).cons
+                          (Var?.SSplit.right { ty := B, q := ⊤ })).cons
+                      (Var?.SSplit.left { ty := C, q := ⊤ })).s1_23_13
+                  (((Γr.erase.erase.erase_left.comm.cons (Var?.SSplit.left { ty := A, q := ⊤ })).cons
+                        (Var?.SSplit.right { ty := B, q := ⊤ })).cons
+                    (Var?.SSplit.right _))).cons
+              (Var?.SSplit.left { ty := A, q := ⊤ })))
+          .bv2 ⊤ _
+          (b := (.pair (((Ctx?.erase_left _).cons (.left _)).cons (.right _)) .bv1
+            (.pair ((Ctx?.erase_left _).cons (.left _)) .bv0 .bv2)))
+      simp; simp [quant]
+      simp [Wf.let₁, Wf.pair, Wf.pwk, Wf.subst, Wf.bv1, Wf.bv2]; rfl
+    _ = let₁ (hΓ.s12_3_1_23 hΓc).comm a
+    (let₁ ((hΓ.s12_3_23 hΓc).comm.cons (Var?.SSplit.left { ty := A, q := ⊤ })) (wk0 _ b)
+      (let₁
+        ((Γr.erase_right.comm.cons
+        (Var?.SSplit.left { ty := A, q := ⊤ })).cons (Var?.SSplit.left { ty := B, q := ⊤ }))
+        (wk0 _ (wk0 _ c))
+          (
+            .pair (((Ctx?.erase_right _).cons (.right _)).cons (.right _)) .bv2
+              (.pair (((Ctx?.erase_right _).cons (.left _)).cons (.right _)) .bv1 .bv0)
+          )
+        )) := by
+      congr 3
+      apply sound
+      apply Wf.eqv.coh
+      apply Wf.pre_beta_pureIn
+        (hΓ := ((((Γr.erase.erase_left.comm.cons (Var?.SSplit.right { ty := A, q := ⊤ })).cons
+                    (Var?.SSplit.right { ty := B, q := ⊤ })).cons
+                (Var?.SSplit.left { ty := C, q := ⊤ })).s1_23_13_2
+            (((Γr.erase.erase.erase_left.comm.cons (Var?.SSplit.left { ty := A, q := ⊤ })).cons
+                  (Var?.SSplit.right { ty := B, q := ⊤ })).cons
+              (Var?.SSplit.right _))))
+        .bv2 ⊤ _
+        (b :=
+          (
+            .pair ((Ctx?.erase_left _).cons (.left _)) .bv0
+              (.pair ((((Ctx?.erase_left _).cons (.left _)).cons (.right _)).cons (.right _))
+                .bv2
+                .bv1)
+          ))
+      simp; simp [quant]
+      simp [Wf.let₁, Wf.pair, Wf.pwk, Wf.subst]; rfl
   _ = _ :=  by
-    sorry
+    conv => rhs; rw [bind_pair]; rhs; lhs; rw [wk0_pair, bind_pair]
+    rw [bind_pair_right _ ⊥ ⊤, let_let₁, let_let₁]
+    congr 1
+    induction b, c using quotInd₂
+    apply sound; apply Wf.eqv.of_tm
+    simp [Wf.let₁, Wf.wk0, Wf.pair, Wf.bv0, Wf.wk1, Wf.bv2, Wf.bv1]
+    apply HasCommRel.commutes_bot_left
 
 -- theorem Eqv.reassoc_reassoc_inv {Γ : Ctx? α} {A B C : Ty α}
 --   (a : Eqv R Γ ((A.tensor B).tensor C))
