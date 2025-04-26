@@ -76,6 +76,10 @@ instance Wf.HasEff.instLet₂ {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {
   [ha : a.HasEff e] [hb : b.HasEff e] : (Wf.let₂ hΓ a b).HasEff e
   := ha.let₂ hΓ hb
 
+set_option linter.unusedVariables false in
+instance Wf.HasEff.unit {Γ : Ctx? α} [hΓ : Γ.del] (e : ε) : (unit Γ).HasEff (R := R) e
+  := Term.HasEff.unit
+
 theorem Wf.HasEff.case {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B C : Ty α}
   {a : Wf R Γr (A.coprod B)} {b : Wf R (Γl.cons ⟨A, ⊤⟩) C}
   {c : Wf R (Γl.cons ⟨B, ⊤⟩) C} {e : ε}
@@ -142,6 +146,10 @@ instance Eqv.HasEff.pair {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B :
   {a : Eqv R Γl A} {b : Eqv R Γr B} (e : ε)
   (ha : a.HasEff e) (hb : b.HasEff e) : Eqv.HasEff (Eqv.pair hΓ a b) e
   := by cases ha; cases hb; constructor; infer_instance
+
+instance Eqv.HasEff.unit {Γ : Ctx? α} [hΓ : Γ.del] (e : ε)
+  : Eqv.HasEff (R := R) (Eqv.unit Γ) e
+  := .mk (.unit e)
 
 instance Eqv.HasEff.let₁ {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B : Ty α}
   {a : Eqv R Γr A} {b : Eqv R (Γl.cons ⟨A, ⊤⟩) B} (e : ε)

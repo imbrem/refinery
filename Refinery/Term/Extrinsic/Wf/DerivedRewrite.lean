@@ -8,8 +8,33 @@ namespace Refinery
 
 namespace Term
 
-variable  {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε]
-          {R : DRWS φ α} [R.UWkCongr]
+variable  {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε] {R : DRWS φ α}
+
+theorem Eqv.unit_pure_del {Γ : Ctx? α}
+  [hΓ : Γ.del] (a : Eqv R Γ .unit) [ha : a.HasEff ⊥] : a = .unit Γ
+  := by
+  rw [<-a.terminal]
+  cases ha with | mk ha =>
+  apply Eqv.sound
+  apply Wf.eqv.coh
+  apply Wf.pre_beta_pureIn (A := .unit) Γ.erase_left _ (quant Γ) _
+    (.unit _ (hΓ := by
+      rw [Ctx?.cons_del_iff]
+      constructor
+      infer_instance
+      constructor
+      rw [quant]
+      simp [Var?.hasQuant]
+    )) (ha := ha)
+  simp [Wf.pwk, Wf.unit]
+  rfl
+  rfl
+
+theorem Eqv.unit_pure_unique {Γ : Ctx? α}
+  [hΓ : Γ.del] (a b : Eqv R Γ .unit) [ha : a.HasEff ⊥] [hb : b.HasEff ⊥] : a = b
+  := a.unit_pure_del.trans b.unit_pure_del.symm
+
+variable [R.UWkCongr]
 
 theorem Eqv.let₂_let₁ {Γ Γl Γc Γm Γr : Ctx? α} {A B C D}
     (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
@@ -271,4 +296,6 @@ theorem Eqv.let₂_pair_right_bv2 {A B C} {Γ Γl Γr : Ctx? α}
 --   : a.let₂ hΓ (.pair ((hΓc.cons (.right _)).cons (.right _)) ((b.wk0 _).wk0 _) c)
 --   = .pair (hΓ.s12_3_1_23 hΓc) b (.let₂ (hΓ.s12_3_23 hΓc) a c)
 --   := by
---   conv => rhs; rw [bind_pair_right _ _ _ _ _ he]
+--   conv => rhs; rw [bind_pair]
+--   rw [bind_pair]
+--   sorry

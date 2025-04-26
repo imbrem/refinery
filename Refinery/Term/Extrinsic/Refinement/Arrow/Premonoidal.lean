@@ -127,14 +127,64 @@ theorem Eqv.releft_inv_releft {Γ : Ctx? α} {A : Ty α}
 theorem Eqv.releft_releft_inv {Γ : Ctx? α} {A : Ty α}
   (a : Eqv R Γ (.tensor .unit A)) : a.releft.releft_inv = a := by
   rw [releft, releft_inv]
-  conv => rhs; rw [<-letT₂_eta a]
-  sorry
+  conv => rhs; rw [<-letT₂_eta a]; rhs; lhs; rw [bv1.unit_pure_del (hΓ := by
+    rw [Ctx?.cons_del_iff]
+    constructor
+    rw [Ctx?.cons_del_iff]
+    constructor
+    infer_instance
+    apply Var?.del.instTopQuant
+    infer_instance
+  )]
+  rw [bind_pair_right _ ⊥ ⊤, letT₂, let_let₂, letT₂]
+  conv => rhs; rhs; rw [<-let₁_bv0 (.pair _ _ _)]
+  induction a using quotInd
+  apply Eqv.sound; apply Wf.eqv.of_tm
+  rfl
+  apply HasCommRel.commutes_bot_left
 
 def DRWS.Obj.leftUnitor (A : R.Obj) : Arrow R (.tensor .unit A) A
   := Eqv.toArr (Eqv.bv0.releft)
 
 def DRWS.Obj.leftUnitor_inv (A : R.Obj) : Arrow R A (.tensor .unit A)
   := Eqv.toArr (Eqv.bv0.releft_inv)
+
+theorem Eqv.letArrow_leftUnitor {Γ : Ctx? α} {A : Ty α}
+  (a : Eqv R Γ (.tensor .unit A)) : a.letArrow (DRWS.Obj.leftUnitor A) = a.releft
+  := by
+  rw [releft, letT₂, bind_let₂]
+  induction a using quotInd
+  apply Eqv.sound; apply Wf.eqv.of_tm
+  simp only [
+    Wf.let₁, Wf.wk, Wf.bv0, Wf.pair, Wf.wk1, let₁.injEq, true_and, Wf.let₂, Wf.bv1,
+    Ctx?.extend1, ren_ren, <-Nat.liftWk_comp
+  ]
+  simp [Ctx?.nil, Ctx?.cons, Ctx?.erase, ren_ren, <-Nat.liftWk_comp]
+  rfl
+
+theorem Eqv.letArrow_leftUnitor_inv {Γ : Ctx? α} {A : Ty α}
+  (a : Eqv R Γ A) : a.letArrow (DRWS.Obj.leftUnitor_inv A) = a.releft_inv
+  := by
+  rw [releft_inv, bind_pair_right _ ⊥ ⊤]
+  induction a using quotInd
+  apply Eqv.sound; apply Wf.eqv.of_tm
+  simp only [
+    Wf.let₁, Wf.wk, Wf.bv0, Wf.pair, Wf.wk1, let₁.injEq, true_and, Wf.let₂, Wf.bv1,
+    Ctx?.extend1, ren_ren, <-Nat.liftWk_comp
+  ]
+  simp [Ctx?.nil, Ctx?.cons, Ctx?.erase, ren_ren, <-Nat.liftWk_comp]
+  rfl
+  apply HasCommRel.commutes_bot_left
+
+theorem DRWS.Obj.leftUnitor_leftUnitor_inv {A : R.Obj}
+  : A.leftUnitor.comp A.leftUnitor_inv = id (.tensor .unit A) := by
+  simp [DRWS.Arrow.comp, Eqv.letArrow_leftUnitor_inv, leftUnitor, Eqv.releft_releft_inv]
+  rfl
+
+theorem DRWS.Obj.leftUnitor_inv_leftUnitor {A : R.Obj}
+  : A.leftUnitor_inv.comp A.leftUnitor = id A := by
+  simp [DRWS.Arrow.comp, Eqv.letArrow_leftUnitor, leftUnitor_inv, Eqv.releft_inv_releft]
+  rfl
 
 def Eqv.reright {Γ : Ctx? α} {A : Ty α}
   (a : Eqv R Γ (A.tensor .unit)) : Eqv R Γ A
@@ -153,7 +203,7 @@ def DRWS.Obj.rightUnitor_inv (A : R.Obj) : Arrow R A (A.tensor .unit)
 def Eqv.reassoc {Γ : Ctx? α} {A B C : Ty α}
   (a : Eqv R Γ ((A.tensor B).tensor C))
   : Eqv R Γ (A.tensor (B.tensor C))
-  := .let₂ (Ctx?.erase_left _) a (
+  := .letT₂ a (
     .let₂ ((Ctx?.erase_left _).cons (.left _)) .bv1 (.pair
       ((((Ctx?.erase_left _).cons (.right _)).cons (.left _)).cons (.right _))
       .bv1
@@ -186,7 +236,7 @@ theorem Eqv.letArrow_assoc {Γ : Ctx? α} {A B C : Ty α}
   (a : Eqv R Γ ((A.tensor B).tensor C))
   : a.letArrow (DRWS.Obj.assoc A B C) = a.reassoc
   := by
-  rw [reassoc, bind_let₂]
+  rw [reassoc, letT₂, bind_let₂]
   induction a using quotInd
   apply Eqv.sound; apply Wf.eqv.of_tm
   simp only [
@@ -211,7 +261,7 @@ theorem Eqv.let₂_reassoc {Γ Γl Γr : Ctx? α} {X Y A B C : Ty α}
   (a : Eqv R Γr (X.tensor Y)) (b : Eqv R ((Γl.cons ⟨X, ⊤⟩).cons ⟨Y, ⊤⟩) ((A.tensor B).tensor C))
   : (a.let₂ hΓ b).reassoc = a.let₂ hΓ b.reassoc
   := by
-  rw [reassoc, let₂_let₂]
+  rw [reassoc, letT₂, let₂_let₂]
   induction a, b using quotInd₂
   apply Eqv.sound; apply Wf.eqv.of_tm
   rfl
@@ -253,7 +303,7 @@ theorem Eqv.reassoc_beta {Γ Γc Γl Γm Γr : Ctx? α} {A B C : Ty α}
               )
             )))
        ) := by
-      rw [reassoc, let₂_beta, bind_pair, let_let₁, let_let₁]
+      rw [reassoc, letT₂, let₂_beta, bind_pair, let_let₁, let_let₁]
       induction a, b, c using quotInd₃
       apply Eqv.sound; apply Wf.eqv.of_tm
       simp [Wf.let₁, Wf.let₂, Wf.pair, Wf.bv1, Wf.wk1, Wf.bv0, Wf.wk0, ren_ren, <-Nat.liftWk_comp]

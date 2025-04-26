@@ -209,11 +209,23 @@ instance Var?.del.instTopQuant (A : Ty α) [IsAff A] : (⟨A, ⊤⟩ : Var? α).
 instance Var?.copy.instTopQuant (A : Ty α) [IsRel A] : (⟨A, ⊤⟩ : Var? α).copy
   := by simp [copy_iff, scopy_iff, *]
 
+instance Var?.del.instTopQuant' (A : Ty α) [IsAff A] : (⟨A, (⊤ : Quant)⟩ : Var? α).del
+  := by simp [del_iff, *]
+
+instance Var?.copy.instTopQuant' (A : Ty α) [IsRel A] : (⟨A, (⊤ : Quant)⟩ : Var? α).copy
+  := by simp [copy_iff, scopy_iff, *]
+
 instance Var?.del.instDelQuant (A : Ty α) [IsAff A] : (⟨A, .del⟩ : Var? α).del
   := by simp [del_iff, *]
 
+instance Var?.del.instDelQuant' (A : Ty α) [IsAff A] : (⟨A, Quant.del⟩ : Var? α).del
+  := Var?.del.instDelQuant A
+
 instance Var?.copy.instCopyQuant (A : Ty α) [IsRel A] : (⟨A, .copy⟩ : Var? α).copy
   := by simp [copy_iff, scopy_iff, *]
+
+instance Var?.copy.instCopyQuant' (A : Ty α) [IsRel A] : (⟨A, Quant.copy⟩ : Var? α).copy
+  := Var?.copy.instCopyQuant A
 
 theorem Ctx?.quant_le_of_quant_le_cons (Γ : Ctx? α) (h : q ≤ quant (Γ.cons v))
   : q ≤ quant Γ := by simp at h; exact h.1
@@ -278,7 +290,7 @@ theorem Ctx?.del.head (Γ : Ctx? α) (v : Var? α) [h : (Γ.cons v).del] : v.del
   := by rw [cons_del_iff] at h; exact h.2
 
 @[simp]
-instance Ctx?.del.cons (Γ : Ctx? α) (v : Var? α) [Γ.del] [v.del] : (Γ.cons v).del
+instance Ctx?.del.cons (Γ : Ctx? α) (v : Var? α) [hΓ : Γ.del] [hv : v.del] : (Γ.cons v).del
   := ⟨by simp [cons_del_iff, *]⟩
 
 @[simp]
