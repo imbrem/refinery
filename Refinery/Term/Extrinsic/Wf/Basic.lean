@@ -322,6 +322,9 @@ theorem Wf.rby_mk_iff {Γ : Ctx? α} {A : Ty α} (a b : Wf R Γ A) : e⟦a⟧.rb
 theorem Eqv.sound {Γ : Ctx? α} {A : Ty α} {a b : Wf R Γ A} (h : a ≈ b) : e⟦a⟧ = e⟦b⟧
   := Quotient.sound h
 
+theorem Eqv.of_tm {Γ : Ctx? α} {A : Ty α} {a b : Wf R Γ A} (h : a.tm = b.tm) : e⟦a⟧ = e⟦b⟧
+  := sound (Wf.eqv.of_tm h)
+
 theorem Eqv.exact {Γ : Ctx? α} {A : Ty α} {a b : Wf R Γ A} (h : e⟦a⟧ = e⟦b⟧) : a ≈ b
   := Quotient.exact h
 

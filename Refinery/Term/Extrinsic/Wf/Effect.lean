@@ -142,33 +142,54 @@ instance Eqv.HasEff.bv3 {Γ : Ctx? α} [hΓ : Γ.del] (e : ε) {l m r : Var? α}
   ) e
   := .mk (.bv3 e)
 
-instance Eqv.HasEff.pair {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B : Ty α}
+theorem Eqv.HasEff.pair {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B : Ty α}
   {a : Eqv R Γl A} {b : Eqv R Γr B} (e : ε)
   (ha : a.HasEff e) (hb : b.HasEff e) : Eqv.HasEff (Eqv.pair hΓ a b) e
   := by cases ha; cases hb; constructor; infer_instance
+
+instance Eqv.HasEff.instPair {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B : Ty α}
+  (a : Eqv R Γl A) (b : Eqv R Γr B) (e : ε)
+  [ha : a.HasEff e] [hb : b.HasEff e] : Eqv.HasEff (Eqv.pair hΓ a b) e
+  := ha.pair hΓ _ hb
 
 instance Eqv.HasEff.unit {Γ : Ctx? α} [hΓ : Γ.del] (e : ε)
   : Eqv.HasEff (R := R) (Eqv.unit Γ) e
   := .mk (.unit e)
 
-instance Eqv.HasEff.let₁ {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B : Ty α}
+theorem Eqv.HasEff.let₁ {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B : Ty α}
   {a : Eqv R Γr A} {b : Eqv R (Γl.cons ⟨A, ⊤⟩) B} (e : ε)
   (ha : a.HasEff e) (hb : b.HasEff e) : Eqv.HasEff (Eqv.let₁ hΓ a b) e
   := by cases ha; cases hb; constructor; infer_instance
 
-instance Eqv.HasEff.let₂ {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B C : Ty α}
+instance Eqv.HasEff.instLet₁ {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B : Ty α}
+  (a : Eqv R Γr A) (b : Eqv R (Γl.cons ⟨A, ⊤⟩) B) (e : ε)
+  [ha : a.HasEff e] [hb : b.HasEff e] : Eqv.HasEff (Eqv.let₁ hΓ a b) e
+  := ha.let₁ hΓ _ hb
+
+theorem Eqv.HasEff.let₂ {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B C : Ty α}
   {a : Eqv R Γr (A.tensor B)} {b : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C} (e : ε)
   (ha : a.HasEff e) (hb : b.HasEff e) : Eqv.HasEff (Eqv.let₂ hΓ a b) e
   := by cases ha; cases hb; constructor; infer_instance
 
-instance Eqv.HasEff.case {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B C : Ty α}
+instance Eqv.HasEff.instLet₂ {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B C : Ty α}
+  (a : Eqv R Γr (A.tensor B)) (b : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C) (e : ε)
+  [ha : a.HasEff e] [hb : b.HasEff e] : Eqv.HasEff (Eqv.let₂ hΓ a b) e
+  := ha.let₂ hΓ _ hb
+
+theorem Eqv.HasEff.case {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B C : Ty α}
   {a : Eqv R Γr (A.coprod B)} {b : Eqv R (Γl.cons ⟨A, ⊤⟩) C}
   {c : Eqv R (Γl.cons ⟨B, ⊤⟩) C} (e : ε)
   (ha : a.HasEff e) (hb : b.HasEff e) (hc : c.HasEff e)
   : Eqv.HasEff (Eqv.case hΓ a b c) e
   := by cases ha; cases hb; cases hc; constructor; infer_instance
 
-instance Eqv.HasEff.iter {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B : Ty α}
+instance Eqv.HasEff.instCase {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B C : Ty α}
+  (a : Eqv R Γr (A.coprod B)) (b : Eqv R (Γl.cons ⟨A, ⊤⟩) C)
+  (c : Eqv R (Γl.cons ⟨B, ⊤⟩) C) (e : ε)
+  [ha : a.HasEff e] [hb : b.HasEff e] [hc : c.HasEff e] : Eqv.HasEff (Eqv.case hΓ a b c) e
+  := ha.case hΓ _ hb hc
+
+theorem Eqv.HasEff.iter {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B : Ty α}
   {a : Eqv R Γr A} {b : Eqv R (Γl.cons ⟨A, ⊤⟩) (B.coprod A)} (e : ε)
   (he : e ∈ S.iterative) (hc : Γl.copy) (hd : Γl.del)
   (ha : a.HasEff e) (hb : b.HasEff e) : Eqv.HasEff (Eqv.iter hΓ a b) e

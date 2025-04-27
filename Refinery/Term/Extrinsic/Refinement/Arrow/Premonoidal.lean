@@ -226,6 +226,55 @@ def Eqv.reassoc_inv {Γ : Ctx? α} {A B C : Ty α}
       .bv0
     ))
 
+def Eqv.eta_assoc {Γ : Ctx? α} {A B C : Ty α}
+  (a : Eqv R Γ ((A.tensor B).tensor C))
+  : Eqv R Γ ((A.tensor B).tensor C)
+  := .letT₂ a (
+    .let₂ (Ctx?.erase_left _).left .bv1 (.pair
+      (Ctx?.erase_right _).right.left.left
+      (.pair (Ctx?.erase_right _).right .bv1 .bv0)
+      .bv2
+  ))
+
+theorem Eqv.eta_assoc_eq_id {Γ : Ctx? α} {A B C : Ty α}
+  (a : Eqv R Γ ((A.tensor B).tensor C))
+  : a.eta_assoc = a := by
+  rw [Eqv.eta_assoc, letT₂]
+  conv => rhs; rw [<-let₂_eta a]
+  congr 1
+  conv => rhs; lhs; rw [<-let₂_eta .bv1]
+  rw [let₂_pair_right]
+  exact Eqv.of_tm rfl
+
+def Eqv.eta_assoc_inv {Γ : Ctx? α} {A B C : Ty α}
+  (a : Eqv R Γ (A.tensor (B.tensor C)))
+  : Eqv R Γ (A.tensor (B.tensor C))
+  := letT₂ a (
+    .let₂ ((Ctx?.erase_right _).cons (.right _)) .bv0 (.pair
+      (Ctx?.erase_right _).right.right
+      .bv3
+      (.pair (Ctx?.erase_right _).right .bv1 .bv0)
+    ))
+
+theorem Eqv.eta_assoc_inv_eq_id {Γ : Ctx? α} {A B C : Ty α}
+  (a : Eqv R Γ (A.tensor (B.tensor C)))
+  : a.eta_assoc_inv = a := by
+  rw [Eqv.eta_assoc_inv, letT₂]
+  conv => rhs; rw [<-let₂_eta a]
+  congr 1
+  conv =>
+    lhs
+    rw [bind_pair_right _ ⊥ ⊤ (ha := inferInstance) (hb := inferInstance)
+      (he := HasCommRel.commutes_bot_left)]
+  conv =>
+    rhs
+    rw [
+      bind_pair_right _ ⊥ ⊤ (ha := inferInstance) (hb := inferInstance)
+        (he := HasCommRel.commutes_bot_left),
+      <-let₂_eta .bv0, let_let₂
+    ]
+  exact Eqv.of_tm rfl
+
 def DRWS.Obj.assoc (A B C : R.Obj) : Arrow R ((A.tensor B).tensor C) (A.tensor (B.tensor C))
   := Eqv.toArr (.reassoc .bv0)
 
@@ -486,7 +535,58 @@ theorem Eqv.reassoc_beta {Γ Γc Γl Γm Γr : Ctx? α} {A B C : Ty α}
     simp [Wf.let₁, Wf.wk0, Wf.pair, Wf.bv0, Wf.wk1, Wf.bv2, Wf.bv1]
     apply HasCommRel.commutes_bot_left
 
--- theorem Eqv.reassoc_reassoc_inv {Γ : Ctx? α} {A B C : Ty α}
---   (a : Eqv R Γ ((A.tensor B).tensor C))
---   : a.reassoc.reassoc_inv = a
---   := sorry
+theorem Eqv.reassoc_reassoc_inv {Γ : Ctx? α} {A B C : Ty α}
+  (a : Eqv R Γ (A.tensor (B.tensor C)))
+  : a.reassoc_inv.reassoc = a
+  := calc
+  _ = a.eta_assoc_inv := by
+    rw [reassoc_inv, let₂_reassoc, let₂_reassoc, reassoc_beta]
+    induction a using quotInd
+    exact Eqv.of_tm rfl
+  _ = _ := by rw [a.eta_assoc_inv_eq_id]
+
+theorem Eqv.reassoc_inv_injective {Γ : Ctx? α} {A B C : Ty α}
+  (a b : Eqv R Γ (A.tensor (B.tensor C)))
+  (h : a.reassoc_inv = b.reassoc_inv) : a = b
+  := by rw [<-a.reassoc_reassoc_inv, <-b.reassoc_reassoc_inv, h]
+
+theorem Eqv.reassoc_inv_reassoc {Γ : Ctx? α} {A B C : Ty α}
+  (a : Eqv R Γ ((A.tensor B).tensor C))
+  : a.reassoc.reassoc_inv = a
+  := by calc
+  _ = a.eta_assoc := by
+    rw [eta_assoc, reassoc, letT₂, let₂_reassoc_inv, let₂_reassoc_inv]
+    congr 2
+    rw [
+      reassoc_inv, let₂_beta, wk0_pair, wk0_bv0, wk0_bv2,
+      let₂_let₁_bv0_anti'
+        (c' :=
+          (.pair (Ctx?.erase_right _).right (.pair (Ctx?.erase_right _).right.right .bv2 .bv1) .bv0)
+        )
+        (hc := by apply Eqv.of_tm; simp [Wf.pair, Wf.wk2, Wf.bv1, Wf.bv0, Wf.bv2, Wf.bv3]),
+      let₂_beta
+    ]
+    conv => rhs; lhs; rw [bind_pair]
+    rw [let_pair_right, let_pair_right]
+    conv => rhs; rhs; rhs; rw [
+      bind_pair_right _ ⊥ ⊤ (ha := inferInstance) (hb := inferInstance)
+        (he := HasCommRel.commutes_bot_left),
+    ]
+    apply Eqv.of_tm
+    simp [Wf.let₁, Wf.bv1, Wf.wk0, Wf.bv0, Wf.bv2, Wf.bv3, Wf.pwk, Wf.pair]
+  _ = _ := by rw [a.eta_assoc_eq_id]
+
+theorem Eqv.reassoc_injective {Γ : Ctx? α} {A B C : Ty α}
+  (a b : Eqv R Γ ((A.tensor B).tensor C))
+  (h : a.reassoc = b.reassoc) : a = b
+  := by rw [<-a.reassoc_inv_reassoc, <-b.reassoc_inv_reassoc, h]
+
+theorem Eqv.reassoc_inv_beta {Γ Γc Γl Γm Γr : Ctx? α} {A B C : Ty α}
+  (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
+  (a : Eqv R Γl A) (b : Eqv R Γm B) (c : Eqv R Γr C)
+  : (a.pair hΓ (b.pair hΓc c)).reassoc_inv = (a.pair (hΓ.s1_23_12 hΓc) b).pair (hΓ.s1_23_12_3 hΓc) c
+  := by
+  apply reassoc_injective
+  rw [reassoc_reassoc_inv, reassoc_beta]
+  induction a, b, c using quotInd₃
+  exact Eqv.of_tm rfl

@@ -63,6 +63,44 @@ theorem Eqv.let₂_let₁_anti {Γ Γl Γc Γm Γr : Ctx? α} {A B C D}
   apply sound; apply Wf.eqv.of_tm
   rfl
 
+theorem Eqv.let₂_let₁_anti' {Γ Γl Γc Γm Γr : Ctx? α} {A B C D}
+    (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
+    (a : Eqv R Γr A)
+    (b : Eqv R (Γm.cons ⟨A, ⊤⟩) (B.tensor C))
+    (c : Eqv R (((Γl.cons ⟨A, 0⟩).cons ⟨B, ⊤⟩).cons ⟨C, ⊤⟩) D)
+    (c' : Eqv R ((Γl.cons ⟨B, ⊤⟩).cons ⟨C, ⊤⟩) D)
+    (hc : c'.wk2 _ = c)
+    : a.let₁ hΓ (b.let₂ ((hΓc.cons (.right _))) c)
+    = (a.let₁ (hΓ.s12_3_23 hΓc) b).let₂ (hΓ.s12_3_1_23 hΓc) c' := by
+  rw [<-hc, let₂_let₁_anti]
+
+
+theorem Eqv.let₂_let₁_bv0_anti {Γ Γl Γr : Ctx? α} {A B C : Ty α}
+    (hΓ : Γ.SSplit Γl Γr)
+    (a : Eqv R Γr (A.tensor B))
+    (c : Eqv R (((Γl.cons ⟨(A.tensor B), 0⟩).cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C)
+    (c' : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C)
+    (hc : c'.wk2 _ = c)
+    : a.let₁ hΓ (let₂ (Γl.erase_right.cons (.right _)) .bv0 c)
+    = a.let₂ hΓ c' := by
+    rw [let₂_let₁_anti' (hc := hc)]
+    conv => rhs; rw [<-a.let₁_eta]
+    induction a, c' using quotInd₂
+    exact Eqv.of_tm rfl
+
+theorem Eqv.let₂_let₁_bv0_anti' {Γ Γl Γr : Ctx? α} {A B C : Ty α}
+    (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm) [hΓm : Γm.del]
+    (a : Eqv R Γr (A.tensor B))
+    (c : Eqv R (((Γl.cons ⟨(A.tensor B), 0⟩).cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C)
+    (c' : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C)
+    (hc : c'.wk2 _ = c)
+    : a.let₁ hΓ (let₂ (hΓc.cons (.right _)) .bv0 c)
+    = a.let₂ hΓ (c'.pwk (((hΓc.pwk_right_del).scons _).scons _)) := by
+    rw [let₂_let₁_anti' (hc := hc)]
+    conv => rhs; rw [<-a.let₁_eta]
+    induction a, c' using quotInd₂
+    exact Eqv.of_tm rfl
+
 theorem Eqv.let₂_let₂ {Γ Γl Γc Γm Γr : Ctx? α} {A B C D E}
     (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
     (a : Eqv R Γr (A.tensor B))
@@ -263,6 +301,22 @@ theorem Eqv.reswap_reswap {A B} {Γ : Ctx? α} (a : Eqv R Γ (.tensor A B)) : a.
   apply sound; apply Wf.eqv.of_tm
   simp only [Wf.let₂, Wf.pair, Wf.bv0, Wf.bv1]
 
+theorem Eqv.let_pair_right_wk0 {A B C} {Γ Γc Γl Γm Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
+  (a : Eqv R Γr A) (b : Eqv R (Γl.cons ⟨A, ⊤⟩) B) (c : Eqv R Γm C)
+  : a.let₁ hΓ (.pair (hΓc.cons (.left _)) b (c.wk0 _))
+  = .pair (hΓ.comm.s1_23_12_3 hΓc) (.let₁ (hΓ.comm.s1_23_12 hΓc).comm a b) c
+  := by
+  conv => rhs; rw [bind_pair_left, let_let₁]
+  rw [bind_pair_left]
+  induction a, b, c using quotInd₃
+  apply sound; apply Wf.eqv.of_tm
+  simp only [
+    Wf.let₁, Wf.pair, Wf.bv0, Wf.bv1, Wf.wk0, ren_ren, <-Nat.liftWk_comp, ren,
+    Nat.liftWk_comp_succ, Wf.wk1
+  ]
+  rfl
+
 theorem Eqv.let₂_pair_right_wk0_wk0 {A B C D} {Γ Γc Γl Γm Γr : Ctx? α}
   (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
   (a : Eqv R Γr (.tensor A B)) (b : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C) (c : Eqv R Γm D)
@@ -288,6 +342,32 @@ theorem Eqv.let₂_pair_right_bv2 {A B C} {Γ Γl Γr : Ctx? α}
   = .pair (hΓ.comm.s1_23_12_3 hΓc)
     (.let₂ (hΓ.comm.s1_23_12 hΓc).comm a b) .bv0
   := let₂_pair_right_wk0_wk0 hΓ hΓc a b (.bv0)
+
+theorem Eqv.let_pair_right {A B C} {Γ Γc Γl Γm Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
+  (a : Eqv R Γm A) (b : Eqv R (Γl.cons ⟨A, ⊤⟩) B) (c : Eqv R Γr C)
+  : Eqv.pair hΓ (.let₁ hΓc a b) c
+  = a.let₁ (hΓ.s12_3_1_23 hΓc.comm).comm
+    (.pair (hΓ.s12_3_23 hΓc.comm).left b (c.wk0 ⟨A, 0⟩))
+  := by
+  apply Eq.symm
+  apply Eq.trans
+  apply let_pair_right_wk0
+  induction a, b, c using quotInd₃
+  exact Eqv.of_tm rfl
+
+theorem Eqv.let₂_pair_right {A B C D} {Γ Γc Γl Γm Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
+  (a : Eqv R Γm (.tensor A B)) (b : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C) (c : Eqv R Γr D)
+  : .pair hΓ (.let₂ hΓc a b) c
+  = a.let₂ (hΓ.s12_3_1_23 hΓc.comm).comm
+    (.pair (hΓ.s12_3_23 hΓc.comm).left.left b ((c.wk0 ⟨A, 0⟩).wk0 ⟨B, 0⟩))
+  := by
+  apply Eq.symm
+  apply Eq.trans
+  apply let₂_pair_right_wk0_wk0
+  induction a, b, c using quotInd₃
+  exact Eqv.of_tm rfl
 
 -- theorem Eqv.let₂_pair_left_wk0_wk0 {A B C D} {Γ Γc Γl Γm Γr : Ctx? α}
 --   (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)

@@ -202,6 +202,18 @@ def Ctx?.SSplit.head {Γ Δ Ξ : Ctx? α} (σ : Ctx?.SSplit (Γ.cons x) (Δ.cons
 def Ctx?.SSplit.tail {Γ Δ Ξ : Ctx? α} (σ : Ctx?.SSplit (Γ.cons x) (Δ.cons l) (Ξ.cons r))
   : Ctx?.SSplit Γ Δ Ξ := match σ with | .cons h _ => h
 
+def Ctx?.SSplit.left {Γ Δ Ξ : Ctx? α} (σ : Ctx?.SSplit Γ Δ Ξ)
+  : (Γ.cons v).SSplit (Δ.cons v) (Ξ.cons v.erase)
+  := σ.cons (.left v)
+
+def Ctx?.SSplit.right {Γ Δ Ξ : Ctx? α} (σ : Ctx?.SSplit Γ Δ Ξ)
+  : (Γ.cons v).SSplit (Δ.cons v.erase) (Ξ.cons v)
+  := σ.cons (.right v)
+
+def Ctx?.SSplit.both {Γ Δ Ξ : Ctx? α} (σ : Ctx?.SSplit Γ Δ Ξ) [h : IsRel v]
+  : (Γ.cons v).SSplit (Δ.cons v) (Ξ.cons v)
+  := σ.cons (.both v)
+
 @[simp]
 def Ctx?.SSplit.unstrict {Γ Δ Ξ : Ctx? α} : Γ.SSplit Δ Ξ → Γ.Split Δ Ξ
   | .nil => .nil
