@@ -202,15 +202,15 @@ def Ctx?.SSplit.head {Γ Δ Ξ : Ctx? α} (σ : Ctx?.SSplit (Γ.cons x) (Δ.cons
 def Ctx?.SSplit.tail {Γ Δ Ξ : Ctx? α} (σ : Ctx?.SSplit (Γ.cons x) (Δ.cons l) (Ξ.cons r))
   : Ctx?.SSplit Γ Δ Ξ := match σ with | .cons h _ => h
 
-def Ctx?.SSplit.left {Γ Δ Ξ : Ctx? α} (σ : Ctx?.SSplit Γ Δ Ξ)
+abbrev Ctx?.SSplit.left {Γ Δ Ξ : Ctx? α} (σ : Ctx?.SSplit Γ Δ Ξ)
   : (Γ.cons v).SSplit (Δ.cons v) (Ξ.cons v.erase)
   := σ.cons (.left v)
 
-def Ctx?.SSplit.right {Γ Δ Ξ : Ctx? α} (σ : Ctx?.SSplit Γ Δ Ξ)
+abbrev Ctx?.SSplit.right {Γ Δ Ξ : Ctx? α} (σ : Ctx?.SSplit Γ Δ Ξ)
   : (Γ.cons v).SSplit (Δ.cons v.erase) (Ξ.cons v)
   := σ.cons (.right v)
 
-def Ctx?.SSplit.both {Γ Δ Ξ : Ctx? α} (σ : Ctx?.SSplit Γ Δ Ξ) [h : IsRel v]
+abbrev Ctx?.SSplit.both {Γ Δ Ξ : Ctx? α} (σ : Ctx?.SSplit Γ Δ Ξ) [h : IsRel v]
   : (Γ.cons v).SSplit (Δ.cons v) (Ξ.cons v)
   := σ.cons (.both v)
 
@@ -844,6 +844,13 @@ def Ctx?.SSplit.pwk_right_del {Γ Δ Ξ : Ctx? α} (σ : Γ.SSplit Δ Ξ) [hΞ :
   : Γ.PWk Δ := match σ, hΞ with
   | .nil, _ => .nil
   | .cons σ hvw, hΞ => (σ.pwk_right_del (hΞ := hΞ.tail)).cons (hvw.wk_right_del (hw := hΞ.head))
+
+def Ctx?.SSplit.pwk_swap0 {Γ Γl Γr : Ctx? α}
+  (hΓ : Γ.SSplit ((Γl.cons x).cons y) ((Γr.cons ⟨A, ⊤⟩).cons z))
+  [hΓr : Γr.del] [hx : x.del] [hz : z.del]
+  : Γ.PWk ((Γl.cons ⟨A, ⊤⟩).cons y)
+  := match hΓ with
+  | .cons (.cons hΓ hl) hr => .cons (.cons hΓ.pwk_right_del hl.wk_left_del) hr.wk_right_del
 
 @[simp]
 def Ctx?.SSplit.wkLeft' {Γ' Γ Δ Ξ : Ctx? α}

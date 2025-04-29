@@ -6,11 +6,37 @@ namespace Refinery
 
 namespace Term
 
-variable  {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε] {R : DRWS φ α} [R.UWkCongr]
+variable  {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε] {R : DRWS φ α}
+
+def Eqv.antipair {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B}
+  (a : Eqv R Γl A) (b : Eqv R Γr B) : Eqv R Γ (Ty.tensor A B)
+  := .reswap (.pair hΓ.comm b a)
+
+theorem Eqv.reswap_pair {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B}
+  (a : Eqv R Γl A) (b : Eqv R Γr B) : (pair hΓ a b).reswap = antipair hΓ.comm b a
+  := by induction a, b using quotInd₂; apply of_tm; simp [Wf.let₂, Wf.pair]
+
+variable [R.UWkCongr]
+
+theorem Eqv.reswap_antipair {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B}
+  (a : Eqv R Γl A) (b : Eqv R Γr B) : (antipair hΓ a b).reswap = pair hΓ.comm b a
+  := by rw [antipair, reswap_reswap]
 
 def Eqv.swap0 {Γ : Ctx? α} {A B : Ty α} {x : Var? α}
   (a : Eqv R ((Γ.cons x).cons ⟨A, ⊤⟩) B) : Eqv R ((Γ.cons ⟨A, ⊤⟩).cons x) B
   := .let₁ (Ctx?.erase_right _).right.left .bv1 (a.wk2 (x := ⟨A, 0⟩))
+
+theorem Eqv.swap0_def {Γ : Ctx? α} {A B : Ty α} {x : Var? α}
+  (a : Eqv R ((Γ.cons x).cons ⟨A, ⊤⟩) B)
+  : a.swap0 = .let₁ (Ctx?.erase_right _).right.left .bv1 (a.wk2 (x := ⟨A, 0⟩))
+  := rfl
+
+theorem Eqv.swap0_pwk {Γ Γl Γr : Ctx? α} {A B : Ty α} {x y z : Var? α}
+  (hΓ : Γ.SSplit ((Γl.cons x).cons y) ((Γr.cons ⟨A, ⊤⟩).cons z))
+  [hΓr : Γr.del] [hx : x.del] [hz : z.del]
+  (a : Eqv R ((Γl.cons y).cons ⟨A, ⊤⟩) B)
+  : let₁ hΓ .bv1 (a.wk2 _) = a.swap0.pwk hΓ.pwk_swap0
+  := by induction a using quotInd; apply of_tm; simp [Wf.let₁, Wf.bv1, Wf.wk2, Wf.pwk]
 
 def Eqv.swap0_swap0 {Γ : Ctx? α} {A B C : Ty α}
   (a : Eqv R ((Γ.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C) : a.swap0.swap0 = a
@@ -49,3 +75,35 @@ def Eqv.swap0_swap0 {Γ : Ctx? α} {A B C : Ty α}
 theorem Eqv.swap0_injective {Γ : Ctx? α} {A B C : Ty α}
   (a b : Eqv R ((Γ.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C) (h : a.swap0 = b.swap0) : a = b
   := by rw [<-a.swap0_swap0, <-b.swap0_swap0, h]
+
+theorem Eqv.let_comm_swap0 {A} {Γ Γl Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm) {ea eb : ε}
+  (a : Eqv R Γr A) (b : Eqv R Γm B) (c : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C)
+  [ha : a.HasEff ea] [hb : b.HasEff eb] (he : ea ⇌ eb)
+  : a.let₁ hΓ ((b.wk0 ⟨A, 0⟩).let₁ (hΓc.cons (.left _)) c)
+  = b.let₁ (hΓ.comm.s1_23_12_3 hΓc)
+    ((a.wk0 ⟨B, 0⟩).let₁ ((hΓ.comm.s1_23_12 hΓc).comm.cons (.left _)) c.swap0)
+  := by rw [Eqv.let_comm hΓ hΓc a b c he, swap0]
+
+theorem Eqv.wk2_swap0 {Γ : Ctx? α} {A B : Ty α} {x : Var? α} {y : Var? α} [hy : y.del]
+  (a : Eqv R ((Γ.cons x).cons ⟨A, ⊤⟩) B)
+  : a.swap0.wk2 y = (a.wk2 y).swap0
+  := by
+  induction a using quotInd; apply of_tm
+  simp [Wf.let₁, Wf.wk2, Wf.bv1, ren_ren]; congr 1; ext x; cases x using Nat.cases2 <;> rfl
+
+theorem Eqv.let₂_reswap
+  {A B C} {Γ Γl Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γl Γr) (a : Eqv R Γr (.tensor A B)) (b : Eqv R ((Γl.cons ⟨B, ⊤⟩).cons ⟨A, ⊤⟩) C)
+  : a.reswap.let₂ hΓ b = a.let₂ hΓ b.swap0
+  := by
+  rw [reswap, let₂_let₂, let₂_beta]
+  conv => rhs; rw [<-a.let₂_eta, let₂_let₂]
+  congr 1
+  rw [
+    let₂_beta, wk0_bv0, wk0_bv1, wk2_swap0, swap0_pwk, swap0_swap0, <-wk1_bv1,
+    wk1_let₁_anti,
+  ]
+  apply Eq.trans _ (let₁_bv0 _)
+  induction a, b using quotInd₂
+  exact of_tm rfl

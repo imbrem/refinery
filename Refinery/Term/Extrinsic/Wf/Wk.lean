@@ -173,3 +173,22 @@ def Eqv.pwk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} (a : Eqv R Δ A) : Eq
 
 theorem Eqv.pwk_mk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} {a : Wf R Δ A}
   : Eqv.pwk ρ (e⟦a⟧) = e⟦a.pwk ρ⟧ := rfl
+
+theorem Eqv.wk1_let₁_anti {Γ Γl Γr : Ctx? α}
+  (hΓ : ((Γ.cons x).cons y).SSplit ((Γl.cons xl).cons yl) ((Γr.cons xr).cons yr)) {A B}
+  (a : Eqv R (Γr.cons yr) A) (b : Eqv R ((Γl.cons yl).cons ⟨A, ⊤⟩) B)
+  [hx : x.del] [hxl : xl.del] [hxr : xr.del]
+  : (a.wk1 xr).let₁ hΓ (b.wk2 xl) = (a.let₁ (hΓ.tail.tail.cons hΓ.head) b).wk1 x
+  := by induction a, b using quotInd₂; exact of_tm rfl
+
+theorem Eqv.wk1_let₁_right {Γ Γl Γr : Ctx? α}
+  (hΓ : (Γ.cons x).SSplit (Γl.cons xl) (Γr.cons xr)) {A B}
+  (a : Eqv R (Γr.cons xr) A) (b : Eqv R ((Γl.cons xl).cons ⟨A, ⊤⟩) B) {y : Var? α} [hy : y.del]
+  : (a.let₁ hΓ b).wk1 y = (a.wk1 y).let₁ ((hΓ.tail.cons (.right _)).cons hΓ.head) (b.wk2 y.erase)
+  := by induction a, b using quotInd₂; exact of_tm rfl
+
+theorem Eqv.pwk_wk2 {Γ Δ : Ctx? α}
+  (ρ : (((Γ.cons l).cons m).cons r).PWk (((Δ.cons l').cons m').cons r'))
+  {B : Ty α} [hl : l.del] [hl' : l'.del] (a : Eqv R ((Δ.cons m').cons r') B)
+  : (a.wk2 l').pwk ρ = (a.pwk ((ρ.tail.tail.tail.cons ρ.tail.head).cons ρ.head)).wk2 l
+  := by induction a using quotInd; exact of_tm rfl

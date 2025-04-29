@@ -10,3 +10,5 @@ import Refinery.Term.Extrinsic.Refinement.Uniform
 import Refinery.Term.Extrinsic.Refinement.Semantics.Relation
 import Refinery.Term.Extrinsic.Wf.Basic
 import Refinery.Term.Extrinsic.Refinement.Arrow.Category
+import Refinery.Term.Extrinsic.Refinement.Arrow.Coproduct
+import Refinery.Term.Extrinsic.Refinement.Arrow.Premonoidal

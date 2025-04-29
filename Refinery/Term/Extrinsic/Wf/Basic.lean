@@ -429,6 +429,28 @@ def Eqv.iter {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) [hc : Γl.copy] [h
   : Eqv R Γ B := liftOn₂ a b (λa b => e⟦a.iter hΓ b⟧) (λ_ _ _ _ ha hb
     => Eqv.sound <| Wf.eqv.iter_congr hΓ ha hb)
 
+def Wf.castCtx {Γ Δ : Ctx? α} (hΓ : Γ = Δ) {A : Ty α} (a : Wf R Γ A) : Wf R Δ A
+  := ⟨a.tm, a.deriv.cast hΓ rfl rfl⟩
+
+@[simp] theorem Wf.castCtx_rfl {Γ : Ctx? α} {A : Ty α} (a : Wf R Γ A) : a.castCtx rfl = a := rfl
+
+@[simp] theorem Wf.castCtx_castCtx {Γ Δ Ξ : Ctx? α}
+  {A : Ty α} (hΓ : Γ = Δ) (hΔ : Δ = Ξ) (a : Wf R Γ A)
+  : (a.castCtx hΓ).castCtx hΔ = a.castCtx (hΓ.trans hΔ)
+  := by subst_vars; rfl
+
+def Eqv.castCtx {Γ Δ : Ctx? α} (hΓ : Γ = Δ) {A : Ty α} (a : Eqv R Γ A) : Eqv R Δ A
+  := a.liftOn (λa => e⟦a.castCtx hΓ⟧) (λ_ _ h => by cases hΓ; apply sound; exact h)
+
+@[simp] theorem Eqv.castCtx_rfl {Γ : Ctx? α} {A : Ty α} (a : Eqv R Γ A) : a.castCtx rfl = a := by
+  induction a using Eqv.quotInd; rfl
+
+@[simp]
+theorem Eqv.castCtx_castCtx {Γ Δ Ξ : Ctx? α}
+  {A : Ty α} (hΓ : Γ = Δ) (hΔ : Δ = Ξ) (a : Eqv R Γ A)
+  : (a.castCtx hΓ).castCtx hΔ = a.castCtx (hΓ.trans hΔ)
+  := by induction a using Eqv.quotInd; subst_vars; rfl
+
 --TODO: Wf HasEff
 
 --TODO: Eqv term equivalence class
