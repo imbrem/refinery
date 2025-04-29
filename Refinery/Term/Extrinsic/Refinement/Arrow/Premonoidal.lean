@@ -1,5 +1,6 @@
 import Refinery.Term.Extrinsic.Refinement.Arrow.Category
 import Refinery.Term.Extrinsic.Wf.DerivedRewrite
+import Refinery.Term.Extrinsic.Wf.Swap
 import Discretion.Premonoidal.Category
 
 open HasQuant HasPQuant HasCommRel
@@ -108,6 +109,31 @@ theorem DRWS.Arrow.whiskerLeft_comp {A : R.Obj} (f : Arrow R B C) (g : Arrow R C
   : (f.comp g).whiskerLeft A = (f.whiskerLeft A).comp (g.whiskerLeft A)
   := (f.whiskerLeft_comp_whiskerLeft g).symm
 
+theorem DRWS.Arrow.whiskerRight_comp_whiskerRight {A : R.Obj}
+  (f : Arrow R B C) (g : Arrow R C D)
+  : (f.whiskerRight A).comp (g.whiskerRight A) = (f.comp g).whiskerRight A := by
+  rw [
+    comp, Eqv.letArrow_whiskerRight, whiskerRight, Eqv.toEqv_toArr, Eqv.letT₂, Eqv.letT₂,
+    Eqv.let₂_let₂, whiskerRight, Eqv.letArrow_comp
+  ]
+  congr 2
+  conv => rhs; rw [Eqv.bind_pair_left]
+  rw [Eqv.let₂_beta]
+  conv => rhs; rw [Eqv.let_letArrow]
+  congr 1
+  rw [Eqv.bind_pair_left, Eqv.let_letArrow, Eqv.wk0_bv0]
+  apply Eq.trans _ (Eqv.swap0_swap0 _)
+  rw [Eqv.swap0, Eqv.swap0]
+  induction g using Eqv.quotInd
+  apply Eqv.of_tm
+  simp [Wf.let₁, Wf.wk2, Wf.wk, Wf.wk1, Wf.pair, Wf.bv0, ren_ren, Wf.wk0, Ctx?.extend1, Wf.bv1]
+  congr 1
+  ext x; cases x <;> rfl
+
+theorem DRWS.Arrow.comp_whiskerRight {A : R.Obj} (f : Arrow R B C) (g : Arrow R C D)
+  : (f.comp g).whiskerRight A = (f.whiskerRight A).comp (g.whiskerRight A)
+  := (f.whiskerRight_comp_whiskerRight g).symm
+
 def Eqv.releft {Γ : Ctx? α} {A : Ty α}
   (a : Eqv R Γ (.tensor .unit A)) : Eqv R Γ A
   := .letT₂ a .bv0
@@ -154,26 +180,14 @@ theorem Eqv.letArrow_leftUnitor {Γ : Ctx? α} {A : Ty α}
   := by
   rw [releft, letT₂, bind_let₂]
   induction a using quotInd
-  apply Eqv.sound; apply Wf.eqv.of_tm
-  simp only [
-    Wf.let₁, Wf.wk, Wf.bv0, Wf.pair, Wf.wk1, let₁.injEq, true_and, Wf.let₂, Wf.bv1,
-    Ctx?.extend1, ren_ren, <-Nat.liftWk_comp
-  ]
-  simp [Ctx?.nil, Ctx?.cons, Ctx?.erase, ren_ren, <-Nat.liftWk_comp]
-  rfl
+  exact Eqv.of_tm rfl
 
 theorem Eqv.letArrow_leftUnitor_inv {Γ : Ctx? α} {A : Ty α}
   (a : Eqv R Γ A) : a.letArrow (DRWS.Obj.leftUnitor_inv A) = a.releft_inv
   := by
   rw [releft_inv, bind_pair_right _ ⊥ ⊤]
   induction a using quotInd
-  apply Eqv.sound; apply Wf.eqv.of_tm
-  simp only [
-    Wf.let₁, Wf.wk, Wf.bv0, Wf.pair, Wf.wk1, let₁.injEq, true_and, Wf.let₂, Wf.bv1,
-    Ctx?.extend1, ren_ren, <-Nat.liftWk_comp
-  ]
-  simp [Ctx?.nil, Ctx?.cons, Ctx?.erase, ren_ren, <-Nat.liftWk_comp]
-  rfl
+  exact Eqv.of_tm rfl
   apply HasCommRel.commutes_bot_left
 
 theorem DRWS.Obj.leftUnitor_leftUnitor_inv {A : R.Obj}
@@ -194,11 +208,50 @@ def Eqv.reright_inv {Γ : Ctx? α} {A : Ty α}
   (a : Eqv R Γ A) : Eqv R Γ (A.tensor .unit)
   := .pair (Ctx?.erase_right _) a (.unit _)
 
+theorem Eqv.reright_reright_inv {Γ : Ctx? α} {A : Ty α}
+  (a : Eqv R Γ A) : a.reright_inv.reright = a := by
+  rw [reright_inv, reright, letT₂, let₂_beta]
+  conv => rhs; rw [<-let₁_eta a, let₁_unit_anti .bv0]
+  induction a using quotInd
+  exact Eqv.of_tm rfl
+
+theorem Eqv.reright_inv_reright {Γ : Ctx? α} {A : Ty α}
+  (a : Eqv R Γ (A.tensor .unit)) : a.reright.reright_inv = a := by
+  rw [reright, reright_inv, letT₂, let₂_pair_right]
+  conv => rhs; rw [<-a.let₂_eta]
+  rw [bv0.unit_pure_del]
+  induction a using quotInd
+  exact Eqv.of_tm rfl
+
 def DRWS.Obj.rightUnitor (A : R.Obj) : Arrow R (A.tensor .unit) A
   := Eqv.toArr (Eqv.bv0.reright)
 
 def DRWS.Obj.rightUnitor_inv (A : R.Obj) : Arrow R A (A.tensor .unit)
   := Eqv.toArr (Eqv.bv0.reright_inv)
+
+theorem Eqv.letArrow_rightUnitor {Γ : Ctx? α} {A : Ty α}
+  (a : Eqv R Γ (A.tensor .unit)) : a.letArrow (DRWS.Obj.rightUnitor A) = a.reright
+  := by
+  rw [reright, letT₂, bind_let₂]
+  induction a using quotInd
+  exact Eqv.of_tm rfl
+
+theorem Eqv.letArrow_rightUnitor_inv {Γ : Ctx? α} {A : Ty α}
+  (a : Eqv R Γ A) : a.letArrow (DRWS.Obj.rightUnitor_inv A) = a.reright_inv
+  := by
+  rw [reright_inv, bind_pair_left]
+  induction a using quotInd
+  exact Eqv.of_tm rfl
+
+theorem DRWS.Obj.rightUnitor_rightUnitor_inv {A : R.Obj}
+  : A.rightUnitor.comp A.rightUnitor_inv = id (A.tensor .unit) := by
+  simp [DRWS.Arrow.comp, Eqv.letArrow_rightUnitor_inv, rightUnitor, Eqv.reright_inv_reright]
+  rfl
+
+theorem DRWS.Obj.rightUnitor_inv_rightUnitor {A : R.Obj}
+  : A.rightUnitor_inv.comp A.rightUnitor = id A := by
+  simp [DRWS.Arrow.comp, Eqv.letArrow_rightUnitor, rightUnitor_inv, Eqv.reright_reright_inv]
+  rfl
 
 def Eqv.reassoc {Γ : Ctx? α} {A B C : Ty α}
   (a : Eqv R Γ ((A.tensor B).tensor C))
@@ -393,7 +446,7 @@ theorem Eqv.reassoc_beta {Γ Γc Γl Γm Γr : Ctx? α} {A B C : Ty α}
             .bv1 .bv0
           )
           ⊤
-          (by simp; simp [quant])
+          (by simp)
           (.let₁
             (((Ctx?.erase_right _).comm).cons (.left _)) (((c.wk0 _).wk0 _).wk0 _)
             (.let₂
@@ -590,3 +643,43 @@ theorem Eqv.reassoc_inv_beta {Γ Γc Γl Γm Γr : Ctx? α} {A B C : Ty α}
   rw [reassoc_reassoc_inv, reassoc_beta]
   induction a, b, c using quotInd₃
   exact Eqv.of_tm rfl
+
+theorem DRWS.Obj.assoc_comp_assoc_inv {A B C : R.Obj}
+  : (DRWS.Obj.assoc A B C).comp (DRWS.Obj.assoc_inv A B C) = id ((A.tensor B).tensor C) := by
+  simp [DRWS.Arrow.comp, Eqv.letArrow_assoc_inv, DRWS.Obj.assoc, Eqv.reassoc_inv_reassoc]
+  rfl
+
+theorem DRWS.Obj.assoc_inv_comp_assoc {A B C : R.Obj}
+  : (DRWS.Obj.assoc_inv A B C).comp (DRWS.Obj.assoc A B C) = id (A.tensor (B.tensor C)) := by
+  simp [DRWS.Arrow.comp, Eqv.letArrow_assoc, DRWS.Obj.assoc_inv, Eqv.reassoc_reassoc_inv]
+  rfl
+
+open CategoryTheory
+
+instance DRWS.Obj.instMonoidalCategoryStruct : MonoidalCategoryStruct R.Obj where
+  tensorObj A B := A.tensor B
+  tensorUnit := .unit
+  whiskerLeft A _ _ f := f.whiskerLeft A
+  whiskerRight f B := f.whiskerRight B
+  associator A B C :=
+    ⟨A.assoc B C, A.assoc_inv B C, DRWS.Obj.assoc_comp_assoc_inv, DRWS.Obj.assoc_inv_comp_assoc⟩
+  leftUnitor A :=
+    ⟨A.leftUnitor, A.leftUnitor_inv,
+      DRWS.Obj.leftUnitor_leftUnitor_inv, DRWS.Obj.leftUnitor_inv_leftUnitor⟩
+  rightUnitor A :=
+    ⟨A.rightUnitor, A.rightUnitor_inv,
+      DRWS.Obj.rightUnitor_rightUnitor_inv, DRWS.Obj.rightUnitor_inv_rightUnitor⟩
+
+instance DRWS.Obj.instPremonoidalCategory : PremonoidalCategory R.Obj where
+  whiskerLeft_id _ _ := DRWS.Obj.whiskerLeft_id _
+  id_whiskerRight _ _ := DRWS.Obj.id_whiskerRight _
+  whiskerLeft_comp _ _ _ _ _ _ := DRWS.Arrow.whiskerLeft_comp _ _
+  comp_whiskerRight _ _ _ := DRWS.Arrow.comp_whiskerRight _ _
+  associator_central := sorry
+  leftUnitor_central := sorry
+  rightUnitor_central := sorry
+  associator_naturality := sorry
+  leftUnitor_naturality := sorry
+  rightUnitor_naturality := sorry
+  pentagon := sorry
+  triangle := sorry

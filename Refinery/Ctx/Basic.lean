@@ -141,6 +141,12 @@ theorem Var?.quant_erase (v : Var? α) : quant (Var?.erase v) = ⊤ := rfl
 @[simp]
 theorem Ctx?.quant_erase (Γ : Ctx? α) : quant (Ctx?.erase Γ) = ⊤ := by induction Γ <;> simp [*]
 
+@[simp]
+theorem Var?.quant_top (A : Ty α) : quant (Var?.mk A ⊤) = quant A := rfl
+
+@[simp]
+theorem Var?.quant_self (A : Ty α) : quant (Var?.mk A (quant A)) = quant A := by simp [quant]
+
 abbrev Var?.del (v : Var? α) : Prop := IsAff v
 
 abbrev Var?.copy (v : Var? α) : Prop := IsRel v

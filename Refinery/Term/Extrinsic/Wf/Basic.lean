@@ -97,6 +97,14 @@ theorem Wf.eqv.coh {Γ : Ctx? α} {A : Ty α} {a b a' b' : Wf R Γ A}
   (h : a.eqv b) (ha : a.tm = a'.tm) (hb : b.tm = b'.tm) : a' ≈ b'
   := ⟨h.left.coh ha hb, h.right.coh hb ha⟩
 
+theorem Wf.eqv.coh_in {Γ : Ctx? α} {A : Ty α} {a b a' : Wf R Γ A}
+  (h : a.eqv b) (ha : a.tm = a'.tm) : a' ≈ b
+  := h.coh ha rfl
+
+theorem Wf.eqv.coh_out {Γ : Ctx? α} {A : Ty α} {a b b' : Wf R Γ A}
+  (h : a.eqv b) (hb : b.tm = b'.tm) : a ≈ b'
+  := h.coh rfl hb
+
 theorem Wf.eqv.of_tm {Γ : Ctx? α} {A : Ty α} {a b : Wf R Γ A}
   (h : a.tm = b.tm) : a ≈ b := a.eqv_refl.coh rfl h
 

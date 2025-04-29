@@ -69,6 +69,14 @@ theorem Wf.pre_beta_pureLout {Γ Γl Γr : Ctx? α} {A : Ty α}
     ≈ b.subst (SubstDS.subst0 hΓ a.deriv 1 bot_le)
     := pre_beta hΓ a 1 bot_le b (commutes_bot_right (l := ⊤)) bot_le
 
+theorem Wf.pre_beta_pureIIn {B} {Γ Γl Γr : Ctx? α} {A : Ty α}
+    (hΓ : Γ.SSplit Γl Γr) (a : Wf R Γr A) (hq : quant A ≤ quant Γr)
+    (b : Wf R (Γl.cons ⟨A, ⊤⟩) B)
+    [ha : a.HasEff ⊥]
+    : a.let₁ hΓ b
+    ≈ b.subst (SubstDS.subst0 hΓ a.deriv ⊤ hq)
+    := (pre_beta_pureIn hΓ a ⊤ hq b).coh rfl rfl
+
 theorem Wf.let₁_eta_pwk {Γ Γl Γr : Ctx? α}
   {A : Ty α} (a : Wf R Γr A) (hΓ : Γ.SSplit Γl Γr) [hΓl : Γl.del]
   : a.let₁ hΓ .bv0 ≈ a.pwk (hΓ.pwk_left_del) := by
@@ -98,7 +106,7 @@ theorem Wf.let₁_bv0 {Γ : Ctx? α} {A B : Ty α} (a : Wf R (Γ.cons ⟨A, ⊤�
   : Wf.bv0.let₁ (Γ.erase_right.cons (.right ⟨A, ⊤⟩)) (a.wk1 ⟨A, 0⟩) ≈ a
   := by
     apply (Wf.pre_beta_pureIn
-      (Γ.erase_right.cons (.right ⟨A, ⊤⟩)) .bv0 (quant A) (by simp; simp [quant])
+      (Γ.erase_right.cons (.right ⟨A, ⊤⟩)) .bv0 (quant A) (by simp)
         ((a.pwk ((Ctx?.PWk.refl _).cons (.wk (by simp)))).wk1 _) (ha := by simp)).coh
     · rfl
     · cases a;

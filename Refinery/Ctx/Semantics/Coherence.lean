@@ -417,10 +417,10 @@ theorem Ctx?.SSplit.den_both {Γ : Ctx? α} [hΓ : Γ.copy]
   induction Γ with
   | nil => simp only [both, den.eq_1, ety, Model.copy_unit, Ty.den]; rfl
   | cons Γ v I =>
-    rw [both]
-    simp only [den, ety, I, Var?.SSplit.both]
     have _ := hΓ.head;
     have _ := hΓ.tail;
+    rw [both_cons]
+    simp only [den, ety, I, Var?.SSplit.both]
     rw [M.copy_tensor]
     cases v using Var?.casesZero with
     | zero A => simp [Var?.ety, MonoidalCategory'.unitors_inv_equal]

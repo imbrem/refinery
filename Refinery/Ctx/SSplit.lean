@@ -303,6 +303,14 @@ def Ctx?.both (Γ : Ctx? α) [hΓ : Γ.copy] : Γ.SSplit Γ Γ := (λ_ => match 
   | .nil => .nil
   | .cons Γ v => .cons (have _ := copy.tail Γ v; Γ.both) (have _ := copy.head Γ v; .both v)) hΓ
 
+@[simp]
+theorem Ctx?.both_nil : (Ctx?.nil (α := α)).both = .nil := rfl
+
+@[simp]
+theorem Ctx?.both_cons (Γ : Ctx? α) (x : Var? α)
+  [hΓ : Γ.copy] [hx : x.copy] : (Γ.cons x).both = Γ.both.cons (.both x)
+  := rfl
+
 def Var?.SSplit.comm {u v w : Var? α} : u.SSplit v w → u.SSplit w v
   | .left _ => .right _
   | .right _ => .left _
