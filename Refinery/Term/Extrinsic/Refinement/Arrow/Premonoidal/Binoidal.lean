@@ -186,6 +186,37 @@ def DRWS.Arrow.tensorHomRight  {A B C A' B' C'}
       (.pair (Ctx?.erase_right _).right (.letArrow .bv1 g) (.letArrow .bv0 h))
   )))
 
+def DRWS.Arrow.rtensorHom (f : Arrow R A A') (g : Arrow R B B')
+  : Arrow R (A.tensor B) (A'.tensor B') := Eqv.toArr (.letT₂ .bv0 (.antipair
+    (((Ctx?.erase_left _).cons (.left _)).cons (.right _))
+     (.letArrow .bv1 f) (.letArrow .bv0 g)
+  ))
+
+theorem DRWS.Arrow.tensorHom_left  {A B C A' B' C'}
+  (f : Arrow R A A') (g : Arrow R B B') (h : Arrow R C C')
+  : (f.tensorHom g).tensorHom h = f.tensorHomLeft g h
+  := by
+  rw [tensorHom, tensorHomLeft]
+  congr 2
+  rw [Eqv.bind_pair_left, Eqv.letArrow_tensorHom, Eqv.letT₂, Eqv.let_let₂]
+  apply Eqv.let₂_coh'
+  rfl
+  conv => rhs; rw [Eqv.bind_pair_left]
+  induction f, g, h using Eqv.quotInd₃
+  apply Eqv.of_tm
+  simp [Wf.let₁, Wf.pair, Wf.wk1, Wf.bv0, Wf.wk0, Wf.bv2, Wf.wk, ren_ren]
+  congr
+  ext x; cases x <;> rfl
+
+theorem DRWS.Arrow.tensorHom_right {A B C A' B' C'}
+  (f : Arrow R A A') (g : Arrow R B B') (h : Arrow R C C')
+  : f.tensorHom (g.tensorHom h) = f.tensorHomRight g h
+  := by
+  rw [tensorHom, tensorHomRight]
+  congr 2
+
+  sorry
+
 def DRWS.Arrow.tensorHomSwap0 (f : Arrow R A A') (g : Arrow R B B')
   : Arrow R (A.tensor B) (A'.tensor B')
   := Eqv.toArr (.letT₂ (.reswap .bv0) (Eqv.pair
@@ -209,9 +240,3 @@ def DRWS.Arrow.tensorHomReswap (f : Arrow R A A') (g : Arrow R B B')
 -- theorem DRWS.Arrow.tensorHom_eq_reswap (f : Arrow R A B) (g : Arrow R A' B')
 --   : f.tensorHom g = f.tensorHomReswap g
 --   := sorry
-
-def DRWS.Arrow.rtensorHom (f : Arrow R A A') (g : Arrow R B B')
-  : Arrow R (A.tensor B) (A'.tensor B') := Eqv.toArr (.letT₂ .bv0 (.antipair
-    (((Ctx?.erase_left _).cons (.left _)).cons (.right _))
-     (.letArrow .bv1 f) (.letArrow .bv0 g)
-  ))

@@ -167,6 +167,18 @@ inductive SubstDS.Pos : (e : ε) → {Γ Δ : Ctx? α} → (SubstDS φ Γ Δ) �
     (hl : el ≤ e) (hr : er ≤ e) (hcomm : el ⇌ er) (hq: quant v ≤ (pquant er).pos)
     : Pos e (σ.cons hΓ da)
 
+instance SubstDS.HasEff.pureTerm
+  (e : ε) (a : Term φ (Ty α)) [ha : a.HasEff e] {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) [hσ : σ.HasEff ⊥] :
+  (a.subst σ).HasEff e
+  := by induction ha generalizing σ with
+  | bv => sorry
+  | iter => sorry
+  | _ =>
+    constructor <;>
+    (try rw [<-SubstDS.lift_toSubst]) <;>
+    sorry
+
 attribute [class] SubstDS.Pos
 
 attribute [simp, instance] SubstDS.Pos.nil

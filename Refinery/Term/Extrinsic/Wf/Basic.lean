@@ -302,11 +302,11 @@ def Eqv.liftOn₃ {Γ : Ctx? α} {A : Ty α} {B : Ty α} {C : Ty α} {β : Type 
 
 @[simp]
 theorem Eqv.liftOn_mk {Γ : Ctx? α} {A : Ty α} {β : Type _} (a : Wf R Γ A) (f : Wf R Γ A → β)
-  (h) : Eqv.liftOn ⟦a⟧ f h = f a := rfl
+  (h) : Eqv.liftOn e⟦a⟧ f h = f a := rfl
 
 @[simp]
 theorem Eqv.liftOn₂_mk {Γ Δ : Ctx? α} {A B : Ty α} {β : Type _} (a : Wf R Γ A) (b : Wf R Δ B)
-  (f : Wf R Γ A → Wf R Δ B → β) (h) : Eqv.liftOn₂ ⟦a⟧ ⟦b⟧ f h = f a b := rfl
+  (f : Wf R Γ A → Wf R Δ B → β) (h) : Eqv.liftOn₂ e⟦a⟧ e⟦b⟧ f h = f a b := rfl
 
 @[simp]
 theorem Eqv.liftOn₃_mk {Γ Δ Ξ : Ctx? α} {A : Ty α} {B : Ty α} {C : Ty α} {β : Type _}
@@ -450,6 +450,44 @@ theorem Eqv.castCtx_castCtx {Γ Δ Ξ : Ctx? α}
   {A : Ty α} (hΓ : Γ = Δ) (hΔ : Δ = Ξ) (a : Eqv R Γ A)
   : (a.castCtx hΓ).castCtx hΔ = a.castCtx (hΓ.trans hΔ)
   := by induction a using Eqv.quotInd; subst_vars; rfl
+
+theorem Eqv.let₁_coh {Γ Γl Γr : Ctx? α} (hΓ hΓ' : Γ.SSplit Γl Γr)
+  (a : Eqv R Γr A) (b : Eqv R (Γl.cons ⟨A, ⊤⟩) B)
+  : a.let₁ hΓ b = a.let₁ hΓ' b
+  := by induction a, b using Eqv.quotInd₂; exact of_tm rfl
+
+theorem Eqv.let₁_coh' {Γ Γl Γr : Ctx? α} (hΓ hΓ' : Γ.SSplit Γl Γr)
+  (a a' : Eqv R Γr A) (b b' : Eqv R (Γl.cons ⟨A, ⊤⟩) B)
+  (ha : a = a') (hb : b = b')
+  : a.let₁ hΓ b = a'.let₁ hΓ' b'
+  := by subst_vars; apply let₁_coh
+
+theorem Eqv.let₁_let₁_coh {Γ Γc Γc' Γl Γm Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γc Γr) (hΓ' : Γ.SSplit Γc' Γr)
+  (hΓc : (Γc.cons ⟨A, ⊤⟩).SSplit Γl Γm) (hΓc' : (Γc'.cons ⟨A, ⊤⟩).SSplit Γl Γm)
+  (a : Eqv R Γr A) (b : Eqv R Γm B)
+  (c : Eqv R (Γl.cons ⟨B, ⊤⟩) C)
+  : a.let₁ hΓ (b.let₁ hΓc c) = a.let₁ hΓ' (b.let₁ hΓc' c)
+  := by induction a, b, c using Eqv.quotInd₃; exact of_tm rfl
+
+theorem Eqv.let₁_let₁_coh' {Γ Γc Γc' Γl Γm Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γc Γr) (hΓ' : Γ.SSplit Γc' Γr)
+  (hΓc : (Γc.cons ⟨A, ⊤⟩).SSplit Γl Γm) (hΓc' : (Γc'.cons ⟨A, ⊤⟩).SSplit Γl Γm)
+  (a a' : Eqv R Γr A) (b b' : Eqv R Γm B) (c c' : Eqv R (Γl.cons ⟨B, ⊤⟩) C)
+  (ha : a = a') (hb : b = b') (hc : c = c')
+  : a.let₁ hΓ (b.let₁ hΓc c) = a'.let₁ hΓ' (b'.let₁ hΓc' c')
+  := by subst_vars; apply let₁_let₁_coh
+
+theorem Eqv.let₂_coh {Γ Γl Γr : Ctx? α} (hΓ hΓ' : Γ.SSplit Γl Γr)
+  (a : Eqv R Γr (A.tensor B)) (b : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C)
+  : a.let₂ hΓ b = a.let₂ hΓ' b
+  := by induction a, b using Eqv.quotInd₂; exact of_tm rfl
+
+theorem Eqv.let₂_coh' {Γ Γl Γr : Ctx? α} (hΓ hΓ' : Γ.SSplit Γl Γr)
+  (a a' : Eqv R Γr (A.tensor B)) (b b' : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C)
+  (ha : a = a') (hb : b = b')
+  : a.let₂ hΓ b = a'.let₂ hΓ' b'
+  := by subst_vars; apply let₂_coh
 
 --TODO: Wf HasEff
 

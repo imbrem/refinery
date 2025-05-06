@@ -1,5 +1,5 @@
 import Refinery.Term.Extrinsic.Refinement.Uniform
-import Refinery.Term.Extrinsic.Subst.Basic
+import Refinery.Term.Extrinsic.Subst.Effect
 
 namespace Refinery
 
@@ -71,81 +71,182 @@ theorem DRWS.rel.usubst_congr [USubstCongr R]
   : R.rel da db → R.uniform.rel (da.subst σ) (db.subst σ)
   := USubstCongr.usubst_congr σ da db
 
--- -- OOPS: only _pure_ substitutions are uniform!!!
--- theorem DRWS.rel.substD_congr_uniform [USubstCongr R]
---   {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A a b} {da : Δ ⊢ a : A} {db : Δ ⊢ b : A}
---   (h : R.uniform.rel da db) : R.uniform.rel (da.substD σ) (db.substD σ)
---   := by induction h generalizing Γ with
---   | pos_unif hΔ hΔc hc hd ha hs hb hei hec hsb I =>
---       apply substD_of_subst
---       rename_i s Δ Δc Δl Δm Δr e e' A B X a b b' da ds db db'
---       have _ : Δl.del := hΔc.left_del;
---       let Γc := (σ.inLeft hΔ)
---       let Γr := (σ.inRight hΔ)
---       let hΓ : Γ.SSplit Γc Γr := (σ.ssplitIn hΔ)
---       let σc : SubstDS φ Γc Δc := (σ.substLeft hΔ)
---       let σr : SubstDS φ Γr Δr := (σ.substRight hΔ)
---       have hcc : Γc.copy := sorry
---       have hdd : Γc.del := sorry
---       let Γl := (σc.inLeft hΔc)
---       let Γm := (σc.inRight hΔc)
---       have hΓc : Γc.SSplit Γl Γm := (σc.ssplitIn hΔc)
---       have hllc : Δl.copy := hΔc.left_copy
---       have hlcc : Γl.copy := sorry
---       have hldd : Γl.del := sorry
---       let ρcl : Γc.PWk Γm := hΓc.pwk_left_del
---       let σl : SubstDS φ Γl Δl := (σc.substLeft hΔc)
---       let σm : SubstDS φ Γm Δm := (σc.substRight hΔc)
---       let dl := (ds.let₁ (hΔc.cons (.right _)) (db.wk1 _));
---       let dr :=
---           (db'.case (Δc.both.cons (.right _))
---             Deriv.bv0.inl ((ds.pwk ((hΔc.pwk_left_del).scons _)).wk1 ⟨A, 0⟩).inr)
---       simp only [Deriv.wk_let₁, Deriv.wk_iter] at *
---       let daw := da.subst σr
---       let dsw := ds.subst (σm.lift ⟨A, ⊤⟩)
---       let dbw := (db.subst (σl.lift ⟨X, ⊤⟩))
---       let dlw := dsw.let₁ (hΓc.cons (.right _)) (dbw.wk1 ⟨A, 0⟩)
---       let dbw' := db'.subst (σc.lift ⟨A, ⊤⟩)
---       let drw := dbw'.case (Γc.both.cons (.right _))
---         Deriv.bv0.inl
---         ((dsw.pwk (ρcl.scons _)).wk1 ⟨A, 0⟩).inr
---       have hdlw : (s.subst (σm.lift ⟨A, ⊤⟩)).let₁ X
---         (↑¹ (b.subst (σl.lift ⟨X , ⊤⟩))) = (s.let₁ X (↑¹ b)).subst (σc.lift ⟨A, ⊤⟩)
---         := by sorry
---       have hdrw :
---         (b'.subst (σc.lift ⟨A, ⊤⟩)).case B A
---           (inl B X (bv 0))
---           (inr B X (↑¹ (s.subst (σm.lift ⟨A, ⊤⟩))))
---         = subst (σc.lift ⟨A, ⊤⟩) (b'.case B A (inl B X (bv 0)) (inr B X (↑¹ s)))
---         := by sorry
---       have h : R.uniform.rel dlw drw := by
---         convert
---           Coherent.elim _ (dlw.cast_term hdlw) _ (drw.cast_term hdrw)
---             (I (σc.lift ⟨A, ⊤⟩)).subst_of_substD using 1
---         <;> simp [Deriv.cast_term, Deriv.cast]
---       let dliw := Deriv.let₁ hΓ daw
---                   (Deriv.iter (hΓc.cons (.right ⟨A, ⊤⟩))
---                     inferInstance inferInstance
---                     dsw (dbw.wk1 ⟨A, 0⟩))
---       let driw := Deriv.iter hΓ inferInstance inferInstance daw dbw'
---       have h : R.uniform.rel dliw driw := DRWS.uniform.pos_unif
---         (ds := dsw) (da := daw) (db := dbw) (db' := dbw') hΓ hΓc
---         inferInstance inferInstance inferInstance inferInstance inferInstance hei hec h
---       have hliw : (ren ρr.ix a).let₁ A
---                     ((ren (Ctx?.Wk.scons { ty := A, q := ⊤ } ρm).ix s).iter X B
---                       (ren (↑ⁿ Nat.succ) (ren (Ctx?.Wk.scons { ty := X, q := ⊤ } ρl).ix b))) =
---                   (ren ρ.ix (a.let₁ A (s.iter X B (ren (↑ⁿ Nat.succ) b)))) := by
---                   simp only [
---                     Ctx?.Wk.ix, ren, ren_ren, <-Nat.liftWk_comp, Nat.liftWk_comp_succ,
---                     ρci, ρli, ρmi, ρri
---                   ]
---       have hriw : (ren ρr.ix a).iter A B (ren (Ctx?.Wk.scons { ty := A, q := ⊤ } ρc).ix b')
---                   = (ren ρ.ix (a.iter A B b')) := by simp [ρri, ρci]
---       exact Coherent.elim
---         (dliw.cast_term hliw) _ (driw.cast_term hriw) _
---         (h.cast_term hliw hriw)
---   | neg_unif hΔ hΔc hc hd ha hs hb hei hec hsb I => sorry
---   | base => apply rel.of_cast_term; apply USubstCongr.usubst_congr; assumption
---   | refl =>  apply rel.substD_of_subst; apply uniform.refl
---   | trans => apply uniform.trans <;> apply_assumption
---   | _ => stop simp only [Deriv.substD]; constructor <;> apply_assumption
+class DRWS.PSubstCongr (R : DRWS φ α) where
+  psubst_congr {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) (hσ : σ.HasEff ⊥) {A a b} (da : Δ ⊢ a : A) (db : Δ ⊢ b : A) :
+    R.rel da db → R.uniform.rel (da.subst σ) (db.subst σ)
+
+theorem DRWS.rel.substD_congr_uniform [PSubstCongr R]
+  {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) [hσ : σ.HasEff ⊥] {A a b} {da : Δ ⊢ a : A} {db : Δ ⊢ b : A}
+  (h : R.uniform.rel da db) : R.uniform.rel (da.substD σ) (db.substD σ)
+  := by induction h generalizing Γ with
+  | pos_unif hΔ hΔc hc hd ha hs hb hei hec hsb I =>
+    apply substD_of_subst
+    rename_i s Δ Δc Δl Δm Δr e e' A B X a b b' da ds db db'
+    have _ : Δl.del := hΔc.left_del;
+    let Γc := (σ.inLeft hΔ)
+    let Γr := (σ.inRight hΔ)
+    let hΓ : Γ.SSplit Γc Γr := (σ.ssplitIn hΔ)
+    let σc : SubstDS φ Γc Δc := (σ.substLeft hΔ)
+    let σr : SubstDS φ Γr Δr := (σ.substRight hΔ)
+    have hcc : Γc.copy := σ.split_copy_left hΔ
+    have hdd : Γc.del := σ.split_del_left hΔ
+    let Γl := (σc.inLeft hΔc)
+    let Γm := (σc.inRight hΔc)
+    have hΓc : Γc.SSplit Γl Γm := (σc.ssplitIn hΔc)
+    have hllc : Δl.copy := hΔc.left_copy
+    have hlcc : Γl.copy := σc.split_copy_left hΔc
+    have hldd : Γl.del := σc.split_del_left hΔc
+    let ρcl : Γc.PWk Γm := hΓc.pwk_left_del
+    let σl : SubstDS φ Γl Δl := (σc.substLeft hΔc)
+    let σm : SubstDS φ Γm Δm := (σc.substRight hΔc)
+    let dl := (ds.let₁ (hΔc.cons (.right _)) (db.wk1 _));
+    let dr :=
+        (db'.case (Δc.both.cons (.right _))
+          Deriv.bv0.inl ((ds.pwk ((hΔc.pwk_left_del).scons _)).wk1 ⟨A, 0⟩).inr)
+    simp only [Deriv.wk_let₁, Deriv.wk_iter] at *
+    let daw := da.subst σr
+    let dsw := ds.subst (σm.lift ⟨A, ⊤⟩)
+    let dbw := (db.subst (σl.lift ⟨X, ⊤⟩))
+    let dlw := dsw.let₁ (hΓc.cons (.right _)) (dbw.wk1 ⟨A, 0⟩)
+    let dbw' := db'.subst (σc.lift ⟨A, ⊤⟩)
+    let drw := dbw'.case (Γc.both.cons (.right _))
+      Deriv.bv0.inl
+      ((dsw.pwk (ρcl.scons _)).wk1 ⟨A, 0⟩).inr
+    have hdlw : (s.subst (σm.lift ⟨A, ⊤⟩)).let₁ X
+      (↑¹ (b.subst (σl.lift ⟨X , ⊤⟩))) = (s.let₁ X (↑¹ b)).subst (σc.lift ⟨A, ⊤⟩)
+      := by
+        simp [<-subst_renOut, <-subst_renIn, σm, σl]
+        congr
+        ext x; cases x
+        rfl
+        simp [ren_ren]
+        rfl
+    have hdrw :
+      (b'.subst (σc.lift ⟨A, ⊤⟩)).case B A
+        (inl B X (bv 0))
+        (inr B X (↑¹ (s.subst (σm.lift ⟨A, ⊤⟩))))
+      = subst (σc.lift ⟨A, ⊤⟩) (b'.case B A (inl B X (bv 0)) (inr B X (↑¹ s)))
+      := by
+        simp [<-subst_renOut, <-subst_renIn, σm]
+        congr
+        ext x; cases x
+        rfl
+        simp [ren_ren]
+        rfl
+    have h : R.uniform.rel dlw drw := by
+      convert
+        Coherent.elim _ (dlw.cast_term hdlw) _ (drw.cast_term hdrw)
+          (I (σc.lift ⟨A, ⊤⟩)).subst_of_substD using 1
+      <;> simp [Deriv.cast_term, Deriv.cast]
+    let dliw := Deriv.let₁ hΓ daw
+                (Deriv.iter (hΓc.cons (.right ⟨A, ⊤⟩))
+                  inferInstance inferInstance
+                  dsw (dbw.wk1 ⟨A, 0⟩))
+    let driw := Deriv.iter hΓ inferInstance inferInstance daw dbw'
+    have h : R.uniform.rel dliw driw := DRWS.uniform.pos_unif
+      (ds := dsw) (da := daw) (db := dbw) (db' := dbw') hΓ hΓc
+      inferInstance inferInstance inferInstance inferInstance inferInstance hei hec h
+    have hliw : (subst σr.toSubst a).let₁ A
+                  ((subst (σm.lift ⟨A, ⊤⟩).toSubst s).iter X B
+                    (ren (↑ⁿ Nat.succ) (subst (σl.lift ⟨X, ⊤⟩).toSubst b))) =
+                (subst σ.toSubst (a.let₁ A (s.iter X B (ren (↑ⁿ Nat.succ) b)))) := by
+                simp [σr, σm, σc, σl, <-subst_renOut, <-subst_renIn]
+                congr
+                ext x; cases x
+                rfl
+                simp [ren_ren]
+                rfl
+    have hriw : (subst σr.toSubst a).iter A B (subst (σc.lift ⟨A, ⊤⟩).toSubst b')
+                = (subst σ.toSubst (a.iter A B b'))
+                := by simp [σr, σc, <-subst_renOut, <-subst_renIn]
+    exact Coherent.elim
+      (dliw.cast_term hliw) _ (driw.cast_term hriw) _
+      (h.cast_term hliw hriw)
+  | neg_unif hΔ hΔc hc hd ha hs hb hei hec hsb I =>
+      apply substD_of_subst
+      rename_i s Δ Δc Δl Δm Δr e e' A B X a b b' da ds db db'
+      have _ : Δl.del := hΔc.left_del;
+      let Γc := (σ.inLeft hΔ)
+      let Γr := (σ.inRight hΔ)
+      let hΓ : Γ.SSplit Γc Γr := (σ.ssplitIn hΔ)
+      let σc : SubstDS φ Γc Δc := (σ.substLeft hΔ)
+      let σr : SubstDS φ Γr Δr := (σ.substRight hΔ)
+      have hcc : Γc.copy := σ.split_copy_left hΔ
+      have hdd : Γc.del := σ.split_del_left hΔ
+      let Γl := (σc.inLeft hΔc)
+      let Γm := (σc.inRight hΔc)
+      have hΓc : Γc.SSplit Γl Γm := (σc.ssplitIn hΔc)
+      have hllc : Δl.copy := hΔc.left_copy
+      have hlcc : Γl.copy := σc.split_copy_left hΔc
+      have hldd : Γl.del := σc.split_del_left hΔc
+      let ρcl : Γc.PWk Γm := hΓc.pwk_left_del
+      let σl : SubstDS φ Γl Δl := (σc.substLeft hΔc)
+      let σm : SubstDS φ Γm Δm := (σc.substRight hΔc)
+      let dl := (ds.let₁ (hΔc.cons (.right _)) (db.wk1 _));
+      let dr :=
+          (db'.case (Δc.both.cons (.right _))
+            Deriv.bv0.inl ((ds.pwk ((hΔc.pwk_left_del).scons _)).wk1 ⟨A, 0⟩).inr)
+      simp only [Deriv.wk_let₁, Deriv.wk_iter] at *
+      let daw := da.subst σr
+      let dsw := ds.subst (σm.lift ⟨A, ⊤⟩)
+      let dbw := (db.subst (σl.lift ⟨X, ⊤⟩))
+      let dlw := dsw.let₁ (hΓc.cons (.right _)) (dbw.wk1 ⟨A, 0⟩)
+      let dbw' := db'.subst (σc.lift ⟨A, ⊤⟩)
+      let drw := dbw'.case (Γc.both.cons (.right _))
+        Deriv.bv0.inl
+        ((dsw.pwk (ρcl.scons _)).wk1 ⟨A, 0⟩).inr
+      have hdlw : (s.subst (σm.lift ⟨A, ⊤⟩)).let₁ X
+        (↑¹ (b.subst (σl.lift ⟨X , ⊤⟩))) = (s.let₁ X (↑¹ b)).subst (σc.lift ⟨A, ⊤⟩)
+        := by
+          simp [<-subst_renOut, <-subst_renIn, σm, σl]
+          congr
+          ext x; cases x
+          rfl
+          simp [ren_ren]
+          rfl
+      have hdrw :
+        (b'.subst (σc.lift ⟨A, ⊤⟩)).case B A
+          (inl B X (bv 0))
+          (inr B X (↑¹ (s.subst (σm.lift ⟨A, ⊤⟩))))
+        = subst (σc.lift ⟨A, ⊤⟩) (b'.case B A (inl B X (bv 0)) (inr B X (↑¹ s)))
+        := by
+          simp [<-subst_renOut, <-subst_renIn, σm]
+          congr
+          ext x; cases x
+          rfl
+          simp [ren_ren]
+          rfl
+      have h : R.uniform.rel drw dlw := by
+        convert
+          Coherent.elim _ (drw.cast_term hdrw) _ (dlw.cast_term hdlw)
+            (I (σc.lift ⟨A, ⊤⟩)).subst_of_substD using 1
+        <;> simp [Deriv.cast_term, Deriv.cast]
+      let dliw := Deriv.let₁ hΓ daw
+                  (Deriv.iter (hΓc.cons (.right ⟨A, ⊤⟩))
+                    inferInstance inferInstance
+                    dsw (dbw.wk1 ⟨A, 0⟩))
+      let driw := Deriv.iter hΓ inferInstance inferInstance daw dbw'
+      have h : R.uniform.rel driw dliw := DRWS.uniform.neg_unif
+        (ds := dsw) (da := daw) (db := dbw) (db' := dbw') hΓ hΓc
+        inferInstance inferInstance inferInstance inferInstance inferInstance hei hec h
+      have hliw : (subst σr.toSubst a).let₁ A
+                    ((subst (σm.lift ⟨A, ⊤⟩).toSubst s).iter X B
+                      (ren (↑ⁿ Nat.succ) (subst (σl.lift ⟨X, ⊤⟩).toSubst b))) =
+                  (subst σ.toSubst (a.let₁ A (s.iter X B (ren (↑ⁿ Nat.succ) b)))) := by
+                    simp [<-subst_renOut, <-subst_renIn, σm, σl, σr, σc]
+                    congr
+                    ext x; cases x
+                    rfl
+                    simp [ren_ren]
+                    rfl
+      have hriw : (subst σr.toSubst a).iter A B (subst (σc.lift ⟨A, ⊤⟩).toSubst b')
+                  = (subst σ.toSubst (a.iter A B b')) := by
+          simp [<-subst_renOut, <-subst_renIn, σm, σr, σc]
+      exact Coherent.elim
+        (driw.cast_term hriw) _ (dliw.cast_term hliw) _
+        (h.cast_term hriw hliw)
+  | base => apply rel.of_cast_term; apply PSubstCongr.psubst_congr <;> assumption
+  | refl =>  apply rel.substD_of_subst; apply uniform.refl
+  | trans => apply uniform.trans <;> apply_assumption
+  | _ => simp only [Deriv.substD]; constructor <;> apply_assumption

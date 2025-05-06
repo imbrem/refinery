@@ -174,6 +174,19 @@ def Eqv.pwk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} (a : Eqv R Δ A) : Eq
 theorem Eqv.pwk_mk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} {a : Wf R Δ A}
   : Eqv.pwk ρ (e⟦a⟧) = e⟦a.pwk ρ⟧ := rfl
 
+theorem Eqv.wk0_let₁_anti {Γ Γl Γr : Ctx? α}
+  (hΓ : (Γ.cons x).SSplit (Γl.cons xl) (Γr.cons xr)) {A B}
+  (a : Eqv R Γr A) (b : Eqv R (Γl.cons ⟨A, ⊤⟩) B)
+  [hx : x.del] [hxl : xl.del] [hxr : xr.del]
+  : (a.wk0 xr).let₁ hΓ (b.wk1 xl) = (a.let₁ hΓ.tail b).wk0 x
+  := by induction a, b using quotInd₂; exact of_tm rfl
+
+theorem Eqv.wk0_let₁_right {Γ Γl Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γl Γr) {A B}
+  (a : Eqv R Γr A) (b : Eqv R (Γl.cons ⟨A, ⊤⟩) B) {x : Var? α} [hx : x.del]
+  : (a.let₁ hΓ b).wk0 x = (a.wk0 x).let₁ (hΓ.right) (b.wk1 x.erase)
+  := by induction a, b using quotInd₂; exact of_tm rfl
+
 theorem Eqv.wk1_let₁_anti {Γ Γl Γr : Ctx? α}
   (hΓ : ((Γ.cons x).cons y).SSplit ((Γl.cons xl).cons yl) ((Γr.cons xr).cons yr)) {A B}
   (a : Eqv R (Γr.cons yr) A) (b : Eqv R ((Γl.cons yl).cons ⟨A, ⊤⟩) B)
