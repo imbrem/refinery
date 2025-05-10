@@ -62,17 +62,6 @@ def Eqv.let_case {Γ Γl Γc Γm Γr : Ctx? α} {A B C D}
   apply DRWS.EquivFwdStep.let_move
   apply DRWS.LetMove.let_case
 
-def Eqv.let_abort {Γ Γl Γr : Ctx? α} {A B}
-    (hΓ : Γ.SSplit Γl Γr) (a : Eqv R Γr Ty.empty) (b : Eqv R (Γl.cons ⟨A, ⊤⟩) B)
-    : ((a.abort _).let₁ hΓ b)
-    = a.let₁ hΓ (.let₁ (Γl.erase_right.cons (.right _)) (.abort _ (.bv0)) (b.wk1 _)) := by
-  induction a, b using quotInd₂ with
-  | h a b => cases a with | mk a da => cases b with | mk b db =>
-  apply sound
-  apply Wf.eqv.equivFwdStep
-  apply DRWS.EquivFwdStep.let_move
-  apply DRWS.LetMove.let_abort
-
 --TODO: backwards rules, with hax... that autocompleted to haxioms.
 
 def Eqv.bind_op {Γ : Ctx? α} {f A B}

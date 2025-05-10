@@ -167,17 +167,77 @@ inductive SubstDS.Pos : (e : ε) → {Γ Δ : Ctx? α} → (SubstDS φ Γ Δ) �
     (hl : el ≤ e) (hr : er ≤ e) (hcomm : el ⇌ er) (hq: quant v ≤ (pquant er).pos)
     : Pos e (σ.cons hΓ da)
 
-instance SubstDS.HasEff.pureTerm
-  (e : ε) (a : Term φ (Ty α)) [ha : a.HasEff e] {Γ Δ : Ctx? α}
-  (σ : SubstDS φ Γ Δ) [hσ : σ.HasEff ⊥] :
+
+@[simp]
+def SubstDS.image {Γ Δ : Ctx? α} : SubstDS φ Γ Δ → Set (Term φ (Ty α))
+  | .nil _ => {.invalid}
+  | .cons (a := a) _ σ _ => insert a σ.image
+
+@[simp]
+theorem SubstDS.outputs_mem_image {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) (n : ℕ)
+  : σ.toSubst n ∈ σ.image := by induction σ generalizing n <;> cases n <;> simp [toSubst, *]
+
+--TODO: image is actually exactly the image of toSubst
+
+theorem SubstDS.effect
+  (e : ε) {a : Term φ (Ty α)} [ha : a.HasEff e] {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) [hσ : σ.HasEff e] (da : Δ ⊢ a : A) :
   (a.subst σ).HasEff e
-  := by induction ha generalizing σ with
-  | bv => sorry
-  | iter => sorry
-  | _ =>
-    constructor <;>
-    (try rw [<-SubstDS.lift_toSubst]) <;>
-    sorry
+  := by induction da generalizing Γ ha with
+  | bv hn =>
+    rename ℕ => n
+    induction hσ generalizing n with
+    | nil => cases hn
+    | cons hΓ σ da hσ hd Iσ => cases hn with
+      | here _ hvw => cases hd with
+        | valid _ _ ha => exact ha
+        | zero => cases hvw using Var?.Wk.casesOn
+      | there hx => exact Iσ hx
+  | let₁ hΓ da db Ia Ib =>
+    cases ha
+    constructor
+    rw [<-σ.substRight_toSubst hΓ]
+    apply Ia
+    rw [<-σ.substLeft_toSubst hΓ, <-SubstDS.lift_toSubst]
+    apply Ib
+  | pair hΓ da db Ia Ib =>
+    cases ha
+    constructor
+    rw [<-σ.substLeft_toSubst hΓ]
+    apply Ia
+    rw [<-σ.substRight_toSubst hΓ]
+    apply Ib
+  | let₂ hΓ da db Ia Ib =>
+    cases ha
+    constructor
+    rw [<-σ.substRight_toSubst hΓ]
+    apply Ia
+    rw [<-σ.substLeft_toSubst hΓ, <-SubstDS.lift_toSubst, <-SubstDS.lift_toSubst]
+    apply Ib
+  | case hΓ da db dc Ia Ib Ic =>
+    cases ha
+    constructor
+    rw [<-σ.substRight_toSubst hΓ]
+    apply Ia
+    rw [<-σ.substLeft_toSubst hΓ, <-SubstDS.lift_toSubst]
+    apply Ib
+    rw [<-σ.substLeft_toSubst hΓ, <-SubstDS.lift_toSubst]
+    apply Ic
+  | iter hΓ hc hd da db Ia Ib =>
+    cases ha
+    constructor
+    assumption
+    rw [<-σ.substRight_toSubst hΓ]
+    apply Ia
+    rw [<-σ.substLeft_toSubst hΓ, <-SubstDS.lift_toSubst]
+    apply Ib
+  | _ => cases ha; constructor <;> apply_assumption
+
+theorem SubstDS.effect_pure
+  (e : ε) {a : Term φ (Ty α)} [ha : a.HasEff e] {Γ Δ : Ctx? α}
+  (σ : SubstDS φ Γ Δ) [hσ : σ.HasEff ⊥] (da : Δ ⊢ a : A) :
+  (a.subst σ).HasEff e
+  := σ.effect e (hσ := hσ.mono (by simp)) da
 
 attribute [class] SubstDS.Pos
 

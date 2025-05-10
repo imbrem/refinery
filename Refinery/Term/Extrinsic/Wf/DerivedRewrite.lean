@@ -252,6 +252,26 @@ theorem Eqv.let_comm_anti {A} {Γ Γl Γr : Ctx? α}
   apply sound; apply Wf.eqv.of_tm
   rfl
 
+theorem Eqv.let_comm_pure_left {A} {Γ Γl Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
+  (a : Eqv R Γr A) (b : Eqv R Γm B) (c : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C)
+  [ha : a.HasEff ⊥]
+  : a.let₁ hΓ ((b.wk0 ⟨A, 0⟩).let₁ (hΓc.cons (.left _)) c)
+  = b.let₁ (hΓ.comm.s1_23_12_3 hΓc)
+    ((a.wk0 ⟨B, 0⟩).let₁ ((hΓ.comm.s1_23_12 hΓc).comm.cons (.left _))
+      (.let₁ ((((Ctx?.erase_right _).cons (.right _))).cons (.left _)) .bv1 (c.wk2 ⟨B, 0⟩)))
+  := by rw [let_comm (ea := ⊥) (eb := ⊤)]; apply HasCommRel.commutes_bot_left
+
+theorem Eqv.let_comm_pure_right {A} {Γ Γl Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
+  (a : Eqv R Γr A) (b : Eqv R Γm B) (c : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C)
+  [hb : b.HasEff ⊥]
+  : a.let₁ hΓ ((b.wk0 ⟨A, 0⟩).let₁ (hΓc.cons (.left _)) c)
+  = b.let₁ (hΓ.comm.s1_23_12_3 hΓc)
+    ((a.wk0 ⟨B, 0⟩).let₁ ((hΓ.comm.s1_23_12 hΓc).comm.cons (.left _))
+      (.let₁ ((((Ctx?.erase_right _).cons (.right _))).cons (.left _)) .bv1 (c.wk2 ⟨B, 0⟩)))
+  := by rw [let_comm (ea := ⊤) (eb := ⊥)]; apply HasCommRel.commutes_bot_right
+
 def Eqv.reswap {A B} {Γ : Ctx? α} (a : Eqv R Γ (.tensor A B)) : Eqv R Γ (.tensor B A)
   := .let₂ (Γ.erase_left) a (.pair ((Γ.erase.erase_left.cons (.right _)).cons (.left _)) .bv0 .bv1)
 
@@ -381,10 +401,30 @@ theorem Eqv.let_pair_left_wk0 {A B C} {Γ Γc Γl Γm Γr : Ctx? α}
   rw [
     Ctx?.SSplit.comm, Var?.SSplit.comm,
     let_comm (ea := ea) (eb := eb) (ha := ha) (hb := hb) (he := he),
-    wk0_let₁_right, let_let₁
+    wk0_let₁_right, let_let₁, wk1_pair, wk1_bv1, wk1_bv0, bind_pair_left (a := .bv2), <-wk0_bv1,
+    Ctx?.SSplit.comm, Ctx?.SSplit.head, Var?.SSplit.comm,
+    let_comm_pure_right (b := .bv1), bind_pair_left
   ]
-  sorry
+  induction a, b, c using quotInd₃
+  apply Eqv.of_tm
+  simp [Wf.let₁, Wf.bv1, Wf.wk2, Wf.pair, Wf.wk0, ren_ren, Wf.bv0, Wf.wk1, Nat.liftWk_comp_succ]
 
+
+theorem Eqv.let_pure_left_pair_wk0 {A B C} {Γ Γc Γl Γm Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
+  (a : Eqv R Γr A) (b : Eqv R Γl B) (c : Eqv R (Γm.cons ⟨A, ⊤⟩) C)
+  [ha : a.HasEff ⊥]
+  : a.let₁ hΓ (.pair (hΓc.cons (.right _)) (b.wk0 _) c)
+  = .pair (hΓ.s12_3_1_23 hΓc) b (.let₁ (hΓ.s12_3_23 hΓc) a c)
+  := Eqv.let_pair_left_wk0 hΓ hΓc a b c ⊥ ⊤ HasCommRel.commutes_bot_left
+
+theorem Eqv.let_pair_pure_left_wk0 {A B C} {Γ Γc Γl Γm Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
+  (a : Eqv R Γr A) (b : Eqv R Γl B) (c : Eqv R (Γm.cons ⟨A, ⊤⟩) C)
+  [hb : b.HasEff ⊥]
+  : a.let₁ hΓ (.pair (hΓc.cons (.right _)) (b.wk0 _) c)
+  = .pair (hΓ.s12_3_1_23 hΓc) b (.let₁ (hΓ.s12_3_23 hΓc) a c)
+  := Eqv.let_pair_left_wk0 hΓ hΓc a b c ⊤ ⊥ HasCommRel.commutes_bot_right
 
 -- theorem Eqv.let₂_pair_left_wk0_wk0 {A B C D} {Γ Γc Γl Γm Γr : Ctx? α}
 --   (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)

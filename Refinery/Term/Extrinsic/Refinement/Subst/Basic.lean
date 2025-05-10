@@ -13,9 +13,14 @@ variable {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε]
 
 inductive DRWS.relD? (R : DRWS φ α)
   : ∀{Γ} {a a' : Term φ (Ty α)} {v}, (Γ ⊢? a : v) → (Γ ⊢? a' : v) → Prop
-  | valid {Γ : Ctx? α} {a a'} (A q) {da : Γ ⊢ a : A} {da' : Γ ⊢ a' : A} (h : R.rel da da') (hq)
-    : relD? R (.valid A q da hq) (.valid A q da' hq)
+  | valid {Γ : Ctx? α} {a a'} (A q) {da : Γ ⊢ a : A} {da' : Γ ⊢ a' : A}
+    (h : R.uniform.rel da da') (hq) : relD? R (.valid A q da hq) (.valid A q da' hq)
   | zero {Γ : Ctx? α} (a a') (A) (hΓ : Γ.del) : relD? R (.zero hΓ a A) (.zero hΓ a' A)
+
+@[simp]
+theorem DRWS.relD?.refl {R : DRWS φ α} {Γ : Ctx? α} {a : Term φ (Ty α)} {v}
+  (da : Γ ⊢? a : v) : R.relD? da da
+  := by induction da <;> constructor; apply DRWS.uniform.refl
 
 inductive DRWS.relS (R : DRWS φ α) : ∀{Γ Δ : Ctx? α}, SubstDS φ Γ Δ → SubstDS φ Γ Δ → Prop
   | nil {Γ : Ctx? α} (hΓ : Γ.del) : relS R (.nil hΓ) (.nil hΓ)
@@ -26,6 +31,83 @@ inductive DRWS.relS (R : DRWS φ α) : ∀{Γ Δ : Ctx? α}, SubstDS φ Γ Δ �
     (ha : R.relD? da da') : relS R (σ.cons hΓ da) (σ'.cons hΓ da')
   -- TODO: do we add transitivity here, or will it make things more complex?
   -- (note: transitivity allows for multi-splitting)
+
+@[simp]
+theorem DRWS.relS.refl {R : DRWS φ α} {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) : R.relS σ σ
+  := by induction σ <;> constructor <;> simp [*]
+
+structure DRWS.relSSplit (R : DRWS φ α) {Γ Δ Δl Δr : Ctx? α} (σ σ' : SubstSSplit φ Γ Δ Δl Δr )
+  : Prop where
+  inLeft : σ.inLeft = σ'.inLeft
+  inRight : σ.inRight = σ'.inRight
+  ssplitIn : σ.ssplitIn = inLeft ▸ inRight ▸ σ'.ssplitIn
+  substLeft : R.relS σ.substLeft (inLeft ▸ σ'.substLeft)
+  substRight : R.relS σ.substRight (inRight ▸ σ'.substRight)
+
+@[simp]
+theorem DRWS.relSSplit.refl {R : DRWS φ α} {Γ Δ Δl Δr : Ctx? α}
+  (σ : SubstSSplit φ Γ Δ Δl Δr) : R.relSSplit σ σ
+  := ⟨rfl, rfl, rfl, by simp, by simp⟩
+
+theorem DRWS.relSSplit.cons {R : DRWS φ α} {Γ Γl Γr Γl' Γr' Δ Δl Δr : Ctx? α}
+  {a a' : Term φ (Ty α)}
+  (hΓ : Γ.SSplit Γl Γr) (hΓ' : Γ.SSplit Γl' Γr')
+  (hΓl : Γl.SSplit Γll Γlr) (hΓr : Γr.SSplit Γrl Γrr)
+  (hΓl' : Γl'.SSplit Γll' Γlr') (hΓr' : Γr'.SSplit Γrl' Γrr')
+  (σl : SubstDS φ Γll Δl) (σr : SubstDS φ Γrl Δr)
+  (dal : Γlr ⊢? a : vl) (dar : Γrr ⊢? a : vr)
+  (σl' : SubstDS φ Γll' Δl) (σr' : SubstDS φ Γrl' Δr)
+  (dal' : Γlr' ⊢? a' : vl) (dar' : Γrr' ⊢? a' : vr)
+  (Γle : Γl = Γl') (Γre : Γr = Γr')
+  (hΓe : hΓ = Γle ▸ Γre ▸ hΓ')
+  : R.relSSplit (Δ := (Δ.cons v)) (Δl := (Δl.cons vl)) (Δr := (Δr.cons vr))
+    ⟨Γl, Γr, hΓ, σl.cons hΓl dal, σr.cons hΓr dar⟩
+    ⟨Γl', Γr', hΓ', σl'.cons hΓl' dal', σr'.cons hΓr' dar'⟩
+  := sorry
+
+theorem DRWS.relS.split {R : DRWS φ α} {Γ Δ Δl Δr : Ctx? α}
+  {σ σ' : SubstDS φ Γ Δ} (hσ : R.relS σ σ') (hΔ : Δ.SSplit Δl Δr) :
+  R.relSSplit (σ.ssplit hΔ) (σ'.ssplit hΔ)
+  := by induction hΔ generalizing Γ with
+  | nil => cases hσ; simp [SubstDS.ssplit]
+  | cons hΔ hvw IΔ => cases hσ with
+  | cons hΓ hσ ha =>
+    rename_i σ σ'
+    cases ha with
+    | valid =>
+      cases hvw with
+      | left =>
+        apply DRWS.relSSplit.cons <;> sorry
+      | right =>
+        apply DRWS.relSSplit.cons <;> sorry
+      | sboth =>
+        apply DRWS.relSSplit.cons <;> sorry
+    | zero =>
+      cases hvw with
+      | left =>
+        apply DRWS.relSSplit.cons <;> sorry
+      | right =>
+        apply DRWS.relSSplit.cons <;> sorry
+      | sboth =>
+        apply DRWS.relSSplit.cons <;> sorry
+
+-- theorem RWS.subst_congr_uniform {R : DRWS φ α}
+--   {Γ Δ : Ctx? α} (σ σ' : SubstDS φ Γ Δ) (hσ : R.relS σ σ') {A a} (da : Δ ⊢ a : A)
+--   : R.toRWS.uniform Γ A (subst σ.toSubst a) (subst σ'.toSubst a)
+--   := by
+--   induction da generalizing Γ with
+--   | bv => sorry
+--   | let₁ hΔ da db Ia Ib =>
+--     rename_i Δ Δl Δr A B a b
+--     let Γl := σ.inLeft hΔ
+--     let Γr := σ.inRight hΔ
+--     let hΓ := σ.ssplitIn hΔ
+--     let σl : SubstDS φ Γl Δl := σ.substLeft hΔ
+--     let σr : SubstDS φ Γr Δr := σ.substRight hΔ
+--     simp only [subst]
+--     sorry
+--   | _ =>
+--     sorry
 
 theorem DRWS.rel.substD_of_subst {R : DRWS φ α}
   {Γ Δ : Ctx? α} (σ : SubstDS φ Γ Δ) {A a b} {da : Δ ⊢ a : A} {db : Δ ⊢ b : A}
@@ -146,7 +228,11 @@ theorem DRWS.rel.substD_congr_uniform [PSubstCongr R]
     let driw := Deriv.iter hΓ inferInstance inferInstance daw dbw'
     have h : R.uniform.rel dliw driw := DRWS.uniform.pos_unif
       (ds := dsw) (da := daw) (db := dbw) (db' := dbw') hΓ hΓc
-      inferInstance inferInstance inferInstance inferInstance inferInstance hei hec h
+      inferInstance inferInstance
+      (SubstDS.effect_pure _ _ da)
+      (SubstDS.effect_pure _ _ ds)
+      (SubstDS.effect_pure _ _ db)
+      hei hec h
     have hliw : (subst σr.toSubst a).let₁ A
                   ((subst (σm.lift ⟨A, ⊤⟩).toSubst s).iter X B
                     (ren (↑ⁿ Nat.succ) (subst (σl.lift ⟨X, ⊤⟩).toSubst b))) =
@@ -229,7 +315,11 @@ theorem DRWS.rel.substD_congr_uniform [PSubstCongr R]
       let driw := Deriv.iter hΓ inferInstance inferInstance daw dbw'
       have h : R.uniform.rel driw dliw := DRWS.uniform.neg_unif
         (ds := dsw) (da := daw) (db := dbw) (db' := dbw') hΓ hΓc
-        inferInstance inferInstance inferInstance inferInstance inferInstance hei hec h
+        inferInstance inferInstance
+        (SubstDS.effect_pure _ _ da)
+        (SubstDS.effect_pure _ _ ds)
+        (SubstDS.effect_pure _ _ db)
+        hei hec h
       have hliw : (subst σr.toSubst a).let₁ A
                     ((subst (σm.lift ⟨A, ⊤⟩).toSubst s).iter X B
                       (ren (↑ⁿ Nat.succ) (subst (σl.lift ⟨X, ⊤⟩).toSubst b))) =
