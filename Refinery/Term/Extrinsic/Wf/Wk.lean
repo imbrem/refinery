@@ -31,6 +31,11 @@ theorem Wf.eqv.wk2_congr {Γ : Ctx? α} (x : Var? α) [hx : x.del] {l r : Var? �
   apply Wf.eqv.coh (Wf.eqv.wk_congr (((Γ.wk0 x).scons _).scons _) h) <;>
   simp [wk, wk2, Ctx?.Wk.ix, Ctx?.wk0, Nat.stepWk]
 
+theorem Wf.eqv.wk3_congr {Γ : Ctx? α} (x : Var? α) [hx : x.del] {l m r : Var? α}
+  {A : Ty α} {a b : Wf R (((Γ.cons l).cons m).cons r) A} (h : a.eqv b) : a.wk3 x ≈ b.wk3 x := by
+  apply Wf.eqv.coh (Wf.eqv.wk_congr ((((Γ.wk0 x).scons _).scons _).scons _) h) <;>
+  simp [wk, wk3, Ctx?.Wk.ix, Ctx?.wk0, Nat.stepWk]
+
 theorem Wf.eqv.pwk_congr {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} {a b : Wf R Δ A} (h : a.eqv b)
   : a.pwk ρ ≈ b.pwk ρ := by
   apply Wf.eqv.coh (Wf.eqv.wk_congr ρ h) <;> simp [wk, pwk]
@@ -48,9 +53,13 @@ def Eqv.wk1 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {v : Var? α} {A : Ty α} 
   : Eqv R ((Γ.cons x).cons v) A
   := a.liftOn (λ a => e⟦a.wk1 x⟧) (λ_ _ h => sound <| Wf.eqv.wk1_congr x h)
 
-def Eqv.wk2 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {l r : Var? α} {A : Ty α} (a : Eqv R ((Γ.cons l).cons r) A)
-  : Eqv R (((Γ.cons x).cons l).cons r) A
+def Eqv.wk2 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {l r : Var? α} {A : Ty α}
+  (a : Eqv R ((Γ.cons l).cons r) A) : Eqv R (((Γ.cons x).cons l).cons r) A
   := a.liftOn (λ a => e⟦a.wk2 x⟧) (λ_ _ h => sound <| Wf.eqv.wk2_congr x h)
+
+def Eqv.wk3 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {l m r : Var? α} {A : Ty α}
+  (a : Eqv R (((Γ.cons l).cons m).cons r) A) : Eqv R ((((Γ.cons x).cons l).cons m).cons r) A
+  := a.liftOn (λ a => e⟦a.wk3 x⟧) (λ_ _ h => sound <| Wf.eqv.wk3_congr x h)
 
 theorem Eqv.wk0_bv0 {Γ : Ctx? α} [hΓ : Γ.del] {A : Ty α} {q : Quant} {x : Var? α} [hx : x.del]
   : (Eqv.bv0 (R := R) (Γ := Γ) (A := A) (q := q)).wk0 x = .bv1

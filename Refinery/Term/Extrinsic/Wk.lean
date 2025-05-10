@@ -70,6 +70,11 @@ def Deriv.wk2 {Γ : Ctx? α} {l r} (x : Var? α) [hx : x.del] {A : Ty α} {a : T
   (D : (Γ.cons l).cons r ⊢ a : A) : (((Γ.cons x).cons l).cons r ⊢ ↑² a : A)
   := (D.wk ((((Ctx?.Wk.refl Γ).skip hx).scons l).scons r)).cast_term (by simp [Nat.stepWk])
 
+def Deriv.wk3 {Γ : Ctx? α} {l m r} (x : Var? α) [hx : x.del] {A : Ty α} {a : Term φ (Ty α)}
+  (D : ((Γ.cons l).cons m).cons r ⊢ a : A) : (((Γ.cons x).cons l).cons m).cons r ⊢ ↑³ a : A
+  := (D.wk (((((Ctx?.Wk.refl Γ).skip hx).scons l).scons m).scons r)).cast_term
+    (by simp [Nat.stepWk])
+
 @[simp]
 theorem Deriv.wk_bv {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {A : Ty α} {n : ℕ} (x : Δ.At ⟨A, 1⟩ n)
   : (Deriv.bv x).wk ρ = (Deriv.bv (x.wkIn ρ)) := rfl

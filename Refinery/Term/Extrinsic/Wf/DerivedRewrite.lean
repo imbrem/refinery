@@ -426,13 +426,15 @@ theorem Eqv.let_pair_pure_left_wk0 {A B C} {Γ Γc Γl Γm Γr : Ctx? α}
   = .pair (hΓ.s12_3_1_23 hΓc) b (.let₁ (hΓ.s12_3_23 hΓc) a c)
   := Eqv.let_pair_left_wk0 hΓ hΓc a b c ⊤ ⊥ HasCommRel.commutes_bot_right
 
--- theorem Eqv.let₂_pair_left_wk0_wk0 {A B C D} {Γ Γc Γl Γm Γr : Ctx? α}
---   (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
---   (a : Eqv R Γr (.tensor A B)) (b : Eqv R Γl C) (c : Eqv R ((Γm.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) D)
---   [ha : a.HasEff ea] [hb : b.HasEff eb] (he : ea ⇌ eb)
---   : a.let₂ hΓ (.pair ((hΓc.cons (.right _)).cons (.right _)) ((b.wk0 _).wk0 _) c)
---   = .pair (hΓ.s12_3_1_23 hΓc) b (.let₂ (hΓ.s12_3_23 hΓc) a c)
---   := by
---   conv => rhs; rw [bind_pair]
---   rw [bind_pair]
---   sorry
+theorem Eqv.let_pair_left {A B C} {Γ Γc Γl Γm Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
+  (a : Eqv R Γl A) (b : Eqv R Γr B) (c : Eqv R (Γm.cons ⟨B, ⊤⟩) C)
+  (ea eb : ε) [ha : a.HasEff ea] [hb : b.HasEff eb] (he : ea ⇌ eb)
+  : Eqv.pair hΓ a (.let₁ hΓc b c)
+  = .let₁ (hΓ.comm.s12_3_1_23 hΓc.comm).comm b
+    (.pair (hΓ.comm.s12_3_23 hΓc.comm).comm.right (a.wk0 ⟨B, 0⟩) c)
+  := by
+  rw [Eqv.let_pair_left_wk0 _ _ _ _ _ eb ea he.symm]
+  induction a, b, c using quotInd₃
+  apply Eqv.of_tm
+  rfl

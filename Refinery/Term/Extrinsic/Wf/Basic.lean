@@ -34,6 +34,10 @@ def Wf.wk2 {Γ : Ctx? α} (x : Var? α) [h : x.del] {l r : Var? α} {A : Ty α}
   (a : Wf R ((Γ.cons l).cons r) A) : Wf R (((Γ.cons x).cons l).cons r) A
   := ⟨_, a.deriv.wk2 x⟩
 
+def Wf.wk3 {Γ : Ctx? α} (x : Var? α) [h : x.del] {l m r : Var? α} {A : Ty α}
+  (a : Wf R (((Γ.cons l).cons m).cons r) A) : Wf R ((((Γ.cons x).cons l).cons m).cons r) A
+  := ⟨_, a.deriv.wk3 x⟩
+
 def Wf.pwk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} (a : Wf R Δ A) : Wf R Γ A
   := ⟨a.tm, a.deriv.pwk ρ⟩
 

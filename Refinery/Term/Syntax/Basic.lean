@@ -53,6 +53,8 @@ scoped notation "↑¹" => ren (Nat.liftWk Nat.succ)
 
 scoped notation "↑²" => ren (Nat.liftWk (Nat.liftWk Nat.succ))
 
+scoped notation "↑³" => ren (Nat.liftWk (Nat.liftWk (Nat.liftWk Nat.succ)))
+
 def Subst (φ : Type u) (α : Type v) : Type _ := ℕ → Term φ α
 
 def Subst.get (σ : Subst φ α) (ix : ℕ) : Term φ α := σ ix
