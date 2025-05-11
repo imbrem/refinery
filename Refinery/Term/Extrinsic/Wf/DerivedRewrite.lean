@@ -468,3 +468,19 @@ theorem Eqv.let_pure_pair_left {A B C} {Γ Γc Γl Γm Γr : Ctx? α}
   = .let₁ (hΓ.comm.s12_3_1_23 hΓc.comm).comm b
     (.pair (hΓ.comm.s12_3_23 hΓc.comm).comm.right (a.wk0 ⟨B, 0⟩) c)
   := let_pair_left hΓ hΓc a b c ⊤ ⊥ HasCommRel.commutes_bot_right
+
+
+theorem Eqv.let_pure_pair_both {A B C D} {Γ Γl Γr Γll Γlr Γrl Γrr : Ctx? α}
+  (hΓ : Γ.SSplit Γl Γr) (hΓl : Γl.SSplit Γll Γlr) (hΓr : Γr.SSplit Γrl Γrr)
+  (a : Eqv R Γlr A) (b : Eqv R (Γll.cons ⟨A, ⊤⟩) B)
+  (c : Eqv R Γrr C) (d : Eqv R (Γrl.cons ⟨C, ⊤⟩) D)
+  [hc : c.HasEff ⊥]
+  : Eqv.pair hΓ (.let₁ hΓl a b) (.let₁ hΓr c d)
+  = Eqv.let₂ (hΓ.s12_34_13_24 hΓl hΓr)
+    (.pair (hΓ.s12_34_24 hΓl hΓr) a c)
+    (.pair (hΓ.s12_34_13 hΓl hΓr).left.right (b.wk0 _) (d.wk1 _))
+  := by
+  rw [let_pair_right, wk0_let₁_right, let_pure_pair_left, let₂_beta]
+  induction a, b, c, d using quotInd₄
+  apply of_tm
+  simp [Wf.let₁, Wf.pair]

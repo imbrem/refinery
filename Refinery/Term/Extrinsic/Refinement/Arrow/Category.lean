@@ -149,6 +149,10 @@ theorem DRWS.Arrow.bv0_letArrow' (Γ : Ctx? α) [hΓ : Γ.del] (f : Arrow R A B)
   simp [Wf.let₁, Wf.wk, Wf.bv0, Ctx?.extend1, ren_ren, <-Nat.liftWk_comp, Ctx?.Wk.drop_ix]
   rfl
 
+theorem Eqv.bind_letArrow  {Γ : Ctx? α} {A B : Ty α} (a : Eqv R Γ A) (b : R.Arrow A B)
+  : a.letArrow b = a.let₁ Γ.erase_left (.letArrow .bv0 b)
+  := by rw [letArrow, letT₁, DRWS.Arrow.bv0_letArrow']
+
 def DRWS.Arrow.comp {A B C : Ty α} (f : DRWS.Arrow R A B) (g : DRWS.Arrow R B C)
   : DRWS.Arrow R A C := (Eqv.letArrow f.toEqv g).toArr
 
