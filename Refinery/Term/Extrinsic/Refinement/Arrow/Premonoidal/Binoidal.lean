@@ -212,9 +212,8 @@ theorem DRWS.Arrow.tensorHom_right {A B C A' B' C'}
   (f : Arrow R A A') (g : Arrow R B B') (h : Arrow R C C')
   : f.tensorHom (g.tensorHom h) = f.tensorHomRight g h
   := by
-  rw [tensorHom, tensorHomRight]
+  rw [tensorHom, tensorHomRight, Eqv.letArrow_tensorHom, Eqv.letT₂]
   congr 2
-
   sorry
 
 def DRWS.Arrow.tensorHomSwap0 (f : Arrow R A A') (g : Arrow R B B')

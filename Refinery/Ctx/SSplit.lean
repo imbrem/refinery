@@ -1013,3 +1013,21 @@ def Var?.SSplit.lift {u v w : Var? α} (Γ : Ctx? α) (hΓ : quant u ≤ quant �
   | .left _ => Γ.erase_right
   | .right _ => Γ.erase_left
   | .sboth h => Γ.both (hΓ := ⟨le_trans h.copy.copy_le_quant hΓ⟩)
+
+theorem Var?.SSplit.erase_left {u v w : Var? α} (h : u.SSplit v w)
+  : u.erase = v.erase := by cases h <;> rfl
+
+theorem Var?.SSplit.erase_right {u v w : Var? α} (h : u.SSplit v w)
+  : u.erase = w.erase := by cases h <;> rfl
+
+theorem Var?.SSplit.erase_target {u v w : Var? α} (h : u.SSplit v w)
+  : v.erase = w.erase := by cases h <;> rfl
+
+theorem Ctx?.SSplit.erase_left {Γ Δ Ξ : Ctx? α} (h : Γ.SSplit Δ Ξ)
+  : Γ.erase = Δ.erase := by induction h <;> simp [*]; rw [Var?.SSplit.erase_left (by assumption)]
+
+theorem Ctx?.SSplit.erase_right {Γ Δ Ξ : Ctx? α} (h : Γ.SSplit Δ Ξ)
+  : Γ.erase = Ξ.erase := by induction h <;> simp [*]; rw [Var?.SSplit.erase_right (by assumption)]
+
+theorem Ctx?.SSplit.erase_target {Γ Δ Ξ : Ctx? α} (h : Γ.SSplit Δ Ξ)
+  : Δ.erase = Ξ.erase := by induction h <;> simp [*]; rw [Var?.SSplit.erase_target (by assumption)]

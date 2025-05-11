@@ -1,4 +1,4 @@
-import Refinery.Term.Extrinsic.Wf.Basic
+import Refinery.Term.Extrinsic.Wf.Wk
 
 open HasQuant HasPQuant HasCommRel
 
@@ -9,6 +9,9 @@ namespace Term
 variable  {φ : Type u} {α : Type v} {ε : Type w} [S : Signature φ α ε] {R : DRWS φ α}
 
 abbrev Wf.HasEff (a : Wf R Γ A) (e : ε) := a.tm.HasEff e
+
+theorem Wf.HasEff.toTm {a : Wf R Γ A} {e : ε} (ha : a.HasEff e) : a.tm.HasEff e
+  := ha
 
 instance Wf.HasEff.top {a : Wf R Γ A} : a.HasEff ⊤
   := Term.HasEff.top
@@ -105,6 +108,54 @@ instance Wf.HasEff.instIter {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A 
   [ha : a.HasEff e] [hb : b.HasEff e] : (Wf.iter hΓ a b).HasEff e
   := ha.iter hΓ he hc hd hb
 
+theorem Wf.HasEff.wk {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {a : Wf R Δ A} {e : ε} (ha : a.HasEff e)
+  : (a.wk ρ).HasEff e
+  := (Term.HasEff.wk_iff ρ).mpr ha
+
+instance Wf.HasEff.instWk {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {a : Wf R Δ A} (e : ε)
+  [ha : a.HasEff e] : (Wf.wk ρ a).HasEff e
+  := ha.wk ρ
+
+theorem Wf.HasEff.wk0 {Γ : Ctx? α} (x : Var? α) [hx : x.del]
+  (e : ε) {a : Wf R Γ A} (ha : a.HasEff e)
+  : (a.wk0 x).HasEff e := by
+  convert ha.wk ((Ctx?.Wk.refl Γ).skip hx) using 0
+  simp [Wf.wk0, Wf.wk, Nat.stepWk, HasEff]
+
+instance Wf.HasEff.instWk0 {Γ : Ctx? α} (x : Var? α) [hx : x.del] (e : ε) {a : Wf R Γ A}
+  [ha : a.HasEff e] : (Wf.wk0 x a).HasEff e
+  := ha.wk0 x
+
+theorem Wf.HasEff.wk1 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {v : Var? α} {A : Ty α}
+  (e : ε) {a : Wf R (Γ.cons v) A} (ha : a.HasEff e)
+  : (a.wk1 x).HasEff e := by
+  convert ha.wk (((Ctx?.Wk.refl Γ).skip hx).scons v) using 0
+  simp [Wf.wk1, Wf.wk, Nat.stepWk, HasEff]
+
+instance Wf.HasEff.instWk1 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {v : Var? α} {A : Ty α} (e : ε)
+  {a : Wf R (Γ.cons v) A} [ha : a.HasEff e] : (Wf.wk1 x a).HasEff e
+  := ha.wk1 x
+
+theorem Wf.HasEff.wk2 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {l r : Var? α} {A : Ty α}
+  (e : ε) {a : Wf R ((Γ.cons l).cons r) A} (ha : a.HasEff e)
+  : (a.wk2 x).HasEff e := by
+  convert ha.wk ((((Ctx?.Wk.refl Γ).skip hx).scons l).scons r) using 0
+  simp [Wf.wk2, Wf.wk, Nat.stepWk, HasEff]
+
+instance Wf.HasEff.instWk2 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {l r : Var? α} {A : Ty α} (e : ε)
+  {a : Wf R ((Γ.cons l).cons r) A} [ha : a.HasEff e] : (Wf.wk2 x a).HasEff e
+  := ha.wk2 x
+
+theorem Wf.HasEff.wk3 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {l m r : Var? α} {A : Ty α}
+  (e : ε) {a : Wf R (((Γ.cons l).cons m).cons r) A} (ha : a.HasEff e)
+  : (a.wk3 x).HasEff e := by
+  convert ha.wk (((((Ctx?.Wk.refl Γ).skip hx).scons l).scons m).scons r) using 0
+  simp [Wf.wk3, Wf.wk, Nat.stepWk, HasEff]
+
+instance Wf.HasEff.instWk3 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {l m r : Var? α} {A : Ty α} (e : ε)
+  {a : Wf R (((Γ.cons l).cons m).cons r) A} [ha : a.HasEff e] : (Wf.wk3 x a).HasEff e
+  := ha.wk3 x
+
 inductive Eqv.HasEff {Γ : Ctx? α} {A : Ty α} : Eqv R Γ A → ε → Prop
   | mk {a : Wf R Γ A} (ha : a.HasEff e) : Eqv.HasEff e⟦a⟧ e
 
@@ -194,3 +245,49 @@ theorem Eqv.HasEff.iter {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B : 
   (he : e ∈ S.iterative) (hc : Γl.copy) (hd : Γl.del)
   (ha : a.HasEff e) (hb : b.HasEff e) : Eqv.HasEff (Eqv.iter hΓ a b) e
   := by cases ha; cases hb; constructor; apply Wf.HasEff.iter <;> assumption
+
+variable [R.UWkCongr]
+
+theorem Eqv.HasEff.wk {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {a : Eqv R Δ A} (e : ε) (ha : a.HasEff e)
+  : Eqv.HasEff (Eqv.wk ρ a) e
+  := by cases ha; constructor; apply Wf.HasEff.wk ρ; assumption
+
+instance Eqv.HasEff.instWk {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) {a : Eqv R Δ A} (e : ε)
+  [ha : a.HasEff e] : Eqv.HasEff (Eqv.wk ρ a) e
+  := ha.wk ρ
+
+theorem Eqv.HasEff.wk0 {Γ : Ctx? α} (x : Var? α) [hx : x.del] (e : ε)
+  {a : Eqv R Γ A} (ha : a.HasEff e)
+  : Eqv.HasEff (Eqv.wk0 x a) e
+  := by cases ha; constructor; apply Wf.HasEff.wk0 x; assumption
+
+instance Eqv.HasEff.instWk0 {Γ : Ctx? α} (x : Var? α) [hx : x.del] (e : ε)
+  {a : Eqv R Γ A} [ha : a.HasEff e] : Eqv.HasEff (Eqv.wk0 x a) e
+  := ha.wk0 x
+
+theorem Eqv.HasEff.wk1 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {v : Var? α} {A : Ty α} (e : ε)
+  {a : Eqv R (Γ.cons v) A} (ha : a.HasEff e)
+  : Eqv.HasEff (Eqv.wk1 x a) e
+  := by cases ha; constructor; apply Wf.HasEff.wk1 x; assumption
+
+instance Eqv.HasEff.instWk1 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {v : Var? α} {A : Ty α} (e : ε)
+  {a : Eqv R (Γ.cons v) A} [ha : a.HasEff e] : Eqv.HasEff (Eqv.wk1 x a) e
+  := ha.wk1 x
+
+theorem Eqv.HasEff.wk2 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {l r : Var? α} {A : Ty α} (e : ε)
+  {a : Eqv R ((Γ.cons l).cons r) A} (ha : a.HasEff e)
+  : Eqv.HasEff (Eqv.wk2 x a) e
+  := by cases ha; constructor; apply Wf.HasEff.wk2 x; assumption
+
+instance Eqv.HasEff.instWk2 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {l r : Var? α} {A : Ty α} (e : ε)
+  {a : Eqv R ((Γ.cons l).cons r) A} [ha : a.HasEff e] : Eqv.HasEff (Eqv.wk2 x a) e
+  := ha.wk2 x
+
+theorem Eqv.HasEff.wk3 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {l m r : Var? α} {A : Ty α} (e : ε)
+  {a : Eqv R (((Γ.cons l).cons m).cons r) A} (ha : a.HasEff e)
+  : Eqv.HasEff (Eqv.wk3 x a) e
+  := by cases ha; constructor; apply Wf.HasEff.wk3 x; assumption
+
+instance Eqv.HasEff.instWk3 {Γ : Ctx? α} (x : Var? α) [hx : x.del] {l m r : Var? α} {A : Ty α} (e : ε)
+  {a : Eqv R (((Γ.cons l).cons m).cons r) A} [ha : a.HasEff e] : Eqv.HasEff (Eqv.wk3 x a) e
+  := ha.wk3 x

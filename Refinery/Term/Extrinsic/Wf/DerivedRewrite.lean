@@ -180,7 +180,7 @@ theorem Eqv.bind_pair_left {Γ Γl Γr : Ctx? α}
 
 --TODO: bind_pair_right_bwd
 
-theorem Eqv.bind_pair_right {A }{Γ Γl Γr : Ctx? α}
+theorem Eqv.bind_pair_right {A} {Γ Γl Γr : Ctx? α}
   (hΓ : Γ.SSplit Γl Γr) (ea eb : ε)
   (a : Eqv R Γl A) (b : Eqv R Γr B)
   [ha : a.HasEff ea] [hb : b.HasEff eb] (he : ea ⇌ eb)
@@ -202,6 +202,20 @@ theorem Eqv.bind_pair_right {A }{Γ Γl Γr : Ctx? α}
   apply Subst.subst1_fvi
   intro x hx
   simp [SubstDS.refl_get, lt_of_lt_of_le hx a.deriv.fvi_le_length]
+
+theorem Eqv.bind_pair_right_pure_left {A} {Γ Γl Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γl Γr) (a : Eqv R Γl A) (b : Eqv R Γr B)
+  [ha : a.HasEff ⊥]
+  : a.pair hΓ b
+  = b.let₁ hΓ ((a.wk0 ⟨B, 0⟩).pair ((Γl.erase_right).cons (.right _)) .bv0)
+  := bind_pair_right hΓ ⊥ ⊤ a b HasCommRel.commutes_bot_left
+
+theorem Eqv.bind_pair_right_pure_right {A} {Γ Γl Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γl Γr) (a : Eqv R Γl A) (b : Eqv R Γr B)
+  [hb : b.HasEff ⊥]
+  : a.pair hΓ b
+  = b.let₁ hΓ ((a.wk0 ⟨B, 0⟩).pair ((Γl.erase_right).cons (.right _)) .bv0)
+  := bind_pair_right hΓ ⊤ ⊥ a b HasCommRel.commutes_bot_right
 
 --TODO: bind_pair_comm_fwd
 
@@ -438,3 +452,19 @@ theorem Eqv.let_pair_left {A B C} {Γ Γc Γl Γm Γr : Ctx? α}
   induction a, b, c using quotInd₃
   apply Eqv.of_tm
   rfl
+
+theorem Eqv.let_pair_left_pure {A B C} {Γ Γc Γl Γm Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
+  (a : Eqv R Γl A) (b : Eqv R Γr B) (c : Eqv R (Γm.cons ⟨B, ⊤⟩) C) [ha : a.HasEff ⊥]
+  : Eqv.pair hΓ a (.let₁ hΓc b c)
+  = .let₁ (hΓ.comm.s12_3_1_23 hΓc.comm).comm b
+    (.pair (hΓ.comm.s12_3_23 hΓc.comm).comm.right (a.wk0 ⟨B, 0⟩) c)
+  := let_pair_left hΓ hΓc a b c ⊥ ⊤ HasCommRel.commutes_bot_left
+
+theorem Eqv.let_pure_pair_left {A B C} {Γ Γc Γl Γm Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
+  (a : Eqv R Γl A) (b : Eqv R Γr B) (c : Eqv R (Γm.cons ⟨B, ⊤⟩) C) [hb : b.HasEff ⊥]
+  : Eqv.pair hΓ a (.let₁ hΓc b c)
+  = .let₁ (hΓ.comm.s12_3_1_23 hΓc.comm).comm b
+    (.pair (hΓ.comm.s12_3_23 hΓc.comm).comm.right (a.wk0 ⟨B, 0⟩) c)
+  := let_pair_left hΓ hΓc a b c ⊤ ⊥ HasCommRel.commutes_bot_right

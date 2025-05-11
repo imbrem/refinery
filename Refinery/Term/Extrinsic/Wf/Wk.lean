@@ -214,3 +214,17 @@ theorem Eqv.pwk_wk2 {Γ Δ : Ctx? α}
   {B : Ty α} [hl : l.del] [hl' : l'.del] (a : Eqv R ((Δ.cons m').cons r') B)
   : (a.wk2 l').pwk ρ = (a.pwk ((ρ.tail.tail.tail.cons ρ.tail.head).cons ρ.head)).wk2 l
   := by induction a using quotInd; exact of_tm rfl
+
+theorem Eqv.wk0_let₂_anti {Γ Γl Γr : Ctx? α}
+  (hΓ : (Γ.cons x).SSplit (Γl.cons xl) (Γr.cons xr)) {A B C}
+  (a : Eqv R Γr (.tensor A B)) (b : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C)
+  [hx : x.del] [hxl : xl.del] [hxr : xr.del]
+  : (a.wk0 xr).let₂ hΓ (b.wk2 xl) = (a.let₂ hΓ.tail b).wk0 x
+  := by induction a, b using quotInd₂; exact of_tm rfl
+
+theorem Eqv.wk0_let₂_right {Γ Γl Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γl Γr) {A B C}
+  (a : Eqv R Γr (.tensor A B)) (b : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C)
+  {x : Var? α} [hx : x.del]
+  : (a.let₂ hΓ b).wk0 x = (a.wk0 x).let₂ (hΓ.right) (b.wk2 x.erase)
+  := by induction a, b using quotInd₂; exact of_tm rfl
