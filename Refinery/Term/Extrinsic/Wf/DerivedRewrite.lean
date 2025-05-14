@@ -108,7 +108,8 @@ theorem Eqv.let₂_let₂ {Γ Γl Γc Γm Γr : Ctx? α} {A B C D E}
     (c : Eqv R ((Γl.cons ⟨C, ⊤⟩).cons ⟨D, ⊤⟩) E)
     : (a.let₂ hΓc b).let₂ hΓ c
     = a.let₂ (hΓ.s1_23_12_3 hΓc)
-      (b.let₂ (((hΓ.s1_23_12 hΓc).cons (.right _)).cons (.right _)) ((c.wk2 _).wk2 _)) := by
+      (b.let₂ (hΓ.s1_23_12 hΓc).right.right ((c.wk2 ⟨A, 0⟩).wk2 ⟨B, 0⟩))
+  := by
   rw [bind_let₂, let_let₂]
   congr 1
   conv => rhs; rw [bind_let₂]
@@ -118,12 +119,22 @@ theorem Eqv.let₂_let₂ {Γ Γl Γc Γm Γr : Ctx? α} {A B C D E}
   simp [Wf.wk1, Wf.let₂, Wf.wk2, Wf.bv0, ren_ren, <-Nat.liftWk_comp, Nat.liftWk_comp_succ]
   rfl
 
+theorem Eqv.let₂_let₂_erase {Γ Γl Γr : Ctx? α} {A B C D E : Ty α}
+    (hΓ : Γ.SSplit Γl Γr)
+    (a : Eqv R Γr (A.tensor B))
+    (b : Eqv R ((Γr.erase.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) (C.tensor D))
+    (c : Eqv R ((Γl.cons ⟨C, ⊤⟩).cons ⟨D, ⊤⟩) E)
+    : (a.let₂ Γr.erase_left b).let₂ hΓ c
+    = a.let₂ hΓ
+      (b.let₂ (Γl.erase_right.cast_right hΓ.erase_eq).right.right ((c.wk2 ⟨A, 0⟩).wk2 ⟨B, 0⟩))
+  := by rw [let₂_let₂]; induction a, b, c using quotInd₃; apply of_tm; simp [Wf.let₂]
+
 theorem Eqv.let₂_let₂_anti {Γ Γl Γc Γm Γr : Ctx? α} {A B C D E}
     (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
     (a : Eqv R Γr (A.tensor B))
     (b : Eqv R ((Γm.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) (C.tensor D))
     (c : Eqv R ((Γl.cons ⟨C, ⊤⟩).cons ⟨D, ⊤⟩) E)
-    : a.let₂ hΓ (b.let₂ ((hΓc.cons (.right _)).cons (.right _)) ((c.wk2 _).wk2 _))
+    : a.let₂ hΓ (b.let₂ hΓc.right.right ((c.wk2 _).wk2 _))
     = (a.let₂ (hΓ.s12_3_23 hΓc) b).let₂ (hΓ.s12_3_1_23 hΓc) c := by
   rw [let₂_let₂]
   induction a, b, c using quotInd₃
@@ -132,8 +143,8 @@ theorem Eqv.let₂_let₂_anti {Γ Γl Γc Γm Γr : Ctx? α} {A B C D E}
 
 theorem Eqv.bind_pair {Γ Γl Γr : Ctx? α}
     (hΓ : Γ.SSplit Γl Γr) (a : Eqv R Γl A) (b : Eqv R Γr B)
-  : a.pair hΓ b = .let₁ hΓ.comm a (.let₁ (Γr.erase_left.cons (.left _)) (b.wk0 _)
-    (.pair (((Ctx?.erase_left _).cons (.left _)).cons (.right _)) .bv1 .bv0))
+  : a.pair hΓ b = .let₁ hΓ.comm a (.let₁ Γr.erase_left.left (b.wk0 _)
+    (.pair (Ctx?.erase_left _).left.right .bv1 .bv0))
   := by
   rw [<-(a.pair hΓ b).let₂_eta, let₂_beta]
   induction a, b using quotInd₂
@@ -155,8 +166,8 @@ theorem Eqv.bind_pair_anti' {Γ Γl Γr Γe : Ctx? α} [hΓe : Γe.del]
 
 theorem Eqv.bind_pair_anti {A B} {Γ Γl Γr : Ctx? α}
     (hΓ : Γ.SSplit Γl Γr) (a : Eqv R Γr A) (b : Eqv R Γl B)
-  : .let₁ hΓ a (.let₁ (Γl.erase_left.cons (.left _)) (b.wk0 _)
-    (.pair (((Ctx?.both _).cons (.left _)).cons (.right _)) .bv1 .bv0))
+  : .let₁ hΓ a (.let₁ Γl.erase_left.left (b.wk0 _)
+    (.pair (Ctx?.both _).left.right .bv1 .bv0))
     = a.pair hΓ.comm b
   := by rw [a.bind_pair_anti' hΓ]
 
@@ -484,3 +495,30 @@ theorem Eqv.let_pure_pair_both {A B C D} {Γ Γl Γr Γll Γlr Γrl Γrr : Ctx? 
   induction a, b, c, d using quotInd₄
   apply of_tm
   simp [Wf.let₁, Wf.pair]
+
+theorem Eqv.let₁_pure_wk0 {Γ Γl Γr : Ctx? α} {A B}
+    (hΓ : Γ.SSplit Γl Γr) (a : Eqv R Γr A) (b : Eqv R Γl B)
+    [hA : IsAff A] [hΓr : Γr.del] [ha : a.HasEff ⊥]
+  : a.let₁ hΓ (b.wk0 ⟨A, ⊤⟩) = b.pwk hΓ.pwk_right_del := by
+  cases ha with
+  | mk ha =>
+  induction b using quotInd with
+  | h b =>
+  apply sound
+  apply Wf.eqv.coh
+  apply Wf.pre_beta_pureIn hΓ (ha := ha) (b := b.wk0 _) (q := .del)
+  simp
+  rfl
+  simp [Wf.subst, Wf.pwk, Wf.wk0, <-subst_renIn]
+  apply Subst.subst1_fvi
+  intro x hx
+  have hx := lt_of_lt_of_le hx b.deriv.fvi_le_length;
+  cases x <;> simp [SubstDS.refl_get, hx]
+
+-- theorem Eqv.let₁_wk0 {Γ Γl Γr : Ctx? α} {A B}
+--     (hΓ : Γ.SSplit Γl Γr) (a : Eqv R Γr A) (b : Eqv R Γl B)
+--     [hA : IsAff A] [hΓr : Γr.del] (e) [ha : a.HasEff e] [he : IsAff e]
+--   : a.let₁ hΓ (b.wk0 ⟨A, ⊤⟩) = b.pwk hΓ.pwk_right_del := by
+--   induction a, b using quotInd₂
+--   apply sound
+--   sorry

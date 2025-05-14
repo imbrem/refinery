@@ -18,6 +18,34 @@ theorem Eqv.reswap_pair {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B}
 
 variable [R.UWkCongr]
 
+theorem Eqv.antipair_def' {A} {Γ Γl Γr : Ctx? α}
+  (hΓ : Γ.SSplit Γl Γr)
+  (a : Eqv R Γl A) (b : Eqv R Γr B)
+  : a.antipair hΓ b
+  = b.let₁ hΓ ((a.wk0 ⟨B, 0⟩).let₁ (Γl.erase_left).left
+    (.pair Γl.erase.erase_left.right.left .bv0 .bv1))
+  := by
+  rw [antipair, reswap, let₂_beta]
+  induction a, b using quotInd₂
+  apply of_tm
+  simp [Wf.let₁, Wf.pair, Wf.bv0, Wf.bv1]
+
+theorem Eqv.antipair_comm {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B}
+  (a : Eqv R Γl A) (b : Eqv R Γr B)
+  [ha : a.HasEff ea] [hb : b.HasEff eb] (he : ea ⇌ eb)
+  : a.antipair hΓ b = a.pair hΓ b
+  := by rw [antipair_def', bind_pair_comm hΓ a b he]
+
+theorem Eqv.antipair_comm_left {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B}
+  (a : Eqv R Γl A) (b : Eqv R Γr B) [ha : a.HasEff ⊥]
+  : a.antipair hΓ b = a.pair hΓ b
+  := antipair_comm hΓ a b (eb := ⊤) HasCommRel.commutes_bot_left
+
+theorem Eqv.antipair_comm_right {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B}
+  (a : Eqv R Γl A) (b : Eqv R Γr B) [hb : b.HasEff ⊥]
+  : a.antipair hΓ b = a.pair hΓ b
+  := antipair_comm hΓ a b (ea := ⊤) HasCommRel.commutes_bot_right
+
 theorem Eqv.reswap_antipair {Γ Γl Γr : Ctx? α} (hΓ : Γ.SSplit Γl Γr) {A B}
   (a : Eqv R Γl A) (b : Eqv R Γr B) : (antipair hΓ a b).reswap = pair hΓ.comm b a
   := by rw [antipair, reswap_reswap]

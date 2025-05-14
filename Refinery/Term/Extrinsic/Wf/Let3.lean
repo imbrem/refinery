@@ -61,7 +61,7 @@ theorem Eqv.letr₃_letT₂ {Γ Γl Γr : Ctx? α} {A B C D E F : Ty α}
   (c : Eqv R (((Γl.cons ⟨C, ⊤⟩).cons ⟨D, ⊤⟩).cons ⟨E, ⊤⟩) F)
   : (a.letT₂ b).letr₃ hΓ c
   = a.let₂ hΓ
-    (b.letr₃ (Γl.erase_right.cast_right hΓ.erase_target).right.right ((c.wk3 ⟨A, 0⟩).wk3 ⟨B, 0⟩))
+    (b.letr₃ (Γl.erase_right.cast_right hΓ.erase_eq).right.right ((c.wk3 ⟨A, 0⟩).wk3 ⟨B, 0⟩))
   := by
   rw [letT₂, letr₃_let₂]
   induction a, b, c using quotInd₃; apply of_tm; simp [Wf.wk3, Wf.wk2, Wf.let₂]

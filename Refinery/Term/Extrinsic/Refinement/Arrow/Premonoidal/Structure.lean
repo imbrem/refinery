@@ -23,6 +23,14 @@ def DRWS.Arrow.whiskerRight (f : Arrow R A B) (C : R.Obj) : Arrow R (A.tensor C)
      (.letArrow .bv1 f) .bv0
   ))
 
+instance DRWS.Arrow.whiskerLeft_effect
+  {A : R.Obj} {f : Arrow R B C} [h : f.HasEff e] : (f.whiskerLeft A).HasEff e
+  := by rw [whiskerLeft, Eqv.letT₂]; infer_instance
+
+instance DRWS.Arrow.whiskerRight_effect
+  {f : Arrow R A B} {C : R.Obj} [h : f.HasEff e] : (f.whiskerRight C).HasEff e
+  := by rw [whiskerRight, Eqv.letT₂]; infer_instance
+
 def DRWS.Arrow.tensorHom (f : Arrow R A B) (g : Arrow R A' B')
   : Arrow R (A.tensor A') (B.tensor B')
   := Eqv.toArr (.letT₂ .bv0 (.pair
@@ -30,11 +38,24 @@ def DRWS.Arrow.tensorHom (f : Arrow R A B) (g : Arrow R A' B')
      (.letArrow .bv1 f) (.letArrow .bv0 g)
   ))
 
+instance DRWS.Arrow.tensorHom_effect
+  {f : Arrow R A B} {g : Arrow R A' B'} [hf : f.HasEff e] [hg : g.HasEff e]
+  : (f.tensorHom g).HasEff e
+  := by rw [tensorHom, Eqv.letT₂]; infer_instance
+
 def DRWS.Obj.leftUnitor (A : R.Obj) : Arrow R (.tensor .unit A) A
   := Eqv.toArr (Eqv.bv0.releft)
 
 def DRWS.Obj.leftUnitor_inv (A : R.Obj) : Arrow R A (.tensor .unit A)
   := Eqv.toArr (Eqv.bv0.releft_inv)
+
+instance DRWS.Obj.leftUnitor_effect
+  {A : R.Obj} : (A.leftUnitor).HasEff e
+  := by rw [leftUnitor]; infer_instance
+
+instance DRWS.Obj.leftUnitor_inv_effect
+  {A : R.Obj} : (A.leftUnitor_inv).HasEff e
+  := by rw [leftUnitor_inv]; infer_instance
 
 theorem Eqv.letArrow_leftUnitor {Γ : Ctx? α} {A : Ty α}
   (a : Eqv R Γ (.tensor .unit A)) : a.letArrow (DRWS.Obj.leftUnitor A) = a.releft
@@ -67,6 +88,14 @@ def DRWS.Obj.rightUnitor (A : R.Obj) : Arrow R (A.tensor .unit) A
 def DRWS.Obj.rightUnitor_inv (A : R.Obj) : Arrow R A (A.tensor .unit)
   := Eqv.toArr (Eqv.bv0.reright_inv)
 
+instance DRWS.Obj.rightUnitor_effect
+  {A : R.Obj} : (A.rightUnitor).HasEff e
+  := by rw [rightUnitor]; infer_instance
+
+instance DRWS.Obj.rightUnitor_inv_effect
+  {A : R.Obj} : (A.rightUnitor_inv).HasEff e
+  := by rw [rightUnitor_inv]; infer_instance
+
 theorem Eqv.letArrow_rightUnitor {Γ : Ctx? α} {A : Ty α}
   (a : Eqv R Γ (A.tensor .unit)) : a.letArrow (DRWS.Obj.rightUnitor A) = a.reright
   := by
@@ -91,12 +120,19 @@ theorem DRWS.Obj.rightUnitor_inv_rightUnitor {A : R.Obj}
   simp [DRWS.Arrow.comp, Eqv.letArrow_rightUnitor, rightUnitor_inv, Eqv.reright_reright_inv]
   rfl
 
-
 def DRWS.Obj.assoc (A B C : R.Obj) : Arrow R ((A.tensor B).tensor C) (A.tensor (B.tensor C))
   := Eqv.toArr (.reassoc .bv0)
 
 def DRWS.Obj.assoc_inv (A B C : R.Obj) : Arrow R (A.tensor (B.tensor C)) ((A.tensor B).tensor C)
   := Eqv.toArr (.reassoc_inv .bv0)
+
+instance DRWS.Obj.asssoc_effect
+  {A B C : R.Obj} : (DRWS.Obj.assoc A B C).HasEff e
+  := by rw [assoc]; infer_instance
+
+instance DRWS.Obj.assoc_inv_effect
+  {A B C : R.Obj} : (DRWS.Obj.assoc_inv A B C).HasEff e
+  := by rw [assoc_inv]; infer_instance
 
 theorem Eqv.letArrow_assoc {Γ : Ctx? α} {A B C : Ty α}
   (a : Eqv R Γ ((A.tensor B).tensor C))
@@ -121,7 +157,7 @@ theorem Eqv.letArrow_assoc_inv {Γ : Ctx? α} {A B C : Ty α}
     Wf.let₁, Var?.erase_erase, Wf.bv1, Wf.pair, Wf.wk, let₁.injEq, true_and, Wf.let₂, Wf.bv0,
     Wf.wk2, Wf.bv2, Wf.bv3]
   simp [ren_ren, Ctx?.extend1]
-  
+
 theorem DRWS.Obj.assoc_comp_assoc_inv {A B C : R.Obj}
   : (DRWS.Obj.assoc A B C).comp (DRWS.Obj.assoc_inv A B C) = id ((A.tensor B).tensor C) := by
   simp [DRWS.Arrow.comp, Eqv.letArrow_assoc_inv, DRWS.Obj.assoc, Eqv.reassoc_inv_reassoc]

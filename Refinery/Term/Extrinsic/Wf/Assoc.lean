@@ -13,27 +13,39 @@ def Eqv.reassoc {Γ : Ctx? α} {A B C : Ty α}
   (a : Eqv R Γ ((A.tensor B).tensor C))
   : Eqv R Γ (A.tensor (B.tensor C))
   := .letT₂ a (
-    .let₂ ((Ctx?.erase_left _).cons (.left _)) .bv1 (.pair
-      ((((Ctx?.erase_left _).cons (.right _)).cons (.left _)).cons (.right _))
+    .let₂ (Ctx?.erase_left _).left .bv1 (.pair
+      (Ctx?.erase_left _).right.left.right
       .bv1
       (.pair
-        ((((Ctx?.erase_left _).cons (.right _)).cons (.left _)).cons (.left _))
+        (Ctx?.erase_left _).right.left.left
         .bv0
         .bv2
       ))
   )
 
+instance Eqv.reassoc_effect {Γ : Ctx? α} {A B C : Ty α}
+  (a : Eqv R Γ ((A.tensor B).tensor C)) [a.HasEff e]
+  : a.reassoc.HasEff e := by
+  rw [reassoc, letT₂]
+  infer_instance
+
 def Eqv.reassoc_inv {Γ : Ctx? α} {A B C : Ty α}
   (a : Eqv R Γ (A.tensor (B.tensor C)))
   : Eqv R Γ ((A.tensor B).tensor C)
   := .let₂ (Ctx?.erase_left _) a (
-    .let₂ ((Ctx?.erase_right _).cons (.right _)) .bv0 (.pair
-      ((Ctx?.erase_right _).cons (.right _))
+    .let₂ (Ctx?.erase_right _).right .bv0 (.pair
+      (Ctx?.erase_right _).right
       (.pair
-        ((((Ctx?.erase_right _).cons (.right _)).cons (.right _)).cons (.left _))
+        (Ctx?.erase_right _).right.right.left
         .bv3 .bv1)
       .bv0
     ))
+
+instance Eqv.reassoc_inv_effect {Γ : Ctx? α} {A B C : Ty α}
+  (a : Eqv R Γ (A.tensor (B.tensor C))) [a.HasEff e]
+  : a.reassoc_inv.HasEff e := by
+  rw [reassoc_inv]
+  infer_instance
 
 def Eqv.eta_assoc {Γ : Ctx? α} {A B C : Ty α}
   (a : Eqv R Γ ((A.tensor B).tensor C))
@@ -49,17 +61,41 @@ def Eqv.releft {Γ : Ctx? α} {A : Ty α}
   (a : Eqv R Γ (.tensor .unit A)) : Eqv R Γ A
   := .letT₂ a .bv0
 
+instance Eqv.releft_effect {Γ : Ctx? α} {A : Ty α}
+  (a : Eqv R Γ (.tensor .unit A)) [a.HasEff e]
+  : a.releft.HasEff e := by
+  rw [releft, letT₂]
+  infer_instance
+
 def Eqv.releft_inv {Γ : Ctx? α} {A : Ty α}
   (a : Eqv R Γ A) : Eqv R Γ (.tensor .unit A)
   := .pair (Ctx?.erase_left _) (.unit _) a
+
+instance Eqv.releft_inv_effect {Γ : Ctx? α} {A : Ty α}
+  (a : Eqv R Γ A) [a.HasEff e]
+  : a.releft_inv.HasEff e := by
+  rw [releft_inv]
+  infer_instance
 
 def Eqv.reright {Γ : Ctx? α} {A : Ty α}
   (a : Eqv R Γ (A.tensor .unit)) : Eqv R Γ A
   := .letT₂ a .bv1
 
+instance Eqv.reright_effect {Γ : Ctx? α} {A : Ty α}
+  (a : Eqv R Γ (A.tensor .unit)) [a.HasEff e]
+  : a.reright.HasEff e := by
+  rw [reright, letT₂]
+  infer_instance
+
 def Eqv.reright_inv {Γ : Ctx? α} {A : Ty α}
   (a : Eqv R Γ A) : Eqv R Γ (A.tensor .unit)
   := .pair (Ctx?.erase_right _) a (.unit _)
+
+instance Eqv.reright_inv_effect {Γ : Ctx? α} {A : Ty α}
+  (a : Eqv R Γ A) [a.HasEff e]
+  : a.reright_inv.HasEff e := by
+  rw [reright_inv]
+  infer_instance
 
 variable [R.UWkCongr]
 
@@ -449,3 +485,87 @@ theorem Eqv.reright_inv_reright {Γ : Ctx? α} {A : Ty α}
   rw [bv0.unit_pure_del]
   induction a using quotInd
   exact Eqv.of_tm rfl
+
+theorem Eqv.reassoc_let₂ {Γ Γl Γr : Ctx? α} {A B C D : Ty α}
+  (hΓ : Γ.SSplit Γl Γr)
+  (a : Eqv R Γr ((A.tensor B).tensor C)) (b : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B.tensor C, ⊤⟩) D)
+  : a.reassoc.let₂ hΓ b
+  = a.let₂ hΓ (
+    .let₂ Γl.erase_right.right.left .bv1 (
+    .let₁ Γl.erase_right.left.right.left.right (.pair (Ctx?.erase_left _).left .bv0 .bv2)
+    (((b.wk2 ⟨A.tensor B, 0⟩).wk2 ⟨C, 0⟩).wk1 ⟨B, 0⟩)
+  ))
+  := by
+  rw [reassoc, letT₂, let₂_let₂_erase]
+  congr 1
+  rw [let₂_let₂]
+  convert_to (let₂ Γl.erase_right.right.left
+    bv1
+    (let₂
+      Γl.erase_right.right.right.right.right
+      (pair (Ctx?.erase_left _).left.right bv1
+        (pair (Ctx?.erase_left _).right.left bv0 bv2))
+      (wk2 { ty := B, q := 0 }
+        (wk2 { ty := A, q := 0 } (wk2 { ty := C, q := 0 } (wk2 { ty := A.tensor B, q := 0 } b))))))
+        = _
+  induction b using quotInd; apply Eqv.of_tm; simp [Wf.let₂, Wf.pair, Wf.bv0, Wf.bv1, Wf.bv2]
+  congr 1
+  rw [let₂_beta]
+  induction b using quotInd with
+  | h b =>
+  apply sound
+  apply Wf.eqv.coh_out
+  apply Wf.pre_beta_pureIIn
+  simp
+  simp [Wf.subst, Wf.let₁, Wf.pair, Wf.wk0, Wf.bv0, Wf.bv1, Wf.bv2, Wf.wk1, Wf.wk2, <-subst_renIn]
+  rw [ren_ren, ren_ren, <-subst_ofRen]
+  constructor
+  constructor
+  rfl
+  rfl
+  apply Subst.subst_eqOn_fvi
+  intro x hx
+  simp only [Subst.get_renIn, Subst.get_ofRen, Function.comp_apply]
+  cases x using Nat.cases2 with
+  | rest x =>
+    simp [SubstDS.refl_get, Ctx?.SSplit.c1_23_13, Ctx?.SSplit.l12_3_1_23]
+    rw [ite_cond_eq_true]
+    rfl
+    have hx : x + 2 < Γl.length + 2 := lt_of_lt_of_le hx b.deriv.fvi_le_length
+    simp
+    omega
+  | _ => rfl
+
+theorem Eqv.reassoc_letT₂ {Γ : Ctx? α} {A B C D : Ty α}
+  (a : Eqv R Γ ((A.tensor B).tensor C)) (b : Eqv R ((Γ.erase.cons ⟨A, ⊤⟩).cons ⟨B.tensor C, ⊤⟩) D)
+  : a.reassoc.letT₂ b
+  = a.letT₂ (
+    .let₂ (Ctx?.erase_right _).right.left .bv1 (
+    .let₁ (Ctx?.erase_right _).right.left.right (.pair (Ctx?.erase_left _).left .bv0 .bv2)
+    (((b.wk2 ⟨A.tensor B, 0⟩).wk2 ⟨C, 0⟩).wk1 ⟨B, 0⟩)
+  ))
+  := by rw [letT₂, reassoc_let₂]; rfl
+
+theorem Eqv.wk0_reassoc {Γ : Ctx? α} {A B C : Ty α} {x : Var? α} [hx : x.del]
+  (a : Eqv R Γ ((A.tensor B).tensor C))
+  : a.reassoc.wk0 x = (a.wk0 x).reassoc := by induction a using quotInd; exact Eqv.of_tm rfl
+
+theorem Eqv.wk0_reassoc_inv {Γ : Ctx? α} {A B C : Ty α} {x : Var? α} [hx : x.del]
+  (a : Eqv R Γ (A.tensor (B.tensor C)))
+  : a.reassoc_inv.wk0 x = (a.wk0 x).reassoc_inv := by induction a using quotInd; exact Eqv.of_tm rfl
+
+theorem Eqv.wk0_releft {Γ : Ctx? α} {A : Ty α} {x : Var? α} [hx : x.del]
+  (a : Eqv R Γ (.tensor .unit A))
+  : a.releft.wk0 x = (a.wk0 x).releft := by induction a using quotInd; exact Eqv.of_tm rfl
+
+theorem Eqv.wk0_reright {Γ : Ctx? α} {A : Ty α} {x : Var? α} [hx : x.del]
+  (a : Eqv R Γ (A.tensor .unit))
+  : a.reright.wk0 x = (a.wk0 x).reright := by induction a using quotInd; exact Eqv.of_tm rfl
+
+theorem Eqv.wk0_releft_inv {Γ : Ctx? α} {A : Ty α} {x : Var? α} [hx : x.del]
+  (a : Eqv R Γ A)
+  : a.releft_inv.wk0 x = (a.wk0 x).releft_inv := by induction a using quotInd; exact Eqv.of_tm rfl
+
+theorem Eqv.wk0_reright_inv {Γ : Ctx? α} {A : Ty α} {x : Var? α} [hx : x.del]
+  (a : Eqv R Γ A)
+  : a.reright_inv.wk0 x = (a.wk0 x).reright_inv := by induction a using quotInd; exact Eqv.of_tm rfl

@@ -180,6 +180,11 @@ theorem Eqv.wk_let₂ {Γ Δ Δl Δr : Ctx? α}
 def Eqv.pwk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} (a : Eqv R Δ A) : Eqv R Γ A
   := a.liftOn (λ a => e⟦a.pwk ρ⟧) (λ_ _ h => sound <| Wf.eqv.pwk_congr ρ h)
 
+theorem Eqv.pwk_bv0 {Γ Γ' : Ctx? α} [hΓ : Γ.del] [hΓ' : Γ'.del]
+    {A : Ty α} {q q' : Quant} (ρ : (Γ.cons ⟨A, q⟩).PWk (Γ'.cons ⟨A, q'⟩))
+  : (Eqv.bv0 (R := R) (Γ := Γ') (A := A) (q := q')).pwk ρ = Eqv.bv0
+  := of_tm rfl
+
 theorem Eqv.pwk_mk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} {a : Wf R Δ A}
   : Eqv.pwk ρ (e⟦a⟧) = e⟦a.pwk ρ⟧ := rfl
 

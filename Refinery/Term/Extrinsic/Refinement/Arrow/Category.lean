@@ -50,7 +50,13 @@ def DRWS.PreArrow.comp {A B C : Ty α} (f : DRWS.PreArrow R A B) (g : DRWS.PreAr
 
 def DRWS.Arrow.toEqv (a : DRWS.Arrow R A B) : Eqv R (.one ⟨A, ⊤⟩) B := a
 
+instance DRWS.Arrow.toEqv_effect {a : DRWS.Arrow R A B} [ha : a.HasEff e] : (a.toEqv).HasEff e
+  := ha
+
 def Eqv.toArr (a : Eqv R (.one ⟨A, ⊤⟩) B) : DRWS.Arrow R A B := a
+
+instance Eqv.toArr_effect {a : Eqv R (.one ⟨A, ⊤⟩) B} [ha : a.HasEff e] : (a.toArr).HasEff e
+  := ha
 
 @[simp] theorem DRWS.Arrow.toArr_toEqv {a : DRWS.Arrow R A B} : a.toEqv.toArr = a := rfl
 
@@ -93,6 +99,10 @@ theorem DRWS.PreArrow.comp_congr {A B C : Ty α}
 def DRWS.Arrow.extend1 (Γ : Ctx? α) [hΓ : Γ.del] (a : DRWS.Arrow R A B)
   : Eqv R (Γ.cons ⟨A, ⊤⟩) B := a.toEqv.wk (Γ.extend1 ⟨A, ⊤⟩)
 
+instance DRWS.Arrow.extend1_effect {Γ : Ctx? α} [hΓ : Γ.del] {a : DRWS.Arrow R A B}
+  [ha : a.HasEff e] : (a.extend1 Γ).HasEff e
+  := by rw [extend1]; infer_instance
+
 def Eqv.letArrow {Γ : Ctx? α} {A B : Ty α} (a : Eqv R Γ A) (b : R.Arrow A B) : Eqv R Γ B
   := a.letT₁ (b.extend1 Γ.erase)
 
@@ -101,6 +111,10 @@ theorem Eqv.letArrow_mk {Γ : Ctx? α} {A B : Ty α} {a : Wf R Γ A} {b : R.PreA
 
 theorem Eqv.letArrow_id (a : Eqv R Γ A) : a.letArrow (DRWS.Obj.id A) = a
   := a.let₁_eta
+
+instance Eqv.letArrow_effect {Γ : Ctx? α} {A B : Ty α} (a : Eqv R Γ A) (b : R.Arrow A B)
+  [ha : a.HasEff e] [hb : b.HasEff e] : (a.letArrow b).HasEff e
+  := by rw [letArrow, letT₁]; infer_instance
 
 theorem Eqv.wk_letArrow {Γ Δ : Ctx? α} (ρ : Γ.Wk Δ) (a : Eqv R Δ A) (b : R.Arrow A B)
   : (a.letArrow b).wk ρ = (a.wk ρ).letArrow b := by
@@ -155,6 +169,10 @@ theorem Eqv.bind_letArrow  {Γ : Ctx? α} {A B : Ty α} (a : Eqv R Γ A) (b : R.
 
 def DRWS.Arrow.comp {A B C : Ty α} (f : DRWS.Arrow R A B) (g : DRWS.Arrow R B C)
   : DRWS.Arrow R A C := (Eqv.letArrow f.toEqv g).toArr
+
+instance DRWS.Arrow.comp_effect {A B C : Ty α} (f : DRWS.Arrow R A B) (g : DRWS.Arrow R B C)
+  [hf : f.HasEff e] [hg : g.HasEff e] : (f.comp g).HasEff e
+  := by rw [comp]; infer_instance
 
 theorem DRWS.Arrow.id_comp {A B : Ty α} (f : DRWS.Arrow R A B)
   : (Obj.id A).comp f = f := f.let₁_bv0

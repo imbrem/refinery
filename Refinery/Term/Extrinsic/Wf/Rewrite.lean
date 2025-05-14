@@ -157,7 +157,7 @@ def Eqv.let₂_beta {Γ Γc Γl Γm Γr : Ctx? α} {A B C}
   (c : Eqv R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C)
   : ((a.pair hΓc b).let₂ hΓ c)
   = a.let₁ (hΓ.s1_23_13_2 hΓc)
-      ((b.wk0 _).let₁ ((hΓ.s1_23_13 hΓc).cons (.left _)) c) := by
+      ((b.wk0 _).let₁ (hΓ.s1_23_13 hΓc).left c) := by
   induction a, b, c using quotInd₃
   apply sound
   apply Wf.eqv.equivFwdStep
