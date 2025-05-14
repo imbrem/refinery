@@ -180,4 +180,15 @@ theorem DRWS.Arrow.associator_naturality {A B C A' B' C' : Obj R}
   = (A.assoc B C).comp (f.tensorHom (g.tensorHom h)) := by
   rw [tensorHom_left, tensorHom_right, comp, Eqv.letArrow_assoc, tensorHomLeft_reassoc]; rfl
 
+theorem DRWS.Obj.pentagon {A B C D : Obj R}
+  : (((A.assoc B C).whiskerRight D).comp
+    (A.assoc (B.tensor C) D)).comp
+    ((B.assoc C D).whiskerLeft A)
+  = (assoc (A.tensor B) C D).comp (A.assoc B (C.tensor D))
+  := by
+  rw [
+    DRWS.Arrow.comp, DRWS.Arrow.comp, Eqv.toEqv_toArr, Eqv.letArrow_whiskerLeft
+  ]
+  sorry
+
 --TODO: pentagon
