@@ -178,6 +178,16 @@ theorem Eqv.let₂_reassoc_inv {Γ Γl Γr : Ctx? α} {X Y A B C : Ty α}
   apply Eqv.sound; apply Wf.eqv.of_tm
   rfl
 
+theorem Eqv.letT₂_reassoc {Γ : Ctx? α} {X Y A B C : Ty α}
+  (a : Eqv R Γ (X.tensor Y)) (b : Eqv R ((Γ.erase.cons ⟨X, ⊤⟩).cons ⟨Y, ⊤⟩) ((A.tensor B).tensor C))
+  : (a.letT₂ b).reassoc = a.letT₂ b.reassoc
+  := a.let₂_reassoc _ b
+
+theorem Eqv.letT₂_reassoc_inv {Γ : Ctx? α} {X Y A B C : Ty α}
+  (a : Eqv R Γ (X.tensor Y)) (b : Eqv R ((Γ.erase.cons ⟨X, ⊤⟩).cons ⟨Y, ⊤⟩) (A.tensor (B.tensor C)))
+  : (a.letT₂ b).reassoc_inv = a.letT₂ b.reassoc_inv
+  := a.let₂_reassoc_inv _ b
+
 set_option maxHeartbeats 1000000000 in
 theorem Eqv.reassoc_beta {Γ Γc Γl Γm Γr : Ctx? α} {A B C : Ty α}
   (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
@@ -553,6 +563,22 @@ theorem Eqv.wk0_reassoc {Γ : Ctx? α} {A B C : Ty α} {x : Var? α} [hx : x.del
 theorem Eqv.wk0_reassoc_inv {Γ : Ctx? α} {A B C : Ty α} {x : Var? α} [hx : x.del]
   (a : Eqv R Γ (A.tensor (B.tensor C)))
   : a.reassoc_inv.wk0 x = (a.wk0 x).reassoc_inv := by induction a using quotInd; exact Eqv.of_tm rfl
+
+theorem Eqv.wk1_reassoc {Γ : Ctx? α} {A B C : Ty α} {x : Var? α} [hx : x.del]
+  (a : Eqv R (Γ.cons v) ((A.tensor B).tensor C))
+  : a.reassoc.wk1 x = (a.wk1 x).reassoc := by induction a using quotInd; exact Eqv.of_tm rfl
+
+theorem Eqv.wk1_reassoc_inv {Γ : Ctx? α} {A B C : Ty α} {x : Var? α} [hx : x.del]
+  (a : Eqv R (Γ.cons v) (A.tensor (B.tensor C)))
+  : a.reassoc_inv.wk1 x = (a.wk1 x).reassoc_inv := by induction a using quotInd; exact Eqv.of_tm rfl
+
+theorem Eqv.wk2_reassoc {Γ : Ctx? α} {A B C : Ty α} {x : Var? α} [hx : x.del]
+  (a : Eqv R ((Γ.cons l).cons r) ((A.tensor B).tensor C))
+  : a.reassoc.wk2 x = (a.wk2 x).reassoc := by induction a using quotInd; exact Eqv.of_tm rfl
+
+theorem Eqv.wk2_reassoc_inv {Γ : Ctx? α} {A B C : Ty α} {x : Var? α} [hx : x.del]
+  (a : Eqv R ((Γ.cons l).cons r) (A.tensor (B.tensor C)))
+  : a.reassoc_inv.wk2 x = (a.wk2 x).reassoc_inv := by induction a using quotInd; exact Eqv.of_tm rfl
 
 theorem Eqv.wk0_releft {Γ : Ctx? α} {A : Ty α} {x : Var? α} [hx : x.del]
   (a : Eqv R Γ (.tensor .unit A))

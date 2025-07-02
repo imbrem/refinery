@@ -185,6 +185,27 @@ theorem Eqv.pwk_bv0 {Γ Γ' : Ctx? α} [hΓ : Γ.del] [hΓ' : Γ'.del]
   : (Eqv.bv0 (R := R) (Γ := Γ') (A := A) (q := q')).pwk ρ = Eqv.bv0
   := of_tm rfl
 
+theorem Eqv.pwk_bv1 {Γ Γ' : Ctx? α} [hΓ : Γ.del] [hΓ' : Γ'.del]
+    {A : Ty α} {q q' : Quant} (ρ : ((Γ.cons ⟨A, q⟩).cons x).PWk ((Γ'.cons ⟨A, q'⟩).cons x'))
+    [hx : x.del] [hx' : x'.del]
+  : (Eqv.bv1 (R := R) (Γ := Γ') (v := x') (A := A) (q := q')).pwk ρ = Eqv.bv1
+  := of_tm rfl
+
+theorem Eqv.pwk_bv2 {Γ Γ' : Ctx? α} [hΓ : Γ.del] [hΓ' : Γ'.del]
+    {A : Ty α} {q q' : Quant}
+    (ρ : (((Γ.cons ⟨A, q⟩).cons l).cons r).PWk ((((Γ'.cons ⟨A, q'⟩).cons l').cons r')))
+    [hl : l.del] [hr : r.del] [hl' : l'.del] [hr' : r'.del]
+  : (Eqv.bv2
+      (R := R) (Γ := Γ') (l := l') (r := r')
+      (A := A) (q := q')).pwk ρ
+    = Eqv.bv2
+  := of_tm rfl
+
+theorem Eqv.pwk_pair {Γ Δ Δl Δr : Ctx? α}
+  (ρ : Γ.PWk Δ) (hΔ : Δ.SSplit Δl Δr) (a : Eqv R Δl A) (b : Eqv R Δr B)
+  : (Eqv.pair hΔ a b).pwk ρ = Eqv.pair (hΔ.wk ρ) (a.pwk (hΔ.leftPWk ρ)) (b.pwk (hΔ.rightPWk ρ))
+  := by induction a, b using quotInd₂; apply sound; apply Wf.eqv.of_tm; simp [Wf.pwk, Wf.pair]
+
 theorem Eqv.pwk_mk {Γ Δ : Ctx? α} (ρ : Γ.PWk Δ) {A : Ty α} {a : Wf R Δ A}
   : Eqv.pwk ρ (e⟦a⟧) = e⟦a.pwk ρ⟧ := rfl
 

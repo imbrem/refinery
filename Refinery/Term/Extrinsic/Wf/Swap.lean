@@ -1,4 +1,5 @@
 import Refinery.Term.Extrinsic.Wf.DerivedRewrite
+import Refinery.Term.Extrinsic.Wf.PairBeta
 
 open HasQuant HasPQuant HasCommRel
 
@@ -165,4 +166,42 @@ def Eqv.swap0₂ {Γ : Ctx? α} {A B C : Ty α} {x : Var? α}
 def Eqv.unswap0₂ {Γ : Ctx? α} {A B C D : Ty α}
   (a : Eqv R (((Γ.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩).cons ⟨C, ⊤⟩) D)
   : Eqv R (((Γ.cons ⟨C, ⊤⟩).cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) D
-  :=  .let₁ Γ.erase_right.right.left.left .bv2 (a.wk3 _)
+  := .let₁ Γ.erase_right.right.left.left .bv2 (a.wk3 _)
+
+theorem Eqv.unswap0₂_swap0₂ {Γ : Ctx? α} {A B C D : Ty α}
+  (a : Eqv R (((Γ.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩).cons ⟨C, ⊤⟩) D)
+  : a.swap0₂.unswap0₂ = a
+  := by
+  calc
+  _ = .let₁ Γ.erase_right.right.left.left .bv2 ((Eqv.let₁ Γ.erase_right.left.right.left.left .bv2
+      (.let₁ Γ.erase_right.left.left.right.left.left .bv2
+        (((a.wk3 ⟨A, 0⟩).wk3 ⟨B, 0⟩).wk3 ⟨C, 0⟩)
+      ))) := by
+      induction a using quotInd; apply of_tm; simp [Wf.let₁, Wf.wk3, Wf.bv2, ren_ren]
+      congr; ext x; cases x using Nat.cases3 <;> rfl
+  _ = _ := by
+    conv => lhs; rw [<-wk0_bv1]; rhs; rw [<-wk0_bv1, <-wk0_bv0]
+    induction a using quotInd with
+    | h a
+    apply sound
+    apply Wf.eqv.coh_out
+    apply Wf.pre_let₁_let₁_let₁_beta_pureIIn
+      (hΓ := Γ.erase_right.right.left.left)
+      (hΓ123 := Γ.erase_right.left.right.left)
+      (hΓ12 := Γ.erase_right.left.left.right)
+      (a := .bv2)
+      (b := .bv1)
+      (c := .bv0)
+      (d := (((a.wk3 ⟨A, 0⟩).wk3 ⟨B, 0⟩).wk3 ⟨C, 0⟩))
+      (hqa := by simp)
+      (hqb := by simp)
+      (hqc := by simp)
+    simp [Wf.subst, Wf.wk3, <-subst_renIn]
+    apply Subst.subst1_fvi
+    intro x hx
+    cases x using Nat.cases3 with
+    | rest x =>
+      simp [SubstDS.subst0₃, SubstDS.refl_get]
+      convert lt_of_lt_of_le hx a.deriv.fvi_le_length using 0
+      simp
+    | _ => rfl

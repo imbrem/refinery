@@ -91,6 +91,17 @@ theorem Eqv.case_inr {Γ Γl Γr : Ctx? α} {A B C}
   apply DRWS.EquivFwdStep.step
   apply DRWS.Step.case_inr
 
+theorem Wf.let₂_beta {Γ Γc Γl Γm Γr : Ctx? α} {A B C}
+  (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
+  (a : Wf R Γm A) (b : Wf R Γr B)
+  (c : Wf R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C)
+  : ((a.pair hΓc b).let₂ hΓ c)
+  ≈ a.let₁ (hΓ.s1_23_13_2 hΓc)
+      ((b.wk0 _).let₁ (hΓ.s1_23_13 hΓc).left c) := by
+  apply Wf.eqv.equivFwdStep
+  apply DRWS.EquivFwdStep.step
+  apply DRWS.Step.let₂_beta
+
 variable [R.UWkCongr]
 
 theorem Eqv.let_op {Γ Γl Γr : Ctx? α} {f A B C}
@@ -184,10 +195,7 @@ theorem Eqv.let₂_beta {Γ Γc Γl Γm Γr : Ctx? α} {A B C}
   = a.let₁ (hΓ.s1_23_13_2 hΓc)
       ((b.wk0 _).let₁ (hΓ.s1_23_13 hΓc).left c) := by
   induction a, b, c using quotInd₃
-  apply sound
-  apply Wf.eqv.equivFwdStep
-  apply DRWS.EquivFwdStep.step
-  apply DRWS.Step.let₂_beta
+  apply sound; apply Wf.let₂_beta
 
 theorem Eqv.let₂_beta_anti {Γ Γc Γl Γm Γr : Ctx? α} {A B C}
   (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)

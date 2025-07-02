@@ -27,7 +27,7 @@ def Eqv.iterT {Γ : Ctx? α} {A B : Ty α}
 
 def Eqv.letT₂_eta {Γ : Ctx? α} {A B : Ty α}
   (a : Eqv R Γ (A.tensor B))
-  : a.letT₂ (.pair (((Γ.erase.both).cons (.left _)).cons (.right _)) .bv1 .bv0)
+  : a.letT₂ (.pair (Γ.erase.both).left.right .bv1 .bv0)
   = a := a.let₂_eta
 
 variable [R.UWkCongr]
@@ -37,7 +37,8 @@ theorem Eqv.letT₂_letT₂ {Γ : Ctx? α} {A B C D E : Ty α}
   (b : Eqv R ((Γ.erase.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) (C.tensor D))
   (c : Eqv R ((Γ.erase.cons ⟨C, ⊤⟩).cons ⟨D, ⊤⟩) E)
   : (a.letT₂ b).letT₂ c
-  = a.letT₂ (b.letT₂ (((c.castCtx (by (conv => lhs; rw [<-Ctx?.erase_erase]); rfl)).wk2 _).wk2 _))
+  = a.letT₂ (b.letT₂
+    (((c.castCtx (by (conv => lhs; rw [<-Ctx?.erase_erase]); rfl)).wk2 ⟨A, 0⟩).wk2 ⟨B, 0⟩))
   := by
   rw [letT₂, letT₂, let₂_let₂]
   induction a, b, c using quotInd₃
@@ -46,7 +47,7 @@ theorem Eqv.letT₂_letT₂ {Γ : Ctx? α} {A B C D E : Ty α}
 theorem Eqv.letT₂_beta  {Γ Γl Γr : Ctx? α} {A B}
   (hΓ : Γ.SSplit Γl Γr) (a : Eqv R Γl A) (b : Eqv R Γr B)
   (c : Eqv R ((Γ.erase.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C)
-  : letT₂ (pair hΓ a b) c = .let₁ hΓ.comm a (.let₁ (Ctx?.erase_left _).left (b.wk0 _)
+  : letT₂ (pair hΓ a b) c = .let₁ hΓ.comm a (.let₁ (Ctx?.erase_left _).left (b.wk0 ⟨A, 0⟩)
     (c.castCtx (by rw [hΓ.erase_eq_right]))) := by
   rw [letT₂, let₂_beta]
   induction a, b, c using quotInd₃

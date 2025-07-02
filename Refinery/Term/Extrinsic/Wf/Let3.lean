@@ -218,6 +218,28 @@ theorem Eqv.let₂_let_comm {A B C D : Ty α} {Γ Γl Γr : Ctx? α}
   simp [Wf.let₁, Wf.let₂, Wf.wk0, Wf.bv0, Wf.bv2]
   exact he
 
+theorem Eqv.let_let₂_comm {A B C D : Ty α} {Γ Γl Γr : Ctx? α}
+(hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm) {ea eb : ε}
+  (a : Eqv R Γr A) (b : Eqv R Γm (B.tensor C))
+  (c : Eqv R (((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩).cons ⟨C, ⊤⟩) D)
+  [ha : a.HasEff ea] [hb : b.HasEff eb] (he : ea ⇌ eb)
+  : a.let₁ hΓ ((b.wk0 ⟨A, 0⟩).let₂ hΓc.left c)
+  = b.let₂ (hΓ.comm.s1_23_12_3 hΓc) (((a.wk0 ⟨B, 0⟩).wk0 ⟨C, 0⟩).let₁
+    (hΓ.comm.s1_23_12 hΓc).comm.left.left c.swap0₂) := by
+  rw [let₂_let_comm (ha := hb) (hb := ha) (he := he.symm), Eqv.unswap0₂_swap0₂]
+  induction a, b, c using quotInd₃
+  exact of_tm rfl
+
+theorem Eqv.let_pure_let₂_comm {A B C D : Ty α} {Γ Γl Γr : Ctx? α}
+(hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
+  (a : Eqv R Γr A) (b : Eqv R Γm (B.tensor C))
+  (c : Eqv R (((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩).cons ⟨C, ⊤⟩) D)
+  [ha : a.HasEff ⊥]
+  : a.let₁ hΓ ((b.wk0 ⟨A, 0⟩).let₂ hΓc.left c)
+  = b.let₂ (hΓ.comm.s1_23_12_3 hΓc) (((a.wk0 ⟨B, 0⟩).wk0 ⟨C, 0⟩).let₁
+    (hΓ.comm.s1_23_12 hΓc).comm.left.left c.swap0₂)
+  := by apply let_let₂_comm (ea := ⊥) (eb := ⊤) (ha := ha) (he := HasCommRel.commutes_bot_left)
+
 theorem Eqv.let₂_pair_left_wk0_wk0 {A B C D} {Γ Γc Γl Γm Γr : Ctx? α}
   (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
   (a : Eqv R Γr (.tensor A B)) (b : Eqv R Γl C) (c : Eqv R ((Γm.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) D)

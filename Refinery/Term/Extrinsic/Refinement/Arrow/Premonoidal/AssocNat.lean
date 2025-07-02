@@ -180,15 +180,79 @@ theorem DRWS.Arrow.associator_naturality {A B C A' B' C' : Obj R}
   = (A.assoc B C).comp (f.tensorHom (g.tensorHom h)) := by
   rw [tensorHom_left, tensorHom_right, comp, Eqv.letArrow_assoc, tensorHomLeft_reassoc]; rfl
 
-theorem DRWS.Obj.pentagon {A B C D : Obj R}
-  : (((A.assoc B C).whiskerRight D).comp
-    (A.assoc (B.tensor C) D)).comp
-    ((B.assoc C D).whiskerLeft A)
-  = (assoc (A.tensor B) C D).comp (A.assoc B (C.tensor D))
-  := by
-  rw [
-    DRWS.Arrow.comp, DRWS.Arrow.comp, Eqv.toEqv_toArr, Eqv.letArrow_whiskerLeft
-  ]
-  sorry
+-- theorem DRWS.Obj.pentagon {A B C D : Obj R}
+--   : (((A.assoc B C).whiskerRight D).comp
+--     (A.assoc (B.tensor C) D)).comp
+--     ((B.assoc C D).whiskerLeft A)
+--   = (assoc (A.tensor B) C D).comp (A.assoc B (C.tensor D))
+--   := by
+--   rw [
+--     Arrow.comp, Arrow.comp, Eqv.toEqv_toArr, Eqv.letArrow_whiskerLeft,
+--     Eqv.letArrow_assoc, Eqv.letArrow_assoc, Arrow.comp, Eqv.letArrow_assoc,
+--     Arrow.whiskerRight, Eqv.toEqv_toArr, Eqv.letArrow_assoc, assoc, Eqv.toEqv_toArr,
+--   ]
+--   congr 1
+--   rw [Eqv.reassoc_letT₂, Eqv.letT₂_letT₂, Eqv.letT₂_beta]
+--   simp only [
+--     Ctx?.erase_cons, Ctx?.erase_nil, Var?.erase, Eqv.castCtx_rfl, Eqv.wk2_pair, Eqv.wk2_bv1,
+--     Eqv.wk2_reassoc, Eqv.wk2_bv0, Eqv.wk1_pair, Eqv.wk1_bv1, Eqv.wk1_bv0, Ctx?.SSplit.head,
+--     Ctx?.SSplit.tail, Ctx?.erase_right, Eqv.wk1_reassoc
+--   ]
+--   conv => lhs; rhs; rhs; rhs; rhs; rhs; rhs; rhs; lhs; rw [<-Eqv.wk0_bv1]
+--   rw [
+--     Eqv.let_pure_left_pair_wk0, <-Eqv.let₁_reassoc, Eqv.let₁_eta_pwk
+--   ]
+--   --     (Eqv.let₁
+--   --     (((Ctx?.erase_left _).cons
+--   --             (Var?.SSplit.left { ty := (Ty.tensor A B).tensor C, q := ⊤ })).cons
+--   --         (Var?.SSplit.right { ty := D, q := ⊤ })).comm
+--   --     Eqv.bv1.reassoc
+--   --     (Eqv.let₁
+--   --       (Ctx?.erase_left _).left
+--   --       (Eqv.wk0 _ Eqv.bv0)
+--   --       (Eqv.wk2 _
+--   --         (Eqv.wk2 _
+--   --           (Eqv.let₂ (Ctx?.erase_right _).right.left
+--   --             Eqv.bv1
+--   --             (Eqv.let₁
+--   --               (Ctx?.erase_right _).right.left.right
+--   --               (Eqv.pair
+--   --                 (Ctx?.erase_left _).left
+--   --                 Eqv.bv0 Eqv.bv2)
+--   --               (Eqv.wk1 _
+--   --                 (Eqv.wk2 _
+--   --                   (Eqv.wk2 _
+--   --                     (Eqv.pair
+--   --                       (Ctx?.erase_right _).right
+--   --                       Eqv.bv1 Eqv.bv0.reassoc
+--   --                     )
+--   --                   )
+--   --                 )
+--   --               )
+--   --             )
+--   --           )
+--   --         )
+--   --       )
+--   --     )
+--   --   )
+--   -- )
+--    = _ using 0
+--   sorry
+--   -- conv => rhs; rhs; rw [Eqv.reassoc]
+--   -- rw [Eqv.letT₂_reassoc, Eqv.letT₂_reassoc, Eqv.letT₂_letT₂]
+--   -- congr 1
+--   -- rw [Eqv.reassoc_letT₂, Eqv.letT₂_beta, Eqv.let₂_reassoc, Eqv.reassoc, Eqv.letT₂, Eqv.let_let₂]
+--   -- apply Eqv.let₂_coh'
+--   -- rfl
+--   -- rw [Eqv.let_let₂]
+--   -- conv => rhs; rw [Eqv.reassoc]
+--   -- rw [Eqv.letT₂_beta]
+--   -- simp only [Ctx?.erase_cons, Ctx?.erase_nil, Var?.erase_erase, Eqv.castCtx_rfl]
+--   -- rw [Eqv.bind_let₂]
+--   -- apply Eqv.let₁_coh'
+--   -- rfl
+--   -- conv => rhs; rw [<-Eqv.wk0_bv0, Eqv.let_pure_let₂_comm]
+--   -- congr 1
+--   -- sorry
 
---TODO: pentagon
+-- --TODO: pentagon

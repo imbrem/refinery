@@ -10,6 +10,7 @@ autoImplicit = true
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
+rev = "8386af85095c985aa33ed448aa9890a40cc5fa00"
 
 [[require]]
 name = "discretion"
