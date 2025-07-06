@@ -54,7 +54,18 @@ instance DRWS.instWkCongrLetMove : WkCongr (LetMove (S := S)) where
         (dc.wk ((hΓ.leftWk ρ).scons _))))
       simp
       simp [ren_ren, <-Nat.liftWk_comp, Nat.liftWk_comp_succ]
-    | dist_iter => sorry
+    | dist_iter hΓ hΓc hc hd da db dc =>
+      apply DRWS.cast_eq
+        (.base (.dist_iter (hΓ.wk ρ) (hΓc.wk (hΓ.rightWk ρ))
+        (hΓc.wkLeft_copy (hΓ.rightWk ρ))
+        (hΓc.wkLeft_del (hΓ.rightWk ρ))
+        (da.wk (hΓ.leftWk ρ))
+        (db.wk (hΓc.rightWk (hΓ.rightWk ρ)))
+        (dc.wk ((hΓc.leftWk (hΓ.rightWk ρ)).scons _))
+        ))
+      simp
+      simp [ren_ren, <-Nat.liftWk_comp, Nat.liftWk_comp_succ]
+      rfl
 
 instance DRWS.instWkCongrLetBind : WkCongr (LetBind (S := S)) where
   cwk_congr {Γ Δ} ρ _ _ _ da db h := by cases h with

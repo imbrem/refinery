@@ -34,6 +34,7 @@ inductive RWS.LetMove : RWS φ α
     (Da : Γr ⊢ a : A) (Db : Γm.cons ⟨A, ⊤⟩ ⊢ b : B.coprod A) (Dc : Γl.cons ⟨B, ⊤⟩ ⊢ c : C)
     : LetMove Γ C (.let₁ (.iter a A B b) B c)
                   (.iter a A C (.case b B A (.inl C A (↑¹ c)) (.inr C A (.bv 0))))
+  --TODO: add distributivity rule here; this is out of sync!!!
 
 theorem RWS.LetMove.wt {Γ A} {a b : Term φ (Ty α)} (h : LetMove Γ A a b)
   : Term.IsWt Γ A a ∧ Term.IsWt Γ A b := by
@@ -147,7 +148,7 @@ inductive DRWS.LetMove : DRWS φ α
             (.inl (.pair (Ctx?.erase_right _).left.right.right .bv2 .bv0))
             (.inr (.pair (Ctx?.erase_right _).left.right.right .bv2 .bv0))))
       )
-      
+
 inductive DRWS.LetBind : DRWS φ α
   | bind_op {f a A B}
     (hf : S.FnTy f A B) (Da : Γ ⊢ a : A)
