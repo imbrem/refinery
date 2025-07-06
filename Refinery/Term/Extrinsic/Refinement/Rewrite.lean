@@ -135,10 +135,19 @@ inductive DRWS.LetMove : DRWS φ α
               (Db.case ((hΓ.s1_23_12 hΓc).cons (.right _))
               (Dc.wk1 ⟨A, 0⟩).inl
               (.inr .bv0)))
-
--- Note: let_abort and let_op should be derivable from binding/substitution operators
--- as well as let_inl, let_inr
-
+  | dist_iter {Γ Γc Γl Γm Γr : Ctx? α}
+    (hΓ : Γ.SSplit Γl Γc) (hΓc : Γc.SSplit Γm Γr)
+    (hc : Γm.copy) (hd : Γm.del)
+    (Da : Γl ⊢ a : A) (Db : Γr ⊢ b : B) (Dc : Γm.cons ⟨B, ⊤⟩ ⊢ c : C.coprod B)
+    : LetMove Γ (A.tensor C) _ _
+      (Da.pair hΓ (Db.iter hΓc hc hd Dc))
+      ((Da.pair (hΓ.s1_23_12 hΓc.comm) Db).iter (hΓ.s1_23_12_3 hΓc.comm).comm hc hd
+        (.let₂ Γm.erase_right.right .bv0
+          (.case Γm.erase_left.left.left.right ((Dc.wk1 _).wk1 _)
+            (.inl (.pair (Ctx?.erase_right _).left.right.right .bv2 .bv0))
+            (.inr (.pair (Ctx?.erase_right _).left.right.right .bv2 .bv0))))
+      )
+      
 inductive DRWS.LetBind : DRWS φ α
   | bind_op {f a A B}
     (hf : S.FnTy f A B) (Da : Γ ⊢ a : A)

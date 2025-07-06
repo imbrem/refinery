@@ -424,3 +424,4 @@ instance DRWS.LetMove.bivalid : BiValid (LetMove (S := S)) C where
       ≫ (!_ (hΓ.c1_23_12 hΓc).ety ▷ t⟦X⟧ ≫ (λ_ t⟦X⟧).hom ⊕ₕ 𝟙 _)
       ≫ (𝟙 t⟦X⟧ ⊕ₕ css⟦hΓ.s1_23_12 hΓc⟧ ▷ t⟦A⟧ ≫ (α_ g⟦Γl⟧ g⟦Γm⟧ t⟦A⟧).hom)
       = _ := by simp only [addHom, Category.assoc]; premonoidal
+    | dist_iter => sorry

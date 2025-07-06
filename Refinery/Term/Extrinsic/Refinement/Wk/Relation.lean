@@ -54,6 +54,7 @@ instance DRWS.instWkCongrLetMove : WkCongr (LetMove (S := S)) where
         (dc.wk ((hΓ.leftWk ρ).scons _))))
       simp
       simp [ren_ren, <-Nat.liftWk_comp, Nat.liftWk_comp_succ]
+    | dist_iter => sorry
 
 instance DRWS.instWkCongrLetBind : WkCongr (LetBind (S := S)) where
   cwk_congr {Γ Δ} ρ _ _ _ da db h := by cases h with
