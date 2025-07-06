@@ -84,59 +84,59 @@ inductive RWS.cong (R : RWS φ α) : RWS φ α
   | trans {Γ a b c A} : cong R Γ A a b → cong R Γ A b c → cong R Γ A a c
 
 -- A version of uniformity which preserves _bivalidity_
-inductive RWS.isoUniform (R : RWS φ α) : RWS φ α
-  | op {Γ A B f a a'} :
-    S.FnTy f A B → isoUniform R Γ A a a' → isoUniform R Γ B (a.op f) (a'.op f)
-  | let₁ {Γ Γl Γr A B a b a' b'} :
-    Γ.SSplit Γl Γr →
-    isoUniform R Γr A a a' → isoUniform R (Γl.cons ⟨A, ⊤⟩) B b b'
-      → isoUniform R Γ B (.let₁ a A b) (.let₁ a' A b')
-  | let₂ {Γ Γl Γr A B C a b a' b'} :
-    Γ.SSplit Γl Γr →
-    isoUniform R Γr (.tensor A B) a a' → isoUniform R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C b b'
-      → isoUniform R Γ C (.let₂ a A B b) (.let₂ a' A B b')
-  | pair {Γ Γl Γr A B a b a' b'} :
-    Γ.SSplit Γl Γr →
-    isoUniform R Γl A a a' → isoUniform R Γr B b b'
-      → isoUniform R Γ (.tensor A B) (.pair a b) (.pair a' b')
-  | inl {Γ A B a a'}
-    : isoUniform R Γ A a a' → isoUniform R Γ (.coprod A B) (.inl A B a) (.inl A B a')
-  | inr {Γ A B b b'}
-    : isoUniform R Γ B b b' → isoUniform R Γ (.coprod A B) (.inr A B b) (.inr A B b')
-  | case {Γ Γl Γr A B C a b c a' b' c'} :
-    Γ.SSplit Γl Γr →
-    isoUniform R Γr (A.coprod B) a a' →
-    isoUniform R (Γl.cons ⟨A, ⊤⟩) C b b' →
-    isoUniform R (Γl.cons ⟨B, ⊤⟩) C c c' →
-    isoUniform R Γ C (.case a A B b c) (.case a' A B b' c')
-  | abort {Γ A a a'} : isoUniform R Γ .empty a a' → isoUniform R Γ A (.abort A a) (.abort A a')
-  | iter {Γ Γl Γr A B a b a' b'} :
-    Γ.SSplit Γl Γr →
-    Γl.copy → Γl.del →
-    isoUniform R Γr A a a' →
-    isoUniform R (Γl.cons ⟨A, ⊤⟩) (.coprod B A) b b' →
-    isoUniform R Γ B (.iter a A B b) (.iter a' A B b')
-  | pos_unif {Γ Γc Γl Γm Γr e e' A B X a b b'} :
-    Γ.SSplit Γc Γr → Γc.SSplit Γl Γm → Γc.copy → Γc.del → e ∈ S.iterative → e' ⇌ e →
-    (Γr ⊢ a : A) → a.HasEff e → ((Γm.cons ⟨A, ⊤⟩) ⊢ s : X) → s.HasEff e' →
-    ((Γl.cons ⟨X, ⊤⟩) ⊢ b : B.coprod X) → b.HasEff e →
-    ((Γc.cons ⟨A, ⊤⟩) ⊢ b' : B.coprod A) →
-    isoUniform R (Γc.cons ⟨A, ⊤⟩) (.coprod B X)
-      (.let₁ s X (↑¹ b))
-      (.case b' B A (.inl B X (.bv 0)) (.inr B X (↑¹ s))) →
-    isoUniform R Γ B (.let₁ a A (.iter s X B (↑¹ b))) (.iter a A B b')
-  | neg_unif {Γ Γc Γl Γm Γr e e' A B X a b b'} :
-    Γ.SSplit Γc Γr → Γc.SSplit Γl Γm → Γc.copy → Γc.del → e ∈ S.iterative → e' ⇌ e →
-    (Γr ⊢ a : A) → a.HasEff e → ((Γm.cons ⟨A, ⊤⟩) ⊢ s : X) → s.HasEff e' →
-    ((Γl.cons ⟨X, ⊤⟩) ⊢ b : B.coprod X) → b.HasEff e →
-    ((Γc.cons ⟨A, ⊤⟩) ⊢ b' : B.coprod A) →
-    isoUniform R (Γc.cons ⟨A, ⊤⟩) (.coprod B X)
-      (.case b' B A (.inl B X (.bv 0)) (.inr B X (↑¹ s)))
-      (.let₁ s X (↑¹ b)) →
-    isoUniform R Γ B (.iter a A B b') (.let₁ a A (.iter s X B (↑¹ b)))
-  | base {Γ A a b} : R Γ A a b → (Γ ⊢ a : A) → (Γ ⊢ b : A) → isoUniform R Γ A a b
-  | refl {Γ a A} : (Γ ⊢ a : A) → isoUniform R Γ A a a
-  | trans {Γ a b c A} : isoUniform R Γ A a b → isoUniform R Γ A b c → isoUniform R Γ A a c
+-- inductive RWS.isoUniform (R : RWS φ α) : RWS φ α
+--   | op {Γ A B f a a'} :
+--     S.FnTy f A B → isoUniform R Γ A a a' → isoUniform R Γ B (a.op f) (a'.op f)
+--   | let₁ {Γ Γl Γr A B a b a' b'} :
+--     Γ.SSplit Γl Γr →
+--     isoUniform R Γr A a a' → isoUniform R (Γl.cons ⟨A, ⊤⟩) B b b'
+--       → isoUniform R Γ B (.let₁ a A b) (.let₁ a' A b')
+--   | let₂ {Γ Γl Γr A B C a b a' b'} :
+--     Γ.SSplit Γl Γr →
+--     isoUniform R Γr (.tensor A B) a a' → isoUniform R ((Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩) C b b'
+--       → isoUniform R Γ C (.let₂ a A B b) (.let₂ a' A B b')
+--   | pair {Γ Γl Γr A B a b a' b'} :
+--     Γ.SSplit Γl Γr →
+--     isoUniform R Γl A a a' → isoUniform R Γr B b b'
+--       → isoUniform R Γ (.tensor A B) (.pair a b) (.pair a' b')
+--   | inl {Γ A B a a'}
+--     : isoUniform R Γ A a a' → isoUniform R Γ (.coprod A B) (.inl A B a) (.inl A B a')
+--   | inr {Γ A B b b'}
+--     : isoUniform R Γ B b b' → isoUniform R Γ (.coprod A B) (.inr A B b) (.inr A B b')
+--   | case {Γ Γl Γr A B C a b c a' b' c'} :
+--     Γ.SSplit Γl Γr →
+--     isoUniform R Γr (A.coprod B) a a' →
+--     isoUniform R (Γl.cons ⟨A, ⊤⟩) C b b' →
+--     isoUniform R (Γl.cons ⟨B, ⊤⟩) C c c' →
+--     isoUniform R Γ C (.case a A B b c) (.case a' A B b' c')
+--   | abort {Γ A a a'} : isoUniform R Γ .empty a a' → isoUniform R Γ A (.abort A a) (.abort A a')
+--   | iter {Γ Γl Γr A B a b a' b'} :
+--     Γ.SSplit Γl Γr →
+--     Γl.copy → Γl.del →
+--     isoUniform R Γr A a a' →
+--     isoUniform R (Γl.cons ⟨A, ⊤⟩) (.coprod B A) b b' →
+--     isoUniform R Γ B (.iter a A B b) (.iter a' A B b')
+--   | pos_unif {Γ Γc Γl Γm Γr e e' A B X a b b'} :
+--     Γ.SSplit Γc Γr → Γc.SSplit Γl Γm → Γc.copy → Γc.del → e ∈ S.iterative → e' ⇌ e →
+--     (Γr ⊢ a : A) → a.HasEff e → ((Γm.cons ⟨A, ⊤⟩) ⊢ s : X) → s.HasEff e' →
+--     ((Γl.cons ⟨X, ⊤⟩) ⊢ b : B.coprod X) → b.HasEff e →
+--     ((Γc.cons ⟨A, ⊤⟩) ⊢ b' : B.coprod A) →
+--     isoUniform R (Γc.cons ⟨A, ⊤⟩) (.coprod B X)
+--       (.let₁ s X (↑¹ b))
+--       (.case b' B A (.inl B X (.bv 0)) (.inr B X (↑¹ s))) →
+--     isoUniform R Γ B (.let₁ a A (.iter s X B (↑¹ b))) (.iter a A B b')
+--   | neg_unif {Γ Γc Γl Γm Γr e e' A B X a b b'} :
+--     Γ.SSplit Γc Γr → Γc.SSplit Γl Γm → Γc.copy → Γc.del → e ∈ S.iterative → e' ⇌ e →
+--     (Γr ⊢ a : A) → a.HasEff e → ((Γm.cons ⟨A, ⊤⟩) ⊢ s : X) → s.HasEff e' →
+--     ((Γl.cons ⟨X, ⊤⟩) ⊢ b : B.coprod X) → b.HasEff e →
+--     ((Γc.cons ⟨A, ⊤⟩) ⊢ b' : B.coprod A) →
+--     isoUniform R (Γc.cons ⟨A, ⊤⟩) (.coprod B X)
+--       (.case b' B A (.inl B X (.bv 0)) (.inr B X (↑¹ s)))
+--       (.let₁ s X (↑¹ b)) →
+--     isoUniform R Γ B (.iter a A B b') (.let₁ a A (.iter s X B (↑¹ b)))
+--   | base {Γ A a b} : R Γ A a b → (Γ ⊢ a : A) → (Γ ⊢ b : A) → isoUniform R Γ A a b
+--   | refl {Γ a A} : (Γ ⊢ a : A) → isoUniform R Γ A a a
+--   | trans {Γ a b c A} : isoUniform R Γ A a b → isoUniform R Γ A b c → isoUniform R Γ A a c
 
 inductive RWS.uniform (R : RWS φ α) : RWS φ α
   | op {Γ A B f a a'} :
@@ -421,77 +421,77 @@ inductive DRWS.cong (R : DRWS φ α) : DRWS φ α
 
 --TODO: DRWS.cong + friends
 
-inductive DRWS.isoUniform (R : DRWS φ α) : DRWS φ α
-  | op {Γ A B f a a'}
-    {da : Γ ⊢ a : A} {da' : Γ ⊢ a' : A}
-    (hf : S.FnTy f A B) : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ (da.op hf) (da'.op hf)
-  | let₁ {Γ Γl Γr : Ctx? α} {A B a b a' b'}
-    {da : Γr ⊢ a : A} {da' : Γr ⊢ a' : A}
-    {db : Γl.cons ⟨A, ⊤⟩ ⊢ b : B} {db' : Γl.cons ⟨A, ⊤⟩ ⊢ b' : B}
-    (hΓ : Γ.SSplit Γl Γr) : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ db db'
-      → isoUniform R _ _ _ _ (da.let₁ hΓ db) (da'.let₁ hΓ db')
-  | let₂ {Γ Γl Γr : Ctx? α} {A B C a b a' b'}
-    {da : Γr ⊢ a : A.tensor B} {da' : Γr ⊢ a' : A.tensor B}
-    {db : (Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ b : C} {db' : (Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ b' : C}
-    (hΓ : Γ.SSplit Γl Γr) : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ db db'
-      → isoUniform R _ _ _ _ (da.let₂ hΓ db) (da'.let₂ hΓ db')
-  | pair {Γ Γl Γr : Ctx? α} {A B a b a' b'}
-    {da : Γl ⊢ a : A} {da' : Γl ⊢ a' : A} {db : Γr ⊢ b : B} {db' : Γr ⊢ b' : B}
-    (hΓ : Γ.SSplit Γl Γr) : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ db db'
-      → isoUniform R _ _ _ _ (da.pair hΓ db) (da.pair hΓ db)
-  | inl {Γ A B a a'}
-    {da : Γ ⊢ a : A} {da' : Γ ⊢ a' : A}
-    : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ (da.inl (B := B)) (da'.inl (B := B))
-  | inr {Γ A B b b'}
-    {db : Γ ⊢ b : B} {db' : Γ ⊢ b' : B}
-    : isoUniform R _ _ _ _ db db' → isoUniform R _ _ _ _ (db.inr (A := A)) (db'.inr (A := A))
-  | abort {Γ A a a'}
-    {da : Γ ⊢ a : Ty.empty} {da' : Γ ⊢ a' : Ty.empty}
-    : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ (da.abort (A := A)) (da'.abort (A := A))
-  | case {Γ Γl Γr : Ctx? α} {A B a b c a' b' c' C}
-    {da : Γr ⊢ a : A.coprod B} {db : Γl.cons ⟨A, ⊤⟩ ⊢ b : C} {dc : Γl.cons ⟨B, ⊤⟩ ⊢ c : C}
-    {da' : Γr ⊢ a' : A.coprod B} {db' : Γl.cons ⟨A, ⊤⟩ ⊢ b' : C} {dc' : Γl.cons ⟨B, ⊤⟩ ⊢ c' : C}
-    (hΓ : Γ.SSplit Γl Γr)
-    : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ db db' → isoUniform R _ _ _ _ dc dc'
-    → isoUniform R _ _ _ _ (da.case hΓ db dc) (da'.case hΓ db' dc')
-  | iter {Γ Γl Γr : Ctx? α} {A B : Ty α} {a b a' b'}
-    {da : Γr ⊢ a : A} {da' : Γr ⊢ a' : A}
-    {db : Γl.cons ⟨A, ⊤⟩ ⊢ b : B.coprod A} {db' : Γl.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
-    (hΓ : Γ.SSplit Γl Γr) (hc : Γl.copy) (hd : Γl.del)
-    : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ db db'
-    → isoUniform R _ _ _ _ (da.iter hΓ hc hd db) (da'.iter hΓ hc hd db')
-  | pos_unif {Γ Γc Γl Γm Γr : Ctx? α} {e e'} {A B X : Ty α} {a b b'}
-    {da : Γr ⊢ a : A} {ds : Γm.cons ⟨A, ⊤⟩ ⊢ s : X}
-    {db : Γl.cons ⟨X, ⊤⟩ ⊢ b : B.coprod X} {db' : Γc.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
-    (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
-    (hc : Γc.copy) (hd : Γc.del) (hcl : Γl.copy) (hdl : Γl.del)
-    : a.HasEff e → s.HasEff e' → b.HasEff e → b'.HasEff e → e ∈ S.iterative → e' ⇌ e
-      → isoUniform R _ _ _ _
-          (ds.let₁ (hΓc.cons (.right _)) (db.wk1 _))
-          (db'.case (Γc.both.cons (.right _))
-            (Deriv.bv (.here inferInstance Var?.Wk.top_le_quant)).inl
-            ((ds.pwk ((hΓc.pwk_left_del).scons _)).wk1 ⟨A, 0⟩).inr)
-      → isoUniform R _ _ _ _
-        (da.let₁ hΓ (ds.iter (hΓc.cons (.right _)) inferInstance inferInstance (db.wk1 _)))
-        (da.iter hΓ hc hd db')
-  | neg_unif {Γ Γc Γl Γm Γr : Ctx? α} {e e'} {A B X : Ty α} {a b b'}
-    {da : Γr ⊢ a : A} {ds : Γm.cons ⟨A, ⊤⟩ ⊢ s : X}
-    {db : Γl.cons ⟨X, ⊤⟩ ⊢ b : B.coprod X} {db' : Γc.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
-    (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
-    (hc : Γc.copy) (hd : Γc.del) (hcl : Γl.copy) (hdl : Γl.del)
-    : a.HasEff e → s.HasEff e' → b.HasEff e → b'.HasEff e → e ∈ S.iterative → e' ⇌ e
-      → isoUniform R _ _ _ _
-          (db'.case (Γc.both.cons (.right _))
-            (Deriv.bv (.here inferInstance Var?.Wk.top_le_quant)).inl
-            ((ds.pwk ((hΓc.pwk_left_del).scons _)).wk1 ⟨A, 0⟩).inr)
-          (ds.let₁ (hΓc.cons (.right _)) (db.wk1 _))
-      → isoUniform R _ _ _ _
-        (da.iter hΓ hc hd db')
-        (da.let₁ hΓ (ds.iter (hΓc.cons (.right _)) inferInstance inferInstance (db.wk1 _)))
-  | base {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R.rel da db → isoUniform R _ _ _ _ da db
-  | refl {Γ a A} : (da da' : Γ ⊢ a : A) → isoUniform R _ _ _ _ da da'
-  | trans {Γ a b c A} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} {dc : Γ ⊢ c : A}
-    : isoUniform R _ _ _ _ da db → isoUniform R _ _ _ _ db dc → isoUniform R _ _ _ _ da dc
+-- inductive DRWS.isoUniform (R : DRWS φ α) : DRWS φ α
+--   | op {Γ A B f a a'}
+--     {da : Γ ⊢ a : A} {da' : Γ ⊢ a' : A}
+--     (hf : S.FnTy f A B) : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ (da.op hf) (da'.op hf)
+--   | let₁ {Γ Γl Γr : Ctx? α} {A B a b a' b'}
+--     {da : Γr ⊢ a : A} {da' : Γr ⊢ a' : A}
+--     {db : Γl.cons ⟨A, ⊤⟩ ⊢ b : B} {db' : Γl.cons ⟨A, ⊤⟩ ⊢ b' : B}
+--     (hΓ : Γ.SSplit Γl Γr) : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ db db'
+--       → isoUniform R _ _ _ _ (da.let₁ hΓ db) (da'.let₁ hΓ db')
+--   | let₂ {Γ Γl Γr : Ctx? α} {A B C a b a' b'}
+--     {da : Γr ⊢ a : A.tensor B} {da' : Γr ⊢ a' : A.tensor B}
+--     {db : (Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ b : C} {db' : (Γl.cons ⟨A, ⊤⟩).cons ⟨B, ⊤⟩ ⊢ b' : C}
+--     (hΓ : Γ.SSplit Γl Γr) : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ db db'
+--       → isoUniform R _ _ _ _ (da.let₂ hΓ db) (da'.let₂ hΓ db')
+--   | pair {Γ Γl Γr : Ctx? α} {A B a b a' b'}
+--     {da : Γl ⊢ a : A} {da' : Γl ⊢ a' : A} {db : Γr ⊢ b : B} {db' : Γr ⊢ b' : B}
+--     (hΓ : Γ.SSplit Γl Γr) : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ db db'
+--       → isoUniform R _ _ _ _ (da.pair hΓ db) (da.pair hΓ db)
+--   | inl {Γ A B a a'}
+--     {da : Γ ⊢ a : A} {da' : Γ ⊢ a' : A}
+--     : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ (da.inl (B := B)) (da'.inl (B := B))
+--   | inr {Γ A B b b'}
+--     {db : Γ ⊢ b : B} {db' : Γ ⊢ b' : B}
+--     : isoUniform R _ _ _ _ db db' → isoUniform R _ _ _ _ (db.inr (A := A)) (db'.inr (A := A))
+--   | abort {Γ A a a'}
+--     {da : Γ ⊢ a : Ty.empty} {da' : Γ ⊢ a' : Ty.empty}
+--     : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ (da.abort (A := A)) (da'.abort (A := A))
+--   | case {Γ Γl Γr : Ctx? α} {A B a b c a' b' c' C}
+--     {da : Γr ⊢ a : A.coprod B} {db : Γl.cons ⟨A, ⊤⟩ ⊢ b : C} {dc : Γl.cons ⟨B, ⊤⟩ ⊢ c : C}
+--     {da' : Γr ⊢ a' : A.coprod B} {db' : Γl.cons ⟨A, ⊤⟩ ⊢ b' : C} {dc' : Γl.cons ⟨B, ⊤⟩ ⊢ c' : C}
+--     (hΓ : Γ.SSplit Γl Γr)
+--     : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ db db' → isoUniform R _ _ _ _ dc dc'
+--     → isoUniform R _ _ _ _ (da.case hΓ db dc) (da'.case hΓ db' dc')
+--   | iter {Γ Γl Γr : Ctx? α} {A B : Ty α} {a b a' b'}
+--     {da : Γr ⊢ a : A} {da' : Γr ⊢ a' : A}
+--     {db : Γl.cons ⟨A, ⊤⟩ ⊢ b : B.coprod A} {db' : Γl.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
+--     (hΓ : Γ.SSplit Γl Γr) (hc : Γl.copy) (hd : Γl.del)
+--     : isoUniform R _ _ _ _ da da' → isoUniform R _ _ _ _ db db'
+--     → isoUniform R _ _ _ _ (da.iter hΓ hc hd db) (da'.iter hΓ hc hd db')
+--   | pos_unif {Γ Γc Γl Γm Γr : Ctx? α} {e e'} {A B X : Ty α} {a b b'}
+--     {da : Γr ⊢ a : A} {ds : Γm.cons ⟨A, ⊤⟩ ⊢ s : X}
+--     {db : Γl.cons ⟨X, ⊤⟩ ⊢ b : B.coprod X} {db' : Γc.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
+--     (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
+--     (hc : Γc.copy) (hd : Γc.del) (hcl : Γl.copy) (hdl : Γl.del)
+--     : a.HasEff e → s.HasEff e' → b.HasEff e → b'.HasEff e → e ∈ S.iterative → e' ⇌ e
+--       → isoUniform R _ _ _ _
+--           (ds.let₁ (hΓc.cons (.right _)) (db.wk1 _))
+--           (db'.case (Γc.both.cons (.right _))
+--             (Deriv.bv (.here inferInstance Var?.Wk.top_le_quant)).inl
+--             ((ds.pwk ((hΓc.pwk_left_del).scons _)).wk1 ⟨A, 0⟩).inr)
+--       → isoUniform R _ _ _ _
+--         (da.let₁ hΓ (ds.iter (hΓc.cons (.right _)) inferInstance inferInstance (db.wk1 _)))
+--         (da.iter hΓ hc hd db')
+--   | neg_unif {Γ Γc Γl Γm Γr : Ctx? α} {e e'} {A B X : Ty α} {a b b'}
+--     {da : Γr ⊢ a : A} {ds : Γm.cons ⟨A, ⊤⟩ ⊢ s : X}
+--     {db : Γl.cons ⟨X, ⊤⟩ ⊢ b : B.coprod X} {db' : Γc.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
+--     (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
+--     (hc : Γc.copy) (hd : Γc.del) (hcl : Γl.copy) (hdl : Γl.del)
+--     : a.HasEff e → s.HasEff e' → b.HasEff e → b'.HasEff e → e ∈ S.iterative → e' ⇌ e
+--       → isoUniform R _ _ _ _
+--           (db'.case (Γc.both.cons (.right _))
+--             (Deriv.bv (.here inferInstance Var?.Wk.top_le_quant)).inl
+--             ((ds.pwk ((hΓc.pwk_left_del).scons _)).wk1 ⟨A, 0⟩).inr)
+--           (ds.let₁ (hΓc.cons (.right _)) (db.wk1 _))
+--       → isoUniform R _ _ _ _
+--         (da.iter hΓ hc hd db')
+--         (da.let₁ hΓ (ds.iter (hΓc.cons (.right _)) inferInstance inferInstance (db.wk1 _)))
+--   | base {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R.rel da db → isoUniform R _ _ _ _ da db
+--   | refl {Γ a A} : (da da' : Γ ⊢ a : A) → isoUniform R _ _ _ _ da da'
+--   | trans {Γ a b c A} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} {dc : Γ ⊢ c : A}
+--     : isoUniform R _ _ _ _ da db → isoUniform R _ _ _ _ db dc → isoUniform R _ _ _ _ da dc
 
 --TODO: DRWS.isoUniform + friends
 
