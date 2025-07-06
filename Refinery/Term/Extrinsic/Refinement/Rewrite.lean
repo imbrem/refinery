@@ -142,7 +142,7 @@ inductive DRWS.LetMove : DRWS φ α
     (Da : Γl ⊢ a : A) (Db : Γr ⊢ b : B) (Dc : Γm.cons ⟨B, ⊤⟩ ⊢ c : C.coprod B)
     : LetMove Γ (A.tensor C) _ _
       (Da.pair hΓ (Db.iter hΓc hc hd Dc))
-      ((Da.pair (hΓ.s1_23_12 hΓc.comm) Db).iter (hΓ.s1_23_12_3 hΓc.comm).comm hc hd
+      ((Da.pair (hΓ.s1_23_13 hΓc) Db).iter (hΓ.s1_23_13_2 hΓc).comm hc hd
         (.let₂ Γm.erase_right.right .bv0
           (.case Γm.erase_left.left.left.right ((Dc.wk1 _).wk1 _)
             (.inl (.pair (Ctx?.erase_right _).left.right.right .bv2 .bv0))
