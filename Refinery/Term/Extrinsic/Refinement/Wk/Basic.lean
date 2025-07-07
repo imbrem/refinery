@@ -82,6 +82,7 @@ theorem DRWS.rel.uwk_congr [UWkCongr R]
 instance DRWS.dwk_congr_uniform (R : DRWS φ α) [UWkCongr R] : R.uniform.DWkCongr where
   dwkD_congr {Γ Δ} ρ _ _ _ da db h := by induction h generalizing Γ with
     | pos_unif hΔ hΔc hc hd ha hs hb hei hec hsb I =>
+      stop
       --TODO: simplfy
       rw [<-DRWS.rel.wk_iff_wkD]
       rename_i s Δ Δc Δl Δm Δr e e' A B X a b b' da ds db db'
@@ -158,6 +159,7 @@ instance DRWS.dwk_congr_uniform (R : DRWS φ α) [UWkCongr R] : R.uniform.DWkCon
         (dliw.cast_term hliw) _ (driw.cast_term hriw) _
         (h.cast_term hliw hriw)
     | neg_unif hΔ hΔc hc hd ha hs hb hei hec hsb I =>
+      stop
       --TODO: simplfy
       rw [<-DRWS.rel.wk_iff_wkD]
       rename_i s Δ Δc Δl Δm Δr e e' A B X a b b' da ds db db'

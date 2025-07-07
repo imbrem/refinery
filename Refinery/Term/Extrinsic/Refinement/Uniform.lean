@@ -167,23 +167,23 @@ inductive RWS.uniform (R : RWS φ α) : RWS φ α
     uniform R Γr A a a' →
     uniform R (Γl.cons ⟨A, ⊤⟩) (.coprod B A) b b' →
     uniform R Γ B (.iter a A B b) (.iter a' A B b')
-  | pos_unif {Γ Γc Γl Γm Γr : Ctx? α} {e e'} {A B C X : Ty α} {a b b' c : Term φ (Ty α)} :
-    Γ.SSplit Γc Γr → Γc.SSplit Γl Γm → Γl.copy → Γl.del → e ∈ S.iterative → e' ⇀ e →
-    (Γr ⊢ a : A) → a.HasEff e → ((Γm.cons ⟨A, ⊤⟩) ⊢ s : X) → s.HasEff e' →
+  | pos_unif {Γ Γc Γl Γr : Ctx? α} {e e'} {A B C X : Ty α} {a b b' c : Term φ (Ty α)} :
+    Γ.SSplit Γc Γr → Γc.SSplit Γl Γc → Γl.copy → Γl.del → e ∈ S.iterative → e' ⇀ e →
+    (Γr ⊢ a : A) → a.HasEff e → ((Γc.cons ⟨A, ⊤⟩) ⊢ s : X) → s.HasEff e' →
     ((Γl.cons ⟨X, ⊤⟩) ⊢ b : C.coprod X) → b.HasEff e →
     ((Γl.cons ⟨A, ⊤⟩) ⊢ b' : B.coprod A) →
-    ((Γm.cons ⟨B, ⊤⟩) ⊢ c : C) →
-    uniform R (Γc.cons ⟨A, ⊤⟩) (.coprod B X)
+    ((Γc.cons ⟨B, ⊤⟩) ⊢ c : C) →
+    uniform R (Γc.cons ⟨A, ⊤⟩) (.coprod C X)
       (.let₁ s X (↑¹ b))
       (.case b' B A (.inl C X (↑¹ c)) (.inr C X (↑¹ s))) →
     uniform R Γ C (.let₁ a A (.iter s X C (↑¹ b))) (.let₁ (.iter a A B b') B c)
-  | neg_unif {Γ Γc Γl Γm Γr e e' A B C X a b b' c} :
-    Γ.SSplit Γc Γr → Γc.SSplit Γl Γm → Γl.copy → Γl.del → e ∈ S.iterative → e' ↽ e →
-    (Γr ⊢ a : A) → a.HasEff e → ((Γm.cons ⟨A, ⊤⟩) ⊢ s : X) → s.HasEff e' →
+  | neg_unif {Γ Γc Γl Γr e e' A B C X a b b' c} :
+    Γ.SSplit Γc Γr → Γc.SSplit Γl Γc → Γl.copy → Γl.del → e ∈ S.iterative → e' ↽ e →
+    (Γr ⊢ a : A) → a.HasEff e → ((Γc.cons ⟨A, ⊤⟩) ⊢ s : X) → s.HasEff e' →
     ((Γl.cons ⟨X, ⊤⟩) ⊢ b : C.coprod X) → b.HasEff e →
     ((Γl.cons ⟨A, ⊤⟩) ⊢ b' : B.coprod A) →
-    ((Γm.cons ⟨B, ⊤⟩) ⊢ c : C) →
-    uniform R (Γc.cons ⟨A, ⊤⟩) (.coprod B X)
+    ((Γc.cons ⟨B, ⊤⟩) ⊢ c : C) →
+    uniform R (Γc.cons ⟨A, ⊤⟩) (.coprod C X)
       (.case b' B A (.inl C X (↑¹ c)) (.inr C X (↑¹ s)))
       (.let₁ s X (↑¹ b)) →
     uniform R Γ C (.let₁ (.iter a A B b') B c) (.let₁ a A (.iter s X C (↑¹ b)))
@@ -195,7 +195,7 @@ theorem RWS.uniform.wt {R : RWS φ α} {Γ A a a'} (h : uniform R Γ A a a')
   : Term.IsWt Γ A a ∧ Term.IsWt Γ A a' := by induction h with
   | base | refl => constructor <;> constructor <;> assumption
   | pos_unif hΓ hΓc hc hd he hcomm da hae ds hse db hbe db' dc hrw I =>
-    rename_i s Γ Γc Γl Γm Γr e e' A B C X a b b' c
+    rename_i s Γ Γc Γl Γr e e' A B C X a b b' c
     constructor <;> constructor
     · apply Deriv.let₁ hΓ da
       apply Deriv.iter (hΓc.cons (.right _)) inferInstance inferInstance ds (db.wk1 ⟨A, 0⟩)
@@ -203,7 +203,7 @@ theorem RWS.uniform.wt {R : RWS φ α} {Γ A a a'} (h : uniform R Γ A a a')
       apply Deriv.iter (A := A) (B := B) (hΓ.s12_3_23 hΓc.comm) inferInstance inferInstance da db'
       assumption
   | neg_unif hΓ hΓc hc hd he hcomm da hae ds hse db hbe db' dc hrw I =>
-    rename_i s Γ Γc Γl Γm Γr e e' A B C X a b b' c
+    rename_i s Γ Γc Γl Γr e e' A B C X a b b' c
     constructor <;> constructor
     · apply Deriv.let₁ (hΓ.s12_3_1_23 hΓc.comm)
       apply Deriv.iter (A := A) (B := B) (hΓ.s12_3_23 hΓc.comm) inferInstance inferInstance da db'
@@ -536,39 +536,40 @@ inductive DRWS.uniform (R : DRWS φ α) : DRWS φ α
     (hΓ : Γ.SSplit Γl Γr) (hc : Γl.copy) (hd : Γl.del)
     : uniform R _ _ _ _ da da' → uniform R _ _ _ _ db db'
     → uniform R _ _ _ _ (da.iter hΓ hc hd db) (da'.iter hΓ hc hd db')
-  | pos_unif {Γ Γc Γl Γm Γr : Ctx? α} {e e'} {A B C X : Ty α} {a b b' c}
-    {da : Γr ⊢ a : A} {ds : Γm.cons ⟨A, ⊤⟩ ⊢ s : X}
-    {db : Γl.cons ⟨X, ⊤⟩ ⊢ b : B.coprod X} {db' : Γl.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
-    {dc : Γm.cons ⟨B, ⊤⟩ ⊢ c : C}
-    (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
+  | pos_unif {Γ Γc Γl Γr : Ctx? α} {e e'} {A B C X : Ty α} {a b b' c}
+    {da : Γr ⊢ a : A} {ds : Γc.cons ⟨A, ⊤⟩ ⊢ s : X}
+    {db : Γl.cons ⟨X, ⊤⟩ ⊢ b : C.coprod X} {db' : Γl.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
+    {dc : Γc.cons ⟨B, ⊤⟩ ⊢ c : C}
+    (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γc)
     (hc : Γl.copy) (hd : Γl.del)
     : a.HasEff e → s.HasEff e' → b.HasEff e → e ∈ S.iterative → e' ⇀ e
       → uniform R _ _ _ _
           (ds.let₁ (hΓc.cons (.right _)) (db.wk1 _))
-          (db'.case hΓc
-            (Deriv.bv (.here inferInstance Var?.Wk.top_le_quant)).inl
-            ((ds.pwk ((have _ := hΓc.left_del; hΓc.pwk_left_del).scons _)).wk1 ⟨A, 0⟩).inr)
+          (db'.case hΓc.comm.right
+            (dc.wk1 ⟨A, 0⟩).inl
+            (ds.wk1 ⟨A, 0⟩).inr)
       → uniform R _ _ _ _
         (da.let₁ hΓ (ds.iter (hΓc.cons (.right _))
           inferInstance
           inferInstance (db.wk1 _)))
-        (da.iter hΓ hc hd db')
-  | neg_unif {Γ Γc Γl Γm Γr : Ctx? α} {e e'} {A B X : Ty α} {a b b'}
-    {da : Γr ⊢ a : A} {ds : Γm.cons ⟨A, ⊤⟩ ⊢ s : X}
-    {db : Γl.cons ⟨X, ⊤⟩ ⊢ b : B.coprod X} {db' : Γc.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
-    (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γm)
-    (hc : Γc.copy) (hd : Γc.del)
+        ((da.iter (hΓ.s12_3_23 hΓc.comm) hc hd db').let₁ (hΓ.s12_3_1_23 hΓc.comm) dc)
+  | neg_unif {Γ Γc Γl Γr : Ctx? α} {e e'} {A B C X : Ty α} {a b b' c}
+    {da : Γr ⊢ a : A} {ds : Γc.cons ⟨A, ⊤⟩ ⊢ s : X}
+    {db : Γl.cons ⟨X, ⊤⟩ ⊢ b : C.coprod X} {db' : Γl.cons ⟨A, ⊤⟩ ⊢ b' : B.coprod A}
+    {dc : Γc.cons ⟨B, ⊤⟩ ⊢ c : C}
+    (hΓ : Γ.SSplit Γc Γr) (hΓc : Γc.SSplit Γl Γc)
+    (hc : Γl.copy) (hd : Γl.del)
     : a.HasEff e → s.HasEff e' → b.HasEff e → e ∈ S.iterative → e' ↽ e
       → uniform R _ _ _ _
-          (db'.case (Γc.both.cons (.right _))
-            (Deriv.bv (.here inferInstance Var?.Wk.top_le_quant)).inl
-            ((ds.pwk ((have _ := hΓc.left_del; hΓc.pwk_left_del).scons _)).wk1 ⟨A, 0⟩).inr)
+          (db'.case hΓc.comm.right
+            (dc.wk1 ⟨A, 0⟩).inl
+            (ds.wk1 ⟨A, 0⟩).inr)
           (ds.let₁ (hΓc.cons (.right _)) (db.wk1 _))
       → uniform R _ _ _ _
-        (da.iter hΓ hc hd db')
+        ((da.iter (hΓ.s12_3_23 hΓc.comm) hc hd db').let₁ (hΓ.s12_3_1_23 hΓc.comm) dc)
         (da.let₁ hΓ (ds.iter (hΓc.cons (.right _))
-          (have _ := hΓc.left_copy; inferInstance)
-          (have _ := hΓc.left_del; inferInstance) (db.wk1 _)))
+          inferInstance
+          inferInstance (db.wk1 _)))
   | base {Γ A a b} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} : R.rel da db → uniform R _ _ _ _ da db
   | refl {Γ a A} : (da da' : Γ ⊢ a : A) → uniform R _ _ _ _ da da'
   | trans {Γ a b c A} {da : Γ ⊢ a : A} {db : Γ ⊢ b : A} {dc : Γ ⊢ c : A}

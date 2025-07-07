@@ -311,6 +311,7 @@ theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform 
     exact Ib Dbx Dby
     rfl
   | pos_unif hΓ hΓc hc hd hei he Dra ha Dms hs Dlb hb Dcb' rs Ia =>
+    stop
     rename_i s Γ Γc Γl Γm Γr e e' A B X a b b'
     have hΓl_copy := hΓc.left_copy
     have hΓl_del := hΓc.left_del
@@ -383,6 +384,7 @@ theorem RWS.uniform.ref {R : RWS φ α} [V : R.Valid C] {Γ A a b} (h : uniform 
       apply uniformRightIndHelper
     rfl
   | neg_unif hΓ hΓc hc hd hei he Dra ha Dms hs Dlb hb Dcb' rs Ia =>
+    stop
     rename_i s Γ Γc Γl Γm Γr e e' A B X a b b'
     have hΓl_copy := hΓc.left_copy
     have hΓl_del := hΓc.left_del
