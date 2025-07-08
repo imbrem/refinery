@@ -19,6 +19,8 @@ variable {φ : Type _} {α : Type _} {ε : Type _} [S : Signature φ α ε]
 
 instance DRWS.Beta.Valid : Valid (Beta (S := S)) C where
   den_ref da db h := by cases h with
+  | elim_pos => sorry
+  | elim_neg => sorry
   | beta_pos hΓ da q hq db ha hb he heq =>
     simp only [Ctx?.den, Deriv.den, Deriv.den_pwk, Ctx?.ety, Var?.ety, ety_var, Ty.den.eq_3,
       Ctx?.PWk.den, Ctx?.PWk.den_refl, ge_iff_le, EQuant.one_le_coe, Var?.Wk.den_used, eqToHom_refl,

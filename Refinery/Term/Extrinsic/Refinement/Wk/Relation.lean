@@ -135,6 +135,8 @@ instance DRWS.instWkCongrStep : WkCongr (Step (S := S)) where
 
 instance DRWS.instWkCongrBeta : WkCongr (Beta (S := S)) where
   cwk_congr {Γ Δ} ρ _ _ _ da db h := by cases h with
+    | elim_pos => sorry
+    | elim_neg => sorry
     | beta_pos hΓ da q hq db ha hb hcomm heq =>
       apply DRWS.cast_eq
         (.base (.beta_pos
